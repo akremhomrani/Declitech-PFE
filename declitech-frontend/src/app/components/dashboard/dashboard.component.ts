@@ -146,25 +146,38 @@ export class DashboardComponent implements OnInit, OnDestroy {
   getStudentStatusClass(student: EmotionReport): string {
     // Check for recent alerts first (highest priority)
     if (this.alertService.hasRecentAlert(student.participantId)) {
+      // Priority 1: Tab switch alerts (RED)
       const hasTabSwitch = this.alertService.hasRecentAlert(student.participantId, 'TAB_SWITCH') ||
         this.alertService.hasRecentAlert(student.participantId, 'MULTIPLE_SWITCHES');
       if (hasTabSwitch) {
         return 'border-red-500 border-4 shadow-lg shadow-red-500/20';
       }
+
+      // Priority 2: Mouse inactivity (ORANGE)
+      const hasMouseInactivity = this.alertService.hasRecentAlert(student.participantId, 'MOUSE_INACTIVITY');
+      if (hasMouseInactivity) {
+        return 'border-orange-500 border-4 shadow-lg shadow-orange-500/20';
+      }
+
+      // Priority 3: Other alerts (AMBER)
       return 'border-amber-500 border-4 shadow-lg shadow-amber-500/20';
     }
 
     // Default emotion-based styling
     if (student.status === 'IN_PROGRESS') {
       if (student.dominantEmotion === 'happy' || student.dominantEmotion === 'neutral') {
-        return 'border-primary/20';
+        return 'border-primary border-2';
       } else if (student.dominantEmotion === 'angry' || student.dominantEmotion === 'sad') {
-        return 'border-amber-400/30';
+        return 'border-amber-400 border-2';
       } else if (student.dominantEmotion === 'fear') {
-        return 'border-red-500/30';
+        return 'border-red-500 border-2';
       }
+      // If IN_PROGRESS but no emotion detected yet
+      return 'border-primary border-2';
     }
-    return 'border-slate-200 opacity-60 grayscale';
+
+    // Default for any other status (CONNECTED, etc.) - blue border
+    return 'border-primary border-2';
   }
 
   getEngagementScore(student: EmotionReport): number {
@@ -180,5 +193,48 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   hasActiveAlert(student: EmotionReport): boolean {
     return this.alertService.hasRecentAlert(student.participantId);
+  }
+
+  getAlertBadgeType(student: EmotionReport): string {
+    if (this.alertService.hasRecentAlert(student.participantId, 'TAB_SWITCH') ||
+      this.alertService.hasRecentAlert(student.participantId, 'MULTIPLE_SWITCHES')) {
+      return 'SECURITY';
+    }
+    if (this.alertService.hasRecentAlert(student.participantId, 'MOUSE_INACTIVITY')) {
+      return 'BLOCKED';
+    }
+    if (this.alertService.hasRecentAlert(student.participantId)) {
+      return 'DISTRACTED';
+    }
+    return 'FOCUSED';
+  }
+
+  getAlertMessage(student: EmotionReport): string {
+    if (this.alertService.hasRecentAlert(student.participantId, 'TAB_SWITCH') ||
+      this.alertService.hasRecentAlert(student.participantId, 'MULTIPLE_SWITCHES')) {
+      return 'Tab Switched';
+    }
+    if (this.alertService.hasRecentAlert(student.participantId, 'MOUSE_INACTIVITY')) {
+      return 'No Movement';
+    }
+    if (this.alertService.hasRecentAlert(student.participantId)) {
+      return 'Distracted';
+    }
+    return 'On Task';
+  }
+
+  getBadgeColor(badgeType: string): string {
+    switch (badgeType) {
+      case 'SECURITY':
+        return 'bg-red-500';
+      case 'BLOCKED':
+        return 'bg-orange-500';
+      case 'DISTRACTED':
+        return 'bg-amber-500';
+      case 'FOCUSED':
+        return 'bg-primary';
+      default:
+        return 'bg-slate-400';
+    }
   }
 }

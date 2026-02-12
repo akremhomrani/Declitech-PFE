@@ -1,10 +1,12 @@
-<aside class="w-72 lg:w-80 xl:w-72 min-h-screen h-full border-r border-border-light flex flex-col justify-between bg-sidebar-bg p-6 hidden md:flex sticky top-0">
+<aside
+  class="w-72 lg:w-80 xl:w-72 min-h-screen h-full border-r border-border-light flex flex-col justify-between bg-sidebar-bg p-6 hidden md:flex sticky top-0">
   <div class="flex flex-col gap-8">
     <div *ngIf="sessionCode" class="flex flex-col gap-1.5 p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
       <p class="text-text-muted text-[10px] font-bold uppercase tracking-[0.2em]">Session Code</p>
       <div class="flex items-end gap-2">
         <h1 class="text-primary text-3xl font-black tracking-tighter">{{ sessionCode }}</h1>
-        <span class="material-symbols-outlined text-slate-400 text-sm mb-1 cursor-pointer hover:text-primary transition-colors">content_copy</span>
+        <span
+          class="material-symbols-outlined text-slate-400 text-sm mb-1 cursor-pointer hover:text-primary transition-colors">content_copy</span>
       </div>
       <div class="flex items-center gap-2 mt-3 text-text-muted">
         <span class="material-symbols-outlined text-lg">timer</span>
@@ -13,31 +15,43 @@
     </div>
 
     <nav class="flex flex-col gap-1.5">
-      <a class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white hover:text-primary hover:shadow-sm transition-all font-semibold" routerLink="/dashboard" routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20" [routerLinkActiveOptions]="{exact: false}">
+      <a class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white hover:text-primary hover:shadow-sm transition-all font-semibold"
+        routerLink="/dashboard" routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20"
+        [routerLinkActiveOptions]="{exact: false}">
         <span class="material-symbols-outlined">dashboard</span>
         <span class="text-sm">Dashboard</span>
       </a>
-      <a class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white hover:text-primary hover:shadow-sm transition-all font-semibold" routerLink="/session/create" routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20" [routerLinkActiveOptions]="{exact: false}">
+      <a class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white hover:text-primary hover:shadow-sm transition-all font-semibold"
+        routerLink="/session/create" routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20"
+        [routerLinkActiveOptions]="{exact: false}">
         <span class="material-symbols-outlined">add_circle</span>
         <span class="text-sm">Create Session</span>
       </a>
-      <a class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white hover:text-primary hover:shadow-sm transition-all font-semibold"  routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20" [routerLinkActiveOptions]="{exact: false}">
+      <a class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white hover:text-primary hover:shadow-sm transition-all font-semibold"
+        routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20"
+        [routerLinkActiveOptions]="{exact: false}">
         <span class="material-symbols-outlined">person_search</span>
         <span class="text-sm">Student Directory</span>
       </a>
-      <a class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white hover:text-primary hover:shadow-sm transition-all font-semibold" routerLink="/users" routerLinkActive="bg-primary/10 text-primary font-bold" [routerLinkActiveOptions]="{exact: false}">
+      <a class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white hover:text-primary hover:shadow-sm transition-all font-semibold"
+        routerLink="/users" routerLinkActive="bg-primary/10 text-primary font-bold"
+        [routerLinkActiveOptions]="{exact: false}">
         <span class="material-symbols-outlined">group</span>
         <span class="text-sm">User Management</span>
       </a>
-      <a class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white hover:text-primary hover:shadow-sm transition-all font-semibold" href="#">
+      <a class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white hover:text-primary hover:shadow-sm transition-all font-semibold"
+        href="#">
         <span class="material-symbols-outlined">analytics</span>
         <span class="text-sm">Insights & Analytics</span>
       </a>
-      <a class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white hover:text-primary hover:shadow-sm transition-all font-semibold" routerLink="/session/history" routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20" [routerLinkActiveOptions]="{exact: false}">
+      <a class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white hover:text-primary hover:shadow-sm transition-all font-semibold"
+        routerLink="/session/history" routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20"
+        [routerLinkActiveOptions]="{exact: false}">
         <span class="material-symbols-outlined">history</span>
         <span class="text-sm">Session History</span>
       </a>
-      <a class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white hover:text-primary hover:shadow-sm transition-all font-semibold" href="#">
+      <a class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white hover:text-primary hover:shadow-sm transition-all font-semibold"
+        href="#">
         <span class="material-symbols-outlined">settings_suggest</span>
         <span class="text-sm">AI Configuration</span>
       </a>
@@ -46,22 +60,51 @@
     <div class="mt-4">
       <div class="flex items-center justify-between mb-4 px-2">
         <p class="text-[10px] font-bold uppercase tracking-[0.15em] text-text-muted">Real-time Alerts</p>
-        <span class="flex h-2 w-2 rounded-full bg-red-500"></span>
+        <span *ngIf="recentAlerts.length > 0" class="flex h-2 w-2 rounded-full bg-red-500"></span>
       </div>
       <div class="space-y-3 px-1 overflow-y-auto max-h-64 custom-scrollbar">
-        <div class="flex gap-4 items-start border-l-4 border-red-500 bg-red-50 p-3 rounded-r-xl shadow-sm">
+        <!-- Dynamic Alerts -->
+        <div *ngFor="let alert of recentAlerts" class="flex gap-4 items-start border-l-4 p-3 rounded-r-xl shadow-sm"
+          [ngClass]="{
+               'border-red-500 bg-red-50': getAlertColor(alert) === 'red',
+               'border-orange-500 bg-orange-50': getAlertColor(alert) === 'orange',
+               'border-amber-500 bg-amber-50': getAlertColor(alert) === 'amber'
+             }">
           <div class="flex-1">
-            <p class="text-xs font-bold text-red-900">Alert Example</p>
-            <p class="text-[10px] text-red-600 font-semibold uppercase tracking-tight">Check console</p>
+            <p class="text-xs font-bold" [ngClass]="{
+                 'text-red-900': getAlertColor(alert) === 'red',
+                 'text-orange-900': getAlertColor(alert) === 'orange',
+                 'text-amber-900': getAlertColor(alert) === 'amber'
+               }">
+              {{ alert.studentLoginIdentity || alert.participantId }}
+            </p>
+            <p class="text-[10px] font-semibold uppercase tracking-tight" [ngClass]="{
+                 'text-red-600': getAlertColor(alert) === 'red',
+                 'text-orange-600': getAlertColor(alert) === 'orange',
+                 'text-amber-600': getAlertColor(alert) === 'amber'
+               }">
+              {{ getAlertTitle(alert) }}
+            </p>
           </div>
-          <span class="text-[9px] font-bold text-red-400">Now</span>
+          <span class="text-[9px] font-bold" [ngClass]="{
+                  'text-red-400': getAlertColor(alert) === 'red',
+                  'text-orange-400': getAlertColor(alert) === 'orange',
+                  'text-amber-400': getAlertColor(alert) === 'amber'
+                }">
+            {{ getRelativeTime(alert.timestamp) }}
+          </span>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="recentAlerts.length === 0" class="text-center py-8">
+          <span class="material-symbols-outlined text-4xl text-slate-300">notifications_off</span>
+          <p class="text-xs text-slate-400 mt-2 font-semibold">No recent alerts</p>
         </div>
       </div>
     </div>
   </div>
 
-  <button 
-    (click)="onEndSession()"
+  <button (click)="onEndSession()"
     class="w-full py-4 px-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-sm font-bold flex items-center justify-center gap-3 hover:bg-red-600 hover:text-white transition-all group">
     <span class="material-symbols-outlined text-xl group-hover:rotate-12 transition-transform">logout</span>
     End Live Session

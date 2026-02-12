@@ -85,17 +85,14 @@
               class="size-16 bg-gradient-to-br from-primary/20 to-accent-teal/20 rounded-2xl ring-4 ring-primary/5 flex items-center justify-center">
               <span class="material-symbols-outlined text-2xl text-primary">person</span>
             </div>
-            <div class="flex flex-col items-end">
-              <span
-                class="px-2.5 py-1 bg-primary text-white text-[10px] font-black rounded-lg uppercase tracking-widest"
-                [ngClass]="{
-                      'bg-primary': student.status === 'IN_PROGRESS',
-                      'bg-amber-500/10 text-amber-600 border border-amber-500/20': student.dominantEmotion === 'sad',
-                      'bg-slate-100 text-slate-500 border border-slate-200': student.status === 'COMPLETED'
-                    }">
-                {{ getStudentStatus(student) }}
+            <div class="flex flex-col items-end gap-2">
+              <!-- Status Badge (SECURITY/BLOCKED/DISTRACTED/FOCUSED) -->
+              <span class="px-3 py-1.5 text-white text-[10px] font-black rounded-lg uppercase tracking-widest"
+                [ngClass]="getBadgeColor(getAlertBadgeType(student))">
+                {{ getAlertBadgeType(student) }}
               </span>
-              <div class="flex items-center gap-1.5 mt-2.5">
+              <!-- Connection Status -->
+              <div class="flex items-center gap-1.5">
                 <span class="size-2 rounded-full" [ngClass]="{
                         'bg-accent-teal status-pulse': student.status === 'IN_PROGRESS',
                         'bg-slate-400': student.status === 'COMPLETED'
@@ -104,25 +101,20 @@
                 <span class="text-[10px] text-text-muted uppercase font-black tracking-tighter">
                   {{ student.status === 'IN_PROGRESS' ? 'Connected' : 'Offline' }}
                 </span>
-                <!-- Alert Badge -->
-                <span *ngIf="hasActiveAlert(student)"
-                  class="ml-auto px-2 py-0.5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center gap-1">
-                  <span class="material-symbols-outlined text-xs">warning</span>
-                  {{ getAlertCount(student) }}
-                </span>
               </div>
             </div>
           </div>
 
           <div class="mb-4">
             <h3 class="font-bold text-lg leading-tight text-text-main">{{ student.studentLoginIdentity }}</h3>
-            <p class="text-text-muted text-xs mt-1">
-              <span *ngIf="student.dominantEmotion">
-                Emotion: <span class="text-primary font-black">{{ student.dominantEmotion }}</span>
-              </span>
-              <span *ngIf="!student.dominantEmotion">
-                Engagement: <span class="text-primary font-black">{{ getEngagementScore(student) }}%</span>
-              </span>
+            <!-- Alert Message / Activity Status -->
+            <p class="text-xs mt-1.5 font-semibold" [ngClass]="{
+                 'text-red-600': getAlertBadgeType(student) === 'SECURITY',
+                 'text-orange-600': getAlertBadgeType(student) === 'BLOCKED',
+                 'text-amber-600': getAlertBadgeType(student) === 'DISTRACTED',
+                 'text-primary': getAlertBadgeType(student) === 'FOCUSED'
+               }">
+              Activity: <span class="font-black">{{ getAlertMessage(student) }}</span>
             </p>
           </div>
 

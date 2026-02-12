@@ -6,7 +6,7 @@ export interface Alert {
     participantId: string;
     sessionId: string;
     studentLoginIdentity?: string;
-    alertType: 'TAB_SWITCH' | 'MULTIPLE_SWITCHES' | 'OFF_PLATFORM' | 'INACTIVITY' | 'LOW_ENGAGEMENT' | 'DISTRACTION' | 'FOCUS_LOSS';
+    alertType: 'TAB_SWITCH' | 'MULTIPLE_SWITCHES' | 'OFF_PLATFORM' | 'INACTIVITY' | 'LOW_ENGAGEMENT' | 'DISTRACTION' | 'FOCUS_LOSS' | 'ALERT_RESOLVED' | 'MOUSE_INACTIVITY';
     severity: 'LOW' | 'MEDIUM' | 'HIGH';
     message: string;
     timestamp: string;
@@ -45,8 +45,15 @@ export class AlertService {
             const alert: Alert = JSON.parse(event.data);
             console.log('🚨 Alert received:', alert);
 
+            // If alert is resolved, clear all alerts for this participant
+            if (alert.alertType === 'ALERT_RESOLVED') {
+                console.log('✅ Clearing alerts for participant:', alert.participantId);
+                this.clearAlertsForParticipant(alert.participantId);
+            } else {
+                this.addRecentAlert(alert);
+            }
+
             this.alertSubject.next(alert);
-            this.addRecentAlert(alert);
         });
 
         this.eventSource.addEventListener('heartbeat', (event: MessageEvent) => {
@@ -105,5 +112,18 @@ export class AlertService {
 
     getAlertCount(participantId: string): number {
         return this.getRecentAlertsForParticipant(participantId).length;
+    }
+
+    clearAlertsForParticipant(participantId: string): void {
+        this.recentAlerts.delete(participantId);
+        console.log('🧹 Cleared all alerts for participant:', participantId);
+    }
+
+    getAllRecentAlerts(): Alert[] {
+        const allAlerts: Alert[] = [];
+        this.recentAlerts.forEach((alerts) => {
+            allAlerts.push(...alerts);
+        });
+        return allAlerts;
     }
 }

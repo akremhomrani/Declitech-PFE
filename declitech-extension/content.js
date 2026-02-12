@@ -103,3 +103,21 @@ setInterval(attach, 500);
 
 const obs = new MutationObserver(attach);
 obs.observe(document.documentElement, { childList: true, subtree: true });
+
+// ----------------------------
+// Mouse movement tracking for inactivity detection
+// ----------------------------
+let lastMouseMoveNotification = 0;
+const MOUSE_MOVE_THROTTLE = 5000; // Only notify every 5 seconds
+
+document.addEventListener('mousemove', () => {
+  const now = Date.now();
+  if (now - lastMouseMoveNotification > MOUSE_MOVE_THROTTLE) {
+    lastMouseMoveNotification = now;
+    chrome.runtime.sendMessage({ type: 'MOUSE_MOVED' }).catch(() => {
+      // Ignore errors if background script is not ready
+    });
+  }
+});
+
+console.log('🖱️ DecliTech mouse tracking initialized');
