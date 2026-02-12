@@ -1,0 +1,163 @@
+<div class="min-h-screen flex flex-col">
+  <app-navbar></app-navbar>
+
+  <div class="flex flex-1 overflow-hidden">
+    <app-sidebar></app-sidebar>
+
+    <main class="flex-1 flex flex-col overflow-y-auto custom-scrollbar p-8">
+      <!-- Statistics Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 flex items-center justify-between shadow-sm">
+          <div>
+            <p class="text-text-muted text-[10px] font-bold uppercase tracking-widest mb-2">Connected</p>
+            <div class="flex items-baseline gap-1">
+              <p class="text-3xl font-black text-text-main">{{ statistics.connectedStudents }}</p>
+              <p class="text-text-muted text-sm font-bold">/{{ statistics.totalStudents }}</p>
+            </div>
+          </div>
+          <div class="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+            <span class="material-symbols-outlined text-3xl">groups</span>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 flex items-center justify-between shadow-sm">
+          <div>
+            <p class="text-text-muted text-[10px] font-bold uppercase tracking-widest mb-2">Focused</p>
+            <p class="text-3xl font-black text-primary">{{ statistics.focusedStudents }}</p>
+          </div>
+          <div class="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+            <span class="material-symbols-outlined text-3xl">emoji_objects</span>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 flex items-center justify-between shadow-sm">
+          <div>
+            <p class="text-text-muted text-[10px] font-bold uppercase tracking-widest mb-2">Distracted</p>
+            <p class="text-3xl font-black text-amber-500">{{ statistics.distractedStudents }}</p>
+          </div>
+          <div class="h-14 w-14 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+            <span class="material-symbols-outlined text-3xl">sensors_off</span>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 flex items-center justify-between shadow-sm">
+          <div>
+            <p class="text-text-muted text-[10px] font-bold uppercase tracking-widest mb-2">Avg. Attention</p>
+            <p class="text-3xl font-black text-primary">{{ statistics.averageAttention }}%</p>
+          </div>
+          <div class="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+            <span class="material-symbols-outlined text-3xl">query_stats</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Title and Controls -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div>
+          <h2 class="text-2xl font-black tracking-tight text-text-main flex items-center gap-3">
+            Live Engagement Monitor
+            <span
+              class="text-[10px] bg-primary text-white px-3 py-1 rounded-full uppercase font-black tracking-wider">Live</span>
+          </h2>
+          <p class="text-text-muted text-sm mt-1">Real-time AI telemetry from local agents and extensions</p>
+        </div>
+        <div class="flex gap-3">
+          <button
+            class="flex items-center gap-2 px-5 py-2.5 bg-white text-text-main text-xs font-bold rounded-xl hover:bg-slate-50 transition-all border border-slate-200 shadow-sm">
+            <span class="material-symbols-outlined text-lg">filter_alt</span>
+            Filter View
+          </button>
+          <button
+            class="flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-xs font-black rounded-xl hover:bg-primary-dark transition-all shadow-md shadow-primary/10">
+            <span class="material-symbols-outlined text-lg">sort</span>
+            Sort: Engagement
+          </button>
+        </div>
+      </div>
+
+      <!-- Student Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+        <div *ngFor="let student of students"
+          class="group relative bg-white rounded-2xl p-5 border-2 student-card-shadow transition-all hover:-translate-y-1"
+          [ngClass]="getStudentStatusClass(student)">
+          <div class="flex justify-between items-start mb-5">
+            <div
+              class="size-16 bg-gradient-to-br from-primary/20 to-accent-teal/20 rounded-2xl ring-4 ring-primary/5 flex items-center justify-center">
+              <span class="material-symbols-outlined text-2xl text-primary">person</span>
+            </div>
+            <div class="flex flex-col items-end">
+              <span
+                class="px-2.5 py-1 bg-primary text-white text-[10px] font-black rounded-lg uppercase tracking-widest"
+                [ngClass]="{
+                      'bg-primary': student.status === 'IN_PROGRESS',
+                      'bg-amber-500/10 text-amber-600 border border-amber-500/20': student.dominantEmotion === 'sad',
+                      'bg-slate-100 text-slate-500 border border-slate-200': student.status === 'COMPLETED'
+                    }">
+                {{ getStudentStatus(student) }}
+              </span>
+              <div class="flex items-center gap-1.5 mt-2.5">
+                <span class="size-2 rounded-full" [ngClass]="{
+                        'bg-accent-teal status-pulse': student.status === 'IN_PROGRESS',
+                        'bg-slate-400': student.status === 'COMPLETED'
+                      }">
+                </span>
+                <span class="text-[10px] text-text-muted uppercase font-black tracking-tighter">
+                  {{ student.status === 'IN_PROGRESS' ? 'Connected' : 'Offline' }}
+                </span>
+                <!-- Alert Badge -->
+                <span *ngIf="hasActiveAlert(student)"
+                  class="ml-auto px-2 py-0.5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center gap-1">
+                  <span class="material-symbols-outlined text-xs">warning</span>
+                  {{ getAlertCount(student) }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <h3 class="font-bold text-lg leading-tight text-text-main">{{ student.studentLoginIdentity }}</h3>
+            <p class="text-text-muted text-xs mt-1">
+              <span *ngIf="student.dominantEmotion">
+                Emotion: <span class="text-primary font-black">{{ student.dominantEmotion }}</span>
+              </span>
+              <span *ngIf="!student.dominantEmotion">
+                Engagement: <span class="text-primary font-black">{{ getEngagementScore(student) }}%</span>
+              </span>
+            </p>
+          </div>
+
+          <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+            <div class="flex gap-1.5 items-end h-6">
+              <div class="w-1.5 h-3 bg-primary/20 rounded-full"></div>
+              <div class="w-1.5 h-5 bg-primary/60 rounded-full"></div>
+              <div class="w-1.5 h-4 bg-primary/80 rounded-full"></div>
+              <div class="w-1.5 h-6 bg-primary rounded-full"></div>
+            </div>
+            <button class="text-slate-400 hover:text-primary transition-colors">
+              <span class="material-symbols-outlined text-xl">open_in_new</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <footer
+        class="mt-auto pt-12 pb-6 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between text-text-muted text-[10px] font-black uppercase tracking-widest">
+        <div class="flex items-center gap-8 mb-4 md:mb-0">
+          <div class="flex items-center gap-2.5">
+            <div class="size-2 rounded-full bg-primary"></div>
+            <span>DecliTech AI Engine: v4.2 stable</span>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <div class="size-2 rounded-full bg-accent-teal"></div>
+            <span>Data Sync: 0.2ms Latency</span>
+          </div>
+        </div>
+        <div class="flex gap-8">
+          <a class="hover:text-primary transition-colors" href="#">Export Session Analytics</a>
+          <a class="hover:text-primary transition-colors" href="#">System Health</a>
+          <span>© 2024 DecliTech Solutions</span>
+        </div>
+      </footer>
+    </main>
+  </div>
+</div>

@@ -1,0 +1,59 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: user-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/declitech_users
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: admin
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: UTC
+
+gateway:
+  secret: declitech-gateway-secret-2024
+  require-header: false
+
+jwt:
+  secret: ${JWT_SECRET:ZGVjbGl0ZWNoLXNlY3VyZS1rZXktZm9yLWp3dC10b2tlbi1nZW5lcmF0aW9uLTIwMjYtdmVyeS1zZWN1cmUtY2hhbmdlLWluLXByb2R1Y3Rpb24=}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 30
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.declitech.user: DEBUG
+    org.springframework.web: INFO
+    org.hibernate: INFO

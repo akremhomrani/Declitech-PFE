@@ -1,0 +1,246 @@
+<div class="min-h-screen flex flex-col bg-background">
+  <app-navbar></app-navbar>
+
+  <div class="flex flex-1 overflow-hidden">
+    <app-sidebar></app-sidebar>
+
+    <main class="flex-1 overflow-y-auto custom-scrollbar">
+  
+
+      <div class="p-10 max-w-6xl mx-auto w-full">
+        <!-- Page Title -->
+        <div class="mb-12">
+          <h2 class="text-4xl font-bold tracking-tight text-slate-900 mb-3">Create New Monitoring Session</h2>
+          <p class="text-slate-500 max-w-2xl leading-relaxed">
+            Set up your AI-powered engagement environment. Generate a secure access code for your students to begin tracking real-time attention metrics and browser activity.
+          </p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-12 gap-8">
+          
+          <!-- Main Card - Left Side -->
+          <div class="col-span-12 lg:col-span-8">
+            <div class="bg-white rounded-2xl border border-slate-200 glow-teal overflow-hidden transition-all flex flex-col min-h-[400px] justify-center">
+              <div class="p-10">
+                
+                <!-- Generate Session View -->
+                <div *ngIf="!sessionGenerated" class="flex flex-col items-center justify-center py-6 text-center">
+                  <div class="mb-8 inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-primary/5 border border-primary/10 text-primary">
+                    <span class="relative flex h-2.5 w-2.5">
+                      <span class="absolute inline-flex h-full w-full rounded-full bg-primary opacity-40"></span>
+                      <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+                    </span>
+                    <span class="text-xs font-bold tracking-widest uppercase">Live Agent Ready</span>
+                  </div>
+                  
+                  <div class="mb-10 max-w-sm">
+                    <h3 class="text-2xl font-bold text-slate-900 mb-4">Ready to start?</h3>
+                    <p class="text-slate-500 text-sm mb-8">Generate a unique session code to invite students and begin monitoring engagement through the DecliTech extension.</p>
+                    
+                    <button 
+                      (click)="openModal()"
+                      class="w-full bg-primary hover:bg-primary-hover text-white font-bold py-6 px-8 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-xl shadow-primary/25 text-lg group">
+                      <span class="material-symbols-outlined text-2xl group-hover:rotate-12 transition-transform">add_circle</span>
+                      <span>Generate New Session Code</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Active Session View -->
+                <div *ngIf="sessionGenerated" class="flex flex-col items-center justify-center py-6 text-center">
+                  <div class="mb-8 inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600">
+                    <span class="relative flex h-2.5 w-2.5">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                    </span>
+                    <span class="text-xs font-bold tracking-widest uppercase">Live Agent Ready</span>
+                  </div>
+
+                  <p class="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">Student Access Code</p>
+                  
+                  <!-- Session Code Display -->
+                  <div class="flex items-center justify-center gap-3 mb-8">
+                    <div *ngFor="let char of getCodeArray()" 
+                         class="w-16 h-20 code-block rounded-xl flex items-center justify-center border-2 border-primary/10">
+                      <span class="text-4xl font-black text-primary">{{ char }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Action Buttons -->
+                  <div class="flex items-center justify-center gap-3 mb-8">
+                    <button 
+                      (click)="copyCode()"
+                      class="bg-primary hover:bg-primary-hover text-white font-bold py-3 px-6 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-primary/25">
+                      <span class="material-symbols-outlined text-xl">content_copy</span>
+                      <span>Copy Code</span>
+                    </button>
+                    <button 
+                      (click)="showQR()"
+                      class="bg-white hover:bg-slate-50 text-slate-700 font-bold py-3 px-6 rounded-xl flex items-center gap-2 transition-all border-2 border-slate-200">
+                      <span class="material-symbols-outlined text-xl">qr_code_2</span>
+                      <span>Show QR</span>
+                    </button>
+                  </div>
+
+                  <!-- Connection Status -->
+                  <div class="flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 max-w-xl mx-auto w-full">
+                    <div class="flex items-center gap-2 text-primary">
+                      <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                      </span>
+                      <span class="text-sm font-semibold italic">Waiting for students to connect...</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Connected:</span>
+                      <span class="text-lg font-bold text-slate-900">{{ connectedStudents }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Configuration Sidebar - Right Side -->
+          <div class="col-span-12 lg:col-span-4 flex flex-col gap-6">
+            <!-- Configuration Card -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-7 shadow-sm">
+              <h3 class="text-xs font-black uppercase tracking-widest text-slate-900 mb-6 flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-xl">tune</span>
+                Configuration
+              </h3>
+              
+              <div class="space-y-4">
+                <div class="p-4 rounded-xl bg-surface border border-slate-100">
+                  <p class="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-wider">Tracking Mode</p>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm font-bold text-slate-700">DecliTech AI Agent</span>
+                    <div class="size-5 rounded-full bg-primary/20 border border-primary flex items-center justify-center">
+                      <div class="size-2.5 rounded-full bg-primary"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="p-4 rounded-xl bg-surface border border-slate-100">
+                  <p class="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-wider">Extension Lock</p>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm font-bold text-slate-700">Strict Monitoring</span>
+                    <button class="w-10 h-5 bg-primary rounded-full relative transition-colors">
+                      <div class="absolute right-1 top-1 size-3 bg-white rounded-full shadow-sm"></div>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="p-4 rounded-xl bg-surface border border-slate-100">
+                  <p class="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-wider">Data Privacy</p>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm font-bold text-slate-700">Anonymized Feed</span>
+                    <span class="material-symbols-outlined text-primary">verified_user</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Setup Guide Card -->
+            <div class="bg-accent-teal/40 border border-primary/10 rounded-2xl p-6 relative overflow-hidden">
+              <h4 class="text-sm font-bold text-primary mb-3 flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">lightbulb</span>
+                Setup Guide
+              </h4>
+              <p class="text-xs text-slate-600 leading-relaxed relative z-10">
+                Click <strong>"Generate New Session Code"</strong> to create a unique access key. Students will enter this code in their browser extension to join.
+              </p>
+              <div class="absolute -right-2 -bottom-2 opacity-5">
+                <span class="material-symbols-outlined text-7xl text-primary">help_center</span>
+              </div>
+            </div>
+
+            <!-- Start Session Button -->
+            <button 
+              [disabled]="!sessionGenerated"
+              [class.cursor-not-allowed]="!sessionGenerated"
+              [class.cursor-pointer]="sessionGenerated"
+              [class.bg-slate-50]="!sessionGenerated"
+              [class.bg-primary]="sessionGenerated"
+              [class.text-slate-400]="!sessionGenerated"
+              [class.text-white]="sessionGenerated"
+              class="w-full py-5 px-6 rounded-2xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3 border-2 border-dashed transition-all"
+              [class.border-slate-200]="!sessionGenerated"
+              [class.border-primary]="sessionGenerated">
+              <span>Start Session Feed</span>
+              <span class="material-symbols-outlined text-lg">rocket_launch</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Recent Sessions Section -->
+  
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Session Details Modal -->
+<div *ngIf="isModalOpen" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
+    <button 
+      (click)="closeModal()"
+      class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors">
+      <span class="material-symbols-outlined text-xl">close</span>
+    </button>
+
+    <div class="mb-5">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/5 border border-primary/10 text-primary mb-3">
+        <span class="material-symbols-outlined text-base">settings</span>
+        <span class="text-xs font-bold tracking-widest uppercase">Session Configuration</span>
+      </div>
+      <h3 class="text-xl font-bold text-slate-900 mb-1">Setup Your Session</h3>
+      <p class="text-slate-500 text-sm">Enter the details for your monitoring session</p>
+    </div>
+
+    <div class="space-y-4 mb-6">
+      <!-- Session Title -->
+      <div>
+        <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-2">
+          Session Title
+        </label>
+        <input 
+          type="text" 
+          [(ngModel)]="modalTitle"
+          placeholder="e.g., Web Development Class - Sprint 3"
+          class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-slate-900 font-medium">
+      </div>
+
+      <!-- Session Duration -->
+      <div>
+        <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-2">
+          Duration (minutes)
+        </label>
+        <input 
+          type="number" 
+          [(ngModel)]="modalDuration"
+          min="1"
+          placeholder="60"
+          class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-slate-900 font-medium">
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button 
+        (click)="closeModal()"
+        class="flex-1 py-3 px-5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-all">
+        Cancel
+      </button>
+      <button 
+        (click)="generateSession()"
+        [disabled]="!modalTitle || modalDuration <= 0"
+        [class.opacity-50]="!modalTitle || modalDuration <= 0"
+        [class.cursor-not-allowed]="!modalTitle || modalDuration <= 0"
+        class="flex-1 py-3 px-5 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold transition-all shadow-lg shadow-primary/25 flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-lg">check_circle</span>
+        <span>Generate Code</span>
+      </button>
+    </div>
+  </div>
+</div>

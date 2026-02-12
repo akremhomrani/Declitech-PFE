@@ -1,0 +1,50 @@
+/* Session Creation Component Styles */
+
+.glow-teal {
+  box-shadow: 0 0 15px rgba(0, 174, 184, 0.1);
+}
+
+.code-block {
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%);
+}
+
+.bg-surface {
+  background-color: #f8fafc;
+}
+
+.bg-accent-teal {
+  background-color: #e6f7f8;
+}
+
+.text-primary-hover {
+  color: #009199;
+}
+
+.bg-primary-hover {
+  background-color: #009199;
+}
+
+/* Smooth transitions for state changes */
+.transition-all {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Custom scrollbar styling */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

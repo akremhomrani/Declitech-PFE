@@ -1,0 +1,95 @@
+<header class="flex items-center justify-between border-b border-border-light bg-white/90 backdrop-blur-md px-6 py-4 sticky top-0 z-50">
+  <div class="flex items-center gap-10">
+    <div class="flex items-center gap-2.5">
+      <div class="size-9 flex items-center justify-center bg-primary rounded-xl text-white">
+        <span class="material-symbols-outlined font-bold">smart_toy</span>
+      </div>
+      <div class="flex flex-col leading-none">
+        <span class="text-xl font-extrabold tracking-tight text-text-main">Decli<span class="text-primary">Tech</span></span>
+        <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-primary">Live Monitor</span>
+      </div>
+    </div>
+    <div *ngIf="sessionCode" class="hidden md:flex items-center gap-3 bg-primary/5 px-4 py-1.5 rounded-full border border-primary/20">
+      <span class="relative flex h-2 w-2">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+      </span>
+      <span class="text-[10px] font-bold uppercase tracking-widest text-primary">Active Session: {{ sessionCode }}</span>
+    </div>
+  </div>
+  
+  <div class="flex flex-1 justify-end gap-5 items-center">
+    <div class="relative w-full max-w-sm hidden lg:block">
+      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
+      <input 
+        class="w-full bg-slate-100 border-transparent focus:bg-white focus:border-primary/30 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none text-text-main placeholder:text-slate-400" 
+        placeholder="Search student by name or ID..." 
+        type="text"
+      />
+    </div>
+    
+    <div class="flex gap-2">
+      <button class="relative flex items-center justify-center rounded-xl h-11 w-11 bg-slate-100 text-text-main transition-all hover:bg-primary/10 hover:text-primary">
+        <span class="material-symbols-outlined">notifications</span>
+        <span class="absolute top-2.5 right-2.5 flex h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+      </button>
+      <button class="flex items-center justify-center rounded-xl h-11 w-11 bg-slate-100 text-text-main transition-all hover:bg-primary/10 hover:text-primary">
+        <span class="material-symbols-outlined">settings</span>
+      </button>
+    </div>
+    
+    <div class="h-8 w-[1px] bg-border-light mx-1"></div>
+    
+    <div class="relative flex items-center gap-3 pl-2">
+      <div class="text-right hidden sm:block">
+        <p class="text-sm font-bold leading-none text-text-main">
+          {{ firstName && lastName ? (firstName + ' ' + lastName) : 'Guest' }}
+        </p>
+        <p class="text-[10px] text-primary font-semibold uppercase tracking-tighter mt-1">
+          {{ role || 'USER' }}
+        </p>
+      </div>
+      <button 
+        (click)="toggleDropdown()"
+        class="bg-center bg-no-repeat aspect-square bg-cover rounded-xl size-11 ring-2 ring-primary/10 shadow-sm hover:ring-primary/30 transition-all cursor-pointer flex items-center justify-center bg-gradient-to-br from-primary to-primary-dark text-white font-bold text-lg" 
+      >
+        {{ getInitials() }}
+      </button>
+      
+      <!-- Dropdown Menu -->
+      <div 
+        *ngIf="isDropdownOpen"
+        class="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-border-light overflow-hidden z-50"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="px-4 py-3 border-b border-border-light">
+          <p class="text-sm font-bold text-text-main">{{ firstName }} {{ lastName }}</p>
+          <p class="text-xs text-slate-500">{{ '@' + username }}</p>
+        </div>
+        <div class="py-1">
+          <button 
+            (click)="goToProfile()"
+            class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-text-main hover:bg-slate-50 transition-colors"
+          >
+            <span class="material-symbols-outlined text-lg">person</span>
+            <span>Profile</span>
+          </button>
+          <button 
+            (click)="logout()"
+            class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+          >
+            <span class="material-symbols-outlined text-lg">logout</span>
+            <span>Logout</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Backdrop to close dropdown -->
+<div 
+  *ngIf="isDropdownOpen" 
+  (click)="closeDropdown()"
+  class="fixed inset-0 z-40"
+></div>
