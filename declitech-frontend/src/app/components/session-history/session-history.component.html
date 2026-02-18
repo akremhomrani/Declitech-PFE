@@ -2,170 +2,260 @@
 <div class="flex min-h-screen bg-slate-50">
   <app-sidebar></app-sidebar>
   
-  <main class="flex-1 p-8">
-    <!-- Header -->
-    <div class="mb-8">
-      <h1 class="text-3xl font-black text-slate-900 mb-2">Session History</h1>
-      <p class="text-slate-500">View and manage all your past and current sessions</p>
+  <main class="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 w-full overflow-x-hidden">
+    <div class="mb-4 sm:mb-6 md:mb-8">
+      <h1 class="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 mb-1 sm:mb-2">Session History</h1>
+      <p class="text-slate-500 text-xs sm:text-sm md:text-base">View and manage all your past and current sessions</p>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6 md:mb-8">
+      <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Total Sessions</p>
-            <p class="text-3xl font-black text-slate-900">{{ sessions.length }}</p>
+            <p class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Total Sessions</p>
+            <p class="text-2xl sm:text-3xl font-black text-slate-900">{{ totalElements }}</p>
           </div>
-          <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-            <span class="material-symbols-outlined text-primary text-2xl">event_note</span>
+          <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+            <span class="material-symbols-outlined text-primary text-xl sm:text-2xl">event_note</span>
           </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+      <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Active Now</p>
-            <p class="text-3xl font-black text-emerald-600">{{ getActiveCount() }}</p>
+            <p class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Active Now</p>
+            <p class="text-2xl sm:text-3xl font-black text-emerald-600">{{ getActiveCount() }}</p>
           </div>
-          <div class="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
-            <span class="material-symbols-outlined text-emerald-600 text-2xl">radio_button_checked</span>
+          <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+            <span class="material-symbols-outlined text-emerald-600 text-xl sm:text-2xl">radio_button_checked</span>
           </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+      <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Total Participants</p>
-            <p class="text-3xl font-black text-blue-600">{{ getTotalParticipants() }}</p>
+            <p class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Participants</p>
+            <p class="text-2xl sm:text-3xl font-black text-blue-600">{{ getTotalParticipants() }}</p>
           </div>
-          <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-            <span class="material-symbols-outlined text-blue-600 text-2xl">group</span>
+          <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+            <span class="material-symbols-outlined text-blue-600 text-xl sm:text-2xl">group</span>
           </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+      <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Total Reports</p>
-            <p class="text-3xl font-black text-amber-600">{{ getTotalReports() }}</p>
+            <p class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Reports</p>
+            <p class="text-2xl sm:text-3xl font-black text-amber-600">{{ getTotalReports() }}</p>
           </div>
-          <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
-            <span class="material-symbols-outlined text-amber-600 text-2xl">analytics</span>
+          <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-amber-100 flex items-center justify-center">
+            <span class="material-symbols-outlined text-amber-600 text-xl sm:text-2xl">analytics</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Filters -->
-    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm mb-6">
-      <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div class="relative flex-1 w-full md:max-w-md">
-          <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+    <div class="bg-white rounded-2xl p-3 sm:p-4 md:p-5 border border-slate-200 shadow-sm mb-4 sm:mb-6">
+      <div class="flex flex-col lg:flex-row gap-3 sm:gap-4">
+        <div class="relative flex-1 w-full lg:max-w-md">
+          <span class="material-symbols-outlined absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg sm:text-xl">search</span>
           <input 
             type="text" 
             [(ngModel)]="searchTerm"
             (ngModelChange)="onSearchChange()"
             placeholder="Search by code or title..."
-            class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium"
+            class="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2 sm:py-2.5 md:py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-xs sm:text-sm font-medium"
           />
         </div>
         
-        <div class="flex gap-2">
+        <div class="flex gap-2 flex-wrap sm:flex-nowrap">
           <button 
             (click)="filterStatus = 'all'; onFilterChange()"
             [class]="filterStatus === 'all' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
-            class="px-4 py-2.5 rounded-xl text-sm font-bold transition-all">
+            class="flex-1 sm:flex-none px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap">
             All
           </button>
           <button 
             (click)="filterStatus = 'active'; onFilterChange()"
             [class]="filterStatus === 'active' ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
-            class="px-4 py-2.5 rounded-xl text-sm font-bold transition-all">
+            class="flex-1 sm:flex-none px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap">
             Active
           </button>
           <button 
             (click)="filterStatus = 'expired'; onFilterChange()"
             [class]="filterStatus === 'expired' ? 'bg-slate-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
-            class="px-4 py-2.5 rounded-xl text-sm font-bold transition-all">
+            class="flex-1 sm:flex-none px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap">
             Ended
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Loading State -->
     <div *ngIf="isLoading" class="flex items-center justify-center py-20">
       <div class="animate-spin w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full"></div>
     </div>
 
-    <!-- Sessions Table -->
     <div *ngIf="!isLoading" class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full">
+
+      <div class="hidden md:block overflow-x-auto">
+        <table class="w-full min-w-full">
           <thead class="bg-slate-50 border-b border-slate-200">
             <tr>
-              <th class="text-left py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-500">Session</th>
-              <th class="text-left py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-500">Status</th>
-              <th class="text-left py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-500">Duration</th>
-              <th class="text-left py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-500">Participants</th>
-              <th class="text-left py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-500">Reports</th>
-              <th class="text-left py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-500">Created</th>
-              <th class="text-left py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-500">Expires</th>
+              <th class="text-left py-3 md:py-4 px-3 md:px-4 lg:px-6 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Session</th>
+              <th *ngIf="isAdmin" class="text-left py-3 md:py-4 px-3 md:px-4 lg:px-6 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 hidden lg:table-cell">Instructor</th>
+              <th class="text-left py-3 md:py-4 px-3 md:px-4 lg:px-6 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Status</th>
+              <th class="text-left py-3 md:py-4 px-3 md:px-4 lg:px-6 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Duration</th>
+              <th class="text-left py-3 md:py-4 px-3 md:px-4 lg:px-6 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Participants</th>
+              <th class="text-left py-3 md:py-4 px-3 md:px-4 lg:px-6 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 hidden xl:table-cell">Reports</th>
+              <th class="text-left py-3 md:py-4 px-3 md:px-4 lg:px-6 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 hidden lg:table-cell">Created</th>
+              <th class="text-left py-3 md:py-4 px-3 md:px-4 lg:px-6 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 hidden xl:table-cell">Expires</th>
+              <th class="text-right py-3 md:py-4 px-3 md:px-4 lg:px-6 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Actions</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            <tr *ngFor="let session of filteredSessions" class="hover:bg-slate-50 transition-colors">
-              <td class="py-4 px-6">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <span class="material-symbols-outlined text-primary">event</span>
+            <tr *ngFor="let session of sessions" class="hover:bg-slate-50 transition-colors">
+              <td class="py-3 md:py-4 px-3 md:px-4 lg:px-6">
+                <div class="flex items-center gap-2 md:gap-3">
+                  <div class="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-primary text-lg md:text-xl">event</span>
                   </div>
-                  <div>
-                    <p class="font-bold text-slate-900">{{ session.sessionCode }}</p>
-                    <p class="text-xs text-slate-500">{{ session.title }}</p>
+                  <div class="min-w-0">
+                    <p class="font-bold text-slate-900 truncate text-xs md:text-sm">{{ session.sessionCode }}</p>
+                    <p class="text-[10px] md:text-xs text-slate-500 truncate">{{ session.title }}</p>
                   </div>
                 </div>
               </td>
-              <td class="py-4 px-6">
-                <span [class]="getStatusClass(session)" class="px-3 py-1.5 rounded-full text-xs font-bold">
+              <td *ngIf="isAdmin" class="py-3 md:py-4 px-3 md:px-4 lg:px-6 hidden lg:table-cell">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-indigo-600 text-sm">person</span>
+                  </div>
+                  <span class="text-xs md:text-sm font-semibold text-slate-700 truncate max-w-[120px]">{{ session.instructorUsername }}</span>
+                </div>
+              </td>
+              <td class="py-3 md:py-4 px-3 md:px-4 lg:px-6">
+                <span [class]="getStatusClass(session)" class="px-2 md:px-3 py-1 md:py-1.5 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap">
                   {{ getStatusText(session) }}
                 </span>
               </td>
-              <td class="py-4 px-6">
-                <span class="text-sm font-semibold text-slate-700">{{ formatDuration(session.durationHours) }}</span>
+              <td class="py-3 md:py-4 px-3 md:px-4 lg:px-6">
+                <span class="text-xs md:text-sm font-semibold text-slate-700">{{ formatDuration(session.durationHours) }}</span>
               </td>
-              <td class="py-4 px-6">
-                <div class="flex items-center gap-2">
-                  <span class="material-symbols-outlined text-slate-400 text-lg">person</span>
-                  <span class="text-sm font-bold text-slate-700">{{ session.participantCount }}</span>
+              <td class="py-3 md:py-4 px-3 md:px-4 lg:px-6">
+                <div class="flex items-center gap-1 md:gap-2">
+                  <span class="material-symbols-outlined text-slate-400 text-base md:text-lg">person</span>
+                  <span class="text-xs md:text-sm font-bold text-slate-700">{{ session.participantCount }}</span>
                 </div>
               </td>
-              <td class="py-4 px-6">
-                <div class="flex items-center gap-2">
-                  <span class="material-symbols-outlined text-slate-400 text-lg">description</span>
-                  <span class="text-sm font-bold text-slate-700">{{ session.reportCount }}</span>
+              <td class="py-3 md:py-4 px-3 md:px-4 lg:px-6 hidden xl:table-cell">
+                <div class="flex items-center gap-1 md:gap-2">
+                  <span class="material-symbols-outlined text-slate-400 text-base md:text-lg">description</span>
+                  <span class="text-xs md:text-sm font-bold text-slate-700">{{ session.reportCount }}</span>
                 </div>
               </td>
-              <td class="py-4 px-6">
-                <span class="text-sm text-slate-600">{{ formatDate(session.createdAt) }}</span>
+              <td class="py-3 md:py-4 px-3 md:px-4 lg:px-6 hidden lg:table-cell">
+                <span class="text-xs md:text-sm text-slate-600">{{ formatDate(session.createdAt) }}</span>
               </td>
-              <td class="py-4 px-6">
-                <span class="text-sm text-slate-600">{{ formatDate(session.expiresAt) }}</span>
+              <td class="py-3 md:py-4 px-3 md:px-4 lg:px-6 hidden xl:table-cell">
+                <span class="text-xs md:text-sm text-slate-600">{{ formatDate(session.expiresAt) }}</span>
+              </td>
+              <td class="py-3 md:py-4 px-3 md:px-4 lg:px-6 text-right">
+                <button 
+                  (click)="viewSessionDetails(session.id)"
+                  class="inline-flex items-center gap-1 md:gap-1.5 px-2.5 md:px-3.5 py-1.5 md:py-2 bg-primary text-white text-[10px] md:text-xs font-bold rounded-lg hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md">
+                  <span class="material-symbols-outlined text-sm md:text-base">visibility</span>
+                  <span class="hidden lg:inline">View Details</span>
+                  <span class="lg:hidden">View</span>
+                </button>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Empty State -->
-      <div *ngIf="filteredSessions.length === 0" class="py-16 text-center">
-        <span class="material-symbols-outlined text-6xl text-slate-300 mb-4 block">event_busy</span>
-        <p class="text-slate-500 font-medium">No sessions found</p>
-        <p class="text-sm text-slate-400 mt-1">Try adjusting your filters</p>
+      <div class="md:hidden divide-y divide-slate-100">
+        <div *ngFor="let session of sessions" class="p-3 sm:p-4 hover:bg-slate-50 transition-colors">
+          <div class="flex items-start justify-between gap-2 sm:gap-3 mb-3">
+            <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-primary text-lg sm:text-xl">event</span>
+              </div>
+              <div class="min-w-0">
+                <p class="font-bold text-slate-900 truncate text-sm sm:text-base">{{ session.sessionCode }}</p>
+                <p class="text-[10px] sm:text-xs text-slate-500 truncate">{{ session.title }}</p>
+              </div>
+            </div>
+            <span [class]="getStatusClass(session)" class="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-bold whitespace-nowrap shrink-0">
+              {{ getStatusText(session) }}
+            </span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-xs mb-3">
+            <div *ngIf="isAdmin" class="col-span-3 bg-indigo-50 rounded-lg p-2 flex items-center gap-2">
+              <span class="material-symbols-outlined text-indigo-600 text-sm">person</span>
+              <p class="font-bold text-indigo-700 text-[10px] sm:text-xs truncate">{{ session.instructorUsername }}</p>
+            </div>
+            <div class="bg-slate-50 rounded-lg p-2 text-center">
+              <p class="text-slate-400 font-semibold mb-0.5 text-[9px] sm:text-[10px]">Duration</p>
+              <p class="font-bold text-slate-700 text-[10px] sm:text-xs">{{ formatDuration(session.durationHours) }}</p>
+            </div>
+            <div class="bg-slate-50 rounded-lg p-2 text-center">
+              <p class="text-slate-400 font-semibold mb-0.5 text-[9px] sm:text-[10px]">Students</p>
+              <p class="font-bold text-slate-700 text-[10px] sm:text-xs">{{ session.participantCount }}</p>
+            </div>
+            <div class="bg-slate-50 rounded-lg p-2 text-center">
+              <p class="text-slate-400 font-semibold mb-0.5 text-[9px] sm:text-[10px]">Reports</p>
+              <p class="font-bold text-slate-700 text-[10px] sm:text-xs">{{ session.reportCount }}</p>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <p class="text-[9px] sm:text-[10px] text-slate-400">Created {{ formatDate(session.createdAt) }}</p>
+            <button 
+              (click)="viewSessionDetails(session.id)"
+              class="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-primary text-white text-[10px] sm:text-xs font-bold rounded-lg hover:bg-primary/90 transition-all duration-200 shadow-sm">
+              <span class="material-symbols-outlined text-sm">visibility</span>
+              View
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="sessions.length === 0" class="py-12 sm:py-16 text-center px-4">
+        <span class="material-symbols-outlined text-5xl sm:text-6xl text-slate-300 mb-3 sm:mb-4 block">event_busy</span>
+        <p class="text-slate-500 font-medium text-sm sm:text-base">No sessions found</p>
+        <p class="text-xs sm:text-sm text-slate-400 mt-1">Try adjusting your filters</p>
+      </div>
+
+      <div *ngIf="sessions.length > 0" class="p-3 sm:p-4 md:p-5 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <p class="text-xs sm:text-sm text-slate-600 text-center sm:text-left order-2 sm:order-1">
+          Page <span class="font-semibold">{{ currentPage }}</span> of <span class="font-semibold">{{ totalPages }}</span>
+          <span class="hidden sm:inline">(<span class="font-semibold">{{ totalElements }}</span> sessions)</span>
+        </p>
+        <div class="flex items-center gap-2 order-1 sm:order-2">
+          <button 
+            (click)="previousPage()" 
+            [disabled]="!hasPrevious"
+            [class.opacity-50]="!hasPrevious"
+            [class.cursor-not-allowed]="!hasPrevious"
+            class="p-2 sm:p-2.5 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:hover:bg-white"
+            title="Previous Page">
+            <span class="material-symbols-outlined text-slate-600 text-lg sm:text-xl">chevron_left</span>
+          </button>
+          <button 
+            (click)="nextPage()" 
+            [disabled]="!hasNext"
+            [class.opacity-50]="!hasNext"
+            [class.cursor-not-allowed]="!hasNext"
+            class="p-2 sm:p-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:bg-slate-300"
+            title="Next Page">
+            <span class="material-symbols-outlined text-lg sm:text-xl">chevron_right</span>
+          </button>
+        </div>
+        <p class="text-xs text-slate-600 text-center sm:hidden order-3">
+          <span class="font-semibold">{{ totalElements }}</span> total sessions
+        </p>
       </div>
     </div>
   </main>

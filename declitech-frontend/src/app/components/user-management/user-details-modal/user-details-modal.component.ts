@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UserService } from '../../../services/user.service';
-import { User } from '../../../models/user/user.model';
+import { User } from '../../../models/user';
 
 @Component({
   selector: 'app-user-details-modal',
@@ -39,7 +39,6 @@ export class UserDetailsModalComponent implements OnChanges {
           this.isLoading = false;
         },
         error: (error: any) => {
-          console.error('Error loading user:', error);
           this.errorMessage = 'Failed to load user details';
           this.isLoading = false;
         }

@@ -1,7 +1,5 @@
-<!-- Modal Overlay -->
 <div *ngIf="isOpen" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" (click)="close()">
   <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
-    <!-- Modal Header -->
     <div class="sticky top-0 bg-white border-b border-gray-200 px-8 py-6 rounded-t-2xl">
       <div class="flex items-center justify-between">
         <div>
@@ -14,23 +12,18 @@
       </div>
     </div>
 
-    <!-- Modal Body -->
     <div class="px-8 py-6">
-      <!-- Error Message -->
       <div *ngIf="errorMessage" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
         <span class="material-symbols-outlined text-red-600">error</span>
         <p class="text-red-700 text-sm font-medium">{{ errorMessage }}</p>
       </div>
 
-      <!-- Loading State -->
       <div *ngIf="isLoading" class="text-center py-12">
         <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
         <p class="text-gray-500 mt-4">Loading user details...</p>
       </div>
 
-      <!-- User Details Content -->
       <div *ngIf="!isLoading && user" class="space-y-6">
-        <!-- User Profile Section -->
         <div class="flex items-center gap-4 p-6 bg-gradient-to-br from-primary/10 to-cyan-50 rounded-xl">
           <div class="size-20 rounded-full bg-gradient-to-br from-primary to-cyan-600 flex items-center justify-center text-white font-bold text-2xl flex-shrink-0">
             {{ getInitials(user.firstName, user.lastName) }}
@@ -50,7 +43,6 @@
           </div>
         </div>
 
-        <!-- Personal Information Section -->
         <div>
           <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <span class="material-symbols-outlined text-primary">person</span>
@@ -76,7 +68,6 @@
           </div>
         </div>
 
-        <!-- Account Information Section -->
         <div>
           <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <span class="material-symbols-outlined text-primary">account_circle</span>
@@ -111,7 +102,6 @@
       </div>
     </div>
 
-    <!-- Modal Footer -->
     <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-8 py-4 rounded-b-2xl">
       <div class="flex items-center justify-end">
         <button (click)="close()" class="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors">

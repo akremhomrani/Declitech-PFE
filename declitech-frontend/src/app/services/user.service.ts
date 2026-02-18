@@ -2,16 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { User } from '../models/user/user.model';
-import { PagedUserResponse } from '../models/user/paged-user-response.model';
-import { CreateUserRequest } from '../models/user/create-user-request.model';
-import { UpdateUserRequest } from '../models/user/update-user-request.model';
+import { User, PagedUserResponse, CreateUserRequest, UpdateUserRequest } from '../models/user';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
-  private apiUrl = `${environment.userServiceUrl}/users/paginated`;
+  private apiUrl = `${environment.apiUrl}/api/users/paginated`;
   private readonly authOptions = { withCredentials: true };
 
   constructor(private http: HttpClient) {}
@@ -24,28 +21,38 @@ export class UserService {
   }
 
   getUserById(id: number): Observable<User> {
-    const baseUrl = `${environment.userServiceUrl}/users`;
+    const baseUrl = `${environment.apiUrl}/api/users`;
     return this.http.get<User>(`${baseUrl}/${id}`, this.authOptions);
   }
 
   getUserByUsername(username: string): Observable<User> {
-    const baseUrl = `${environment.userServiceUrl}/users`;
+    const baseUrl = `${environment.apiUrl}/api/users`;
     return this.http.get<User>(`${baseUrl}/username/${username}`, this.authOptions);
   }
 
   createUser(user: CreateUserRequest): Observable<User> {
-    const baseUrl = `${environment.userServiceUrl}/users`;
+    const baseUrl = `${environment.apiUrl}/api/users`;
     return this.http.post<User>(baseUrl, user, this.authOptions);
   }
 
   updateUser(id: number, user: UpdateUserRequest): Observable<User> {
-    const baseUrl = `${environment.userServiceUrl}/users`;
+    const baseUrl = `${environment.apiUrl}/api/users`;
     return this.http.put<User>(`${baseUrl}/${id}`, user, this.authOptions);
   }
 
   deleteUser(id: number): Observable<void> {
-    const baseUrl = `${environment.userServiceUrl}/users`;
+    const baseUrl = `${environment.apiUrl}/api/users`;
     return this.http.delete<void>(`${baseUrl}/${id}`, this.authOptions);
+  }
+
+  blockUser(id: number): Observable<void> {
+    const baseUrl = `${environment.apiUrl}/api/users`;
+    return this.http.delete<void>(`${baseUrl}/${id}`, this.authOptions);
+  }
+
+  unblockUser(id: number): Observable<User> {
+    const baseUrl = `${environment.apiUrl}/api/users`;
+    return this.http.patch<User>(`${baseUrl}/${id}/reactivate`, {}, this.authOptions);
   }
 
   filterUsers(filters: any, page: number = 0, size: number = 10): Observable<PagedUserResponse> {

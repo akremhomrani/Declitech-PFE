@@ -1,18 +1,19 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { NavbarComponent } from '../../shared/navbar/navbar.component';
 import { SidebarComponent } from '../../shared/sidebar/sidebar.component';
 import { FormsModule } from '@angular/forms';
 import { UserFormModalComponent } from './user-form-modal/user-form-modal.component';
 import { UserDetailsModalComponent } from './user-details-modal/user-details-modal.component';
 import { UserService } from '../../services/user.service';
-import { User } from '../../models/user/user.model';
-import { PagedUserResponse } from '../../models/user/paged-user-response.model';
+import { AuthService } from '../../services/auth.service';
+import { User, PagedUserResponse } from '../../models/user';
 
 @Component({
   selector: 'app-user-management',
   standalone: true,
-  imports: [CommonModule, NavbarComponent, SidebarComponent, FormsModule, UserFormModalComponent, UserDetailsModalComponent],
+  imports: [CommonModule, RouterLink, NavbarComponent, SidebarComponent, FormsModule, UserFormModalComponent, UserDetailsModalComponent],
   templateUrl: './user-management.component.html',
   styleUrls: ['./user-management.component.css']
 })
@@ -27,19 +28,25 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   searchTerm = '';
   private searchTimeout: any;
 
-  // Modal state
   isModalOpen = false;
   modalMode: 'create' | 'edit' = 'create';
   selectedUserId: number | null = null;
 
-  // Details modal state
   isDetailsModalOpen = false;
   selectedDetailsUserId: number | null = null;
 
-  constructor(private userService: UserService) {}
+  showBlockModal = false;
+  userToBlock: User | null = null;
+  blockingUser = false;
+  isAdmin = false;
+
+  constructor(private userService: UserService, private authService: AuthService) {}
 
   ngOnInit() {
-    this.loadUsers();
+    this.isAdmin = this.authService.getRole() === 'ADMIN';
+    if (this.isAdmin) {
+      this.loadUsers();
+    }
   }
 
   ngOnDestroy() {
@@ -69,9 +76,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
             this.hasNext = this.currentPage < this.totalPages;
             this.hasPrevious = this.currentPage > 1;
           },
-          error: (error: any) => {
-            console.error('❌ Error loading users (filter):', error);
-          }
+          error: (error: any) => {}
         });
     } else {
       this.userService.getAllUsers(page, this.pageSize)
@@ -85,9 +90,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
             this.hasNext = this.currentPage < this.totalPages;
             this.hasPrevious = this.currentPage > 1;
           },
-          error: (error: any) => {
-            console.error('❌ Error loading users (getAll):', error);
-          }
+          error: (error: any) => {}
         });
     }
   }
@@ -135,15 +138,12 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   formatPhoneNumber(phone: string): string {
     if (!phone) return 'N/A';
     
-    // Remove any non-digit characters
     const digits = phone.replace(/\D/g, '');
     
-    // Validate: must be 8 digits and not start with 1 or 0
     if (digits.length !== 8 || digits.startsWith('1') || digits.startsWith('0')) {
       return 'Invalid';
     }
     
-    // Format as: +216 XX XXX XXX
     const formatted = `${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5, 8)}`;
     return `+216 ${formatted}`;
   }
@@ -187,7 +187,6 @@ export class UserManagementComponent implements OnInit, OnDestroy {
             this.loadUsers();
           },
           error: (error: any) => {
-            console.error('Error deleting user:', error);
             alert('Failed to delete user');
           }
         });
@@ -195,6 +194,46 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   blockUser(userId: number) {
-    // TODO: Implement block/unblock functionality
+    const user = this.users.find(u => u.id === userId);
+    if (user) {
+      this.userToBlock = user;
+      this.showBlockModal = true;
+    }
+  }
+
+  closeBlockModal(): void {
+    this.showBlockModal = false;
+    this.userToBlock = null;
+  }
+
+  confirmBlockUser(): void {
+    if (!this.userToBlock) return;
+    this.blockingUser = true;
+
+    if (this.userToBlock.active) {
+      this.userService.blockUser(this.userToBlock.id).subscribe({
+        next: () => {
+          this.blockingUser = false;
+          this.showBlockModal = false;
+          this.userToBlock = null;
+          this.loadUsers();
+        },
+        error: () => {
+          this.blockingUser = false;
+        }
+      });
+    } else {
+      this.userService.unblockUser(this.userToBlock.id).subscribe({
+        next: () => {
+          this.blockingUser = false;
+          this.showBlockModal = false;
+          this.userToBlock = null;
+          this.loadUsers();
+        },
+        error: () => {
+          this.blockingUser = false;
+        }
+      });
+    }
   }
 }

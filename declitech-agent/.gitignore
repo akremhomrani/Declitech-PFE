@@ -72,9 +72,7 @@ coverage.xml
 Thumbs.db
 
 # Project specific
-emotion_report.json
-*.onnx
-!onnx_model.onnx
+agent_old.py
 
 # Logs
 *.log

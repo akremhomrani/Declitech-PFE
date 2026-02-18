@@ -34,14 +34,13 @@ function score(el) {
   if (attrs.includes("email") || attrs.includes("mail")) s += 16;
   if (type === "email") s += 10;
 
-  // Recherche label proche
   let labelText = "";
   if (el.id) {
     const lbl = document.querySelector(`label[for="${CSS.escape(el.id)}"]`);
     if (lbl) labelText += " " + textOf(lbl);
   }
 
-  // Chercher texte “Pseudonyme” dans parents proches
+
   const parent = el.closest("div, form, section, article") || el.parentElement;
   if (parent) {
     const candidates = parent.querySelectorAll("label, span, div, p");
@@ -81,43 +80,27 @@ function attach() {
   if (current === best) return;
   current = best;
 
-  // Sauve si déjà rempli
   if (best.value && best.value.trim()) saveIdentity(best.value);
 
   best.addEventListener("input", () => saveIdentity(best.value));
   best.addEventListener("change", () => saveIdentity(best.value));
-
-  // Debug (tu peux laisser)
-  console.log("[DecliTechExt] Attached to identity input:", {
-    score: bestScore,
-    type: best.type,
-    id: best.id,
-    name: best.name,
-    placeholder: best.placeholder
-  });
 }
 
-// scan périodique + mutation observer
 attach();
 setInterval(attach, 500);
 
 const obs = new MutationObserver(attach);
 obs.observe(document.documentElement, { childList: true, subtree: true });
 
-// ----------------------------
-// Mouse movement tracking for inactivity detection
-// ----------------------------
 let lastMouseMoveNotification = 0;
-const MOUSE_MOVE_THROTTLE = 5000; // Only notify every 5 seconds
+const MOUSE_MOVE_THROTTLE = 5000;
 
 document.addEventListener('mousemove', () => {
   const now = Date.now();
   if (now - lastMouseMoveNotification > MOUSE_MOVE_THROTTLE) {
     lastMouseMoveNotification = now;
     chrome.runtime.sendMessage({ type: 'MOUSE_MOVED' }).catch(() => {
-      // Ignore errors if background script is not ready
+      
     });
   }
 });
-
-console.log('🖱️ DecliTech mouse tracking initialized');

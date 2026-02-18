@@ -6,7 +6,6 @@ import com.declitech.report.model.EmotionTimeline;
 import com.declitech.report.repository.EmotionReportRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,51 +20,36 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class EmotionReportService {
 
     private final EmotionReportRepository reportRepository;
     private final ObjectMapper objectMapper;
 
-    /**
-     * Import emotion report from JSON file
-     */
     @Transactional
     public EmotionReport importReportFromJson(String jsonFilePath) throws Exception {
-        log.info("Importing emotion report from: {}", jsonFilePath);
-        
         File jsonFile = new File(jsonFilePath);
         EmotionReportDTO dto = objectMapper.readValue(jsonFile, EmotionReportDTO.class);
         
         return saveReportFromDTO(dto);
     }
 
-    /**
-     * Save emotion report from DTO (can be from JSON or API)
-     */
     @Transactional
     public EmotionReport saveReportFromDTO(EmotionReportDTO dto) {
-        log.info("Saving emotion report for session: {}", dto.getSessionId());
-        
-        // Check if report already exists
         Optional<EmotionReport> existingReport = reportRepository.findBySessionId(dto.getSessionId());
         EmotionReport report;
         
         if (existingReport.isPresent()) {
             report = existingReport.get();
-            log.info("Updating existing report for session: {}", dto.getSessionId());
         } else {
             report = new EmotionReport();
         }
         
-        // Map basic fields
-        report.setSessionId_legacy(dto.getSessionId()); // Keep for backward compatibility
-        report.setSessionCode(dto.getSessionCode() != null ? dto.getSessionCode() : dto.getSessionId()); // Use sessionCode if available, fallback to sessionId
+        report.setSessionId_legacy(dto.getSessionId());
+        report.setSessionCode(dto.getSessionCode() != null ? dto.getSessionCode() : dto.getSessionId());
         report.setParticipantId(dto.getParticipantId());
         report.setGeneratedAt(dto.getGeneratedAt());
         report.setStudentLoginIdentity(dto.getStudentLoginIdentity());
         
-        // Map summary mean
         if (dto.getSummaryMean() != null) {
             Map<String, Double> meanProbs = dto.getSummaryMean().getMeanProbs();
             if (meanProbs != null) {
@@ -81,13 +65,11 @@ public class EmotionReportService {
             report.setNumberOfSamples(dto.getSummaryMean().getNSamples());
         }
         
-        // Map final state
         if (dto.getFinalState() != null) {
             report.setFinalState(dto.getFinalState().getState());
             report.setFinalSentence(dto.getFinalState().getFinalSentence());
         }
         
-        // Map timeline
         if (dto.getTimeline() != null && !dto.getTimeline().isEmpty()) {
             List<EmotionTimeline> timelineEntries = new ArrayList<>();
             
@@ -113,7 +95,6 @@ public class EmotionReportService {
                 timelineEntries.add(timeline);
             }
             
-            // Clear existing timeline if updating
             if (report.getTimeline() != null) {
                 report.getTimeline().clear();
                 report.getTimeline().addAll(timelineEntries);
@@ -125,52 +106,40 @@ public class EmotionReportService {
         return reportRepository.save(report);
     }
 
-    /**
-     * Get report by session ID
-     */
     public Optional<EmotionReport> getReportBySessionId(String sessionId) {
         return reportRepository.findBySessionId(sessionId);
     }
 
-    /**
-     * Get all reports by session code
-     */
     public List<EmotionReport> getReportsBySessionCode(String sessionCode) {
         return reportRepository.findBySessionCode(sessionCode);
     }
 
-    /**
-     * Get report count by session code
-     */
+    public List<EmotionReport> getReportsByNumericSessionId(Long sessionId) {
+        return reportRepository.findBySessionId(sessionId);
+    }
+
     public Integer getReportCountBySessionCode(String sessionCode) {
         Integer count = reportRepository.countBySessionCode(sessionCode);
         return count != null ? count : 0;
     }
 
-    /**
-     * Get all reports for a student by login identity
-     */
+    public Long getDistinctParticipantCountBySessionCode(String sessionCode) {
+        Long count = reportRepository.countDistinctParticipantsBySessionCode(sessionCode);
+        return count != null ? count : 0L;
+    }
+
     public List<EmotionReport> getReportsByStudentLoginIdentity(String studentLoginIdentity) {
         return reportRepository.findByStudentLoginIdentity(studentLoginIdentity);
     }
 
-    /**
-     * Get all reports
-     */
     public List<EmotionReport> getAllReports() {
         return reportRepository.findAll();
     }
 
-    /**
-     * Get reports within date range
-     */
     public List<EmotionReport> getReportsByDateRange(LocalDateTime start, LocalDateTime end) {
         return reportRepository.findByGeneratedAtBetween(start, end);
     }
 
-    /**
-     * Get reports for student within date range
-     */
     public List<EmotionReport> getStudentReportsByDateRange(
             String studentLoginIdentity, 
             LocalDateTime start, 
@@ -180,9 +149,6 @@ public class EmotionReportService {
         );
     }
 
-    /**
-     * Get student statistics
-     */
     public Map<String, Object> getStudentStatistics(String studentLoginIdentity) {
         List<EmotionReport> reports = reportRepository.findByStudentLoginIdentity(studentLoginIdentity);
         
@@ -190,7 +156,6 @@ public class EmotionReportService {
             return Map.of("message", "No reports found for student");
         }
         
-        // Calculate average emotions across all sessions
         double avgAngry = reports.stream()
             .mapToDouble(r -> r.getAngryMean() != null ? r.getAngryMean() : 0.0)
             .average().orElse(0.0);
@@ -207,7 +172,6 @@ public class EmotionReportService {
             .mapToDouble(r -> r.getFearMean() != null ? r.getFearMean() : 0.0)
             .average().orElse(0.0);
         
-        // Count states
         Map<String, Long> stateFrequency = reports.stream()
             .filter(r -> r.getFinalState() != null)
             .collect(Collectors.groupingBy(
@@ -229,14 +193,10 @@ public class EmotionReportService {
         );
     }
 
-    /**
-     * Parse ISO timestamp to LocalDateTime
-     */
     private LocalDateTime parseTimestamp(String timestamp) {
         try {
             return LocalDateTime.parse(timestamp, DateTimeFormatter.ISO_DATE_TIME);
         } catch (Exception e) {
-            log.warn("Failed to parse timestamp: {}", timestamp);
             return LocalDateTime.now();
         }
     }

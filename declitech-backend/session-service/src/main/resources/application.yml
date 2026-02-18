@@ -29,6 +29,10 @@ spring:
 jwt:
   secret: ${JWT_SECRET:ZGVjbGl0ZWNoLXNlY3VyZS1rZXktZm9yLWp3dC10b2tlbi1nZW5lcmF0aW9uLTIwMjYtdmVyeS1zZWN1cmUtY2hhbmdlLWluLXByb2R1Y3Rpb24=}
 
+gateway:
+  secret: declitech-gateway-secret-2024
+  require-header: true
+
 # Session Configuration
 declitech:
   session:

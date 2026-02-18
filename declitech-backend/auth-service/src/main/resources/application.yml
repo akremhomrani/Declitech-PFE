@@ -5,6 +5,17 @@ spring:
   application:
     name: auth-service
 
+# Service URLs for proxying
+services:
+  user-service:
+    url: http://localhost:8082
+  session-service:
+    url: http://localhost:8084
+  report-service:
+    url: http://localhost:8081
+  module-service:
+    url: http://localhost:8085
+
 gateway:
   secret: declitech-gateway-secret-2024
   require-header: false

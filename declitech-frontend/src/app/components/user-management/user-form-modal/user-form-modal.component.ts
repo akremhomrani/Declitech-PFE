@@ -2,8 +2,7 @@ import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChange
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UserService } from '../../../services/user.service';
-import { CreateUserRequest } from '../../../models/user/create-user-request.model';
-import { UpdateUserRequest } from '../../../models/user/update-user-request.model';
+import { CreateUserRequest, UpdateUserRequest } from '../../../models/user';
 
 @Component({
   selector: 'app-user-form-modal',
@@ -39,11 +38,9 @@ export class UserFormModalComponent implements OnInit, OnChanges {
   constructor(private userService: UserService) {}
 
   ngOnInit() {
-    // Initial load if needed
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    // When modal opens or userId changes, load user data for edit mode
     if (changes['isOpen'] && this.isOpen && this.mode === 'edit' && this.userId) {
       this.loadUser();
     } else if (changes['isOpen'] && this.isOpen && this.mode === 'create') {
@@ -60,7 +57,6 @@ export class UserFormModalComponent implements OnInit, OnChanges {
           this.isLoading = false;
         },
         error: (error: any) => {
-          console.error('Error loading user:', error);
           this.errorMessage = 'Failed to load user details';
           this.isLoading = false;
         }
@@ -86,7 +82,6 @@ export class UserFormModalComponent implements OnInit, OnChanges {
         this.close();
       },
       error: (error: any) => {
-        console.error('Error saving user:', error);
         this.errorMessage = error.error?.message || 'Failed to save user';
         this.isLoading = false;
       }

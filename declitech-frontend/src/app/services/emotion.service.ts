@@ -8,7 +8,7 @@ import { EmotionReport } from '../models/emotion-report.model';
   providedIn: 'root'
 })
 export class EmotionService {
-  private apiUrl = `http://localhost:8081/api/reports`;
+  private apiUrl = `${environment.apiUrl}/api/emotions`;
 
   constructor(private http: HttpClient) {}
 
@@ -26,6 +26,10 @@ export class EmotionService {
 
   getReportsBySessionCode(sessionCode: string): Observable<EmotionReport[]> {
     return this.http.get<EmotionReport[]>(`${this.apiUrl}/session-code/${sessionCode}`);
+  }
+
+  getReportsBySessionId(sessionId: number): Observable<EmotionReport[]> {
+    return this.http.get<EmotionReport[]>(`${this.apiUrl}/session-id/${sessionId}`);
   }
 
   getReportCountBySessionCode(sessionCode: string): Observable<number> {

@@ -1,5 +1,5 @@
 const BASE = "http://127.0.0.1:8765";
-const SESSION_CHECK_INTERVAL = 5000; // Check session validity every 5 seconds
+const SESSION_CHECK_INTERVAL = 5000;
 
 const boxes = Array.from(document.querySelectorAll(".code-box"));
 const btnJoin = document.getElementById("btnJoin");
@@ -104,7 +104,7 @@ function saveSettings() {
 }
 btnSaveSettings.addEventListener("click", () => {
   saveSettings();
-  setMsg("✅ Settings saved.");
+  setMsg("Settings saved.");
   closeDrawer();
 });
 
@@ -137,13 +137,11 @@ async function refreshStatus() {
     agentStatus.textContent = isRunning ? "Running" : "Ready";
     setLive(true);
 
-    // Update UI based on running state
     if (isRunning) {
       btnJoin.style.display = "none";
       sessionActive.style.display = "flex";
       currentSessionCode = s.session_id ? s.session_id.replace("SESSION-", "") : null;
 
-      // Start session validity check if not already running
       if (!sessionCheckInterval) {
         startSessionValidityCheck();
       }
@@ -157,7 +155,7 @@ async function refreshStatus() {
     setLive(false);
     btnJoin.style.display = "block";
     sessionActive.style.display = "none";
-    setMsg("❌ Agent not reachable. Check: http://127.0.0.1:8765/status", true);
+    setMsg("Agent not reachable. Check: http://127.0.0.1:8765/status", true);
   }
 }
 
@@ -171,12 +169,11 @@ function startSessionValidityCheck() {
       const validation = await httpGet(`/validate/${currentSessionCode}`);
 
       if (!validation.valid) {
-        console.log("⏰ Session ended by instructor:", validation.reason);
-        setMsg(`⏰ Session ended: ${validation.reason}`, false);
+        setMsg(`Session ended: ${validation.reason}`, false);
         await autoDisconnect();
       }
     } catch (e) {
-      console.error("Session validation error:", e);
+      
     }
   }, SESSION_CHECK_INTERVAL);
 }
@@ -192,23 +189,19 @@ async function autoDisconnect() {
   try {
     await httpPost("/stop", {});
 
-    // Notify background script to stop monitoring
     chrome.runtime.sendMessage({ type: "SESSION_STOPPED" });
 
-    setMsg("✅ Session ended. Camera stopped.");
+    setMsg("Session ended. Camera stopped.");
     currentSessionCode = null;
     stopSessionValidityCheck();
     btnJoin.style.display = "block";
     sessionActive.style.display = "none";
     agentStatus.textContent = "Ready";
   } catch (e) {
-    console.error("Auto-disconnect error:", e);
+    
   }
 }
 
-/**
- * ✅ Lecture fiable du champ pseudonyme/email depuis l'onglet actif
- */
 async function detectIdentityFromActiveTab() {
   return new Promise((resolve) => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -220,7 +213,6 @@ async function detectIdentityFromActiveTab() {
         func: () => {
           const norm = (s) => (s || "").toLowerCase().trim();
 
-          // on cherche input visible (pas password)
           const inputs = Array.from(document.querySelectorAll("input"))
             .filter(i => {
               const t = norm(i.type);
@@ -236,7 +228,6 @@ async function detectIdentityFromActiveTab() {
             if (attrs.includes("username") || attrs.includes("user") || attrs.includes("utilisateur")) s += 25;
             if (attrs.includes("email") || attrs.includes("mail")) s += 20;
 
-            // label proche
             let lbl = "";
             if (i.id) {
               const l = document.querySelector(`label[for="${CSS.escape(i.id)}"]`);
@@ -279,7 +270,6 @@ async function detectIdentityFromActiveTab() {
 }
 
 async function loadDetectedIdentity() {
-  // essaie de lire depuis l'onglet actif
   const v = (await detectIdentityFromActiveTab()) || "";
   if (v) {
     chrome.storage.local.set({ decli_identity: v }, () => { });
@@ -304,13 +294,13 @@ btnClear.addEventListener("click", () => {
 btnJoin.addEventListener("click", async () => {
   const code = codeValue();
   if (code.length !== 6) {
-    setMsg("❌ Please enter the 6-character code.", true);
+    setMsg("Please enter the 6-character code.", true);
     return;
   }
 
   const s = saveSettings();
 
-  // prend le pseudo depuis l’onglet actif au moment du Join
+
   const identity = (await detectIdentityFromActiveTab()) || detIdentity.textContent || "";
   const login_identity = identity === "—" ? "" : identity;
 
@@ -325,9 +315,8 @@ btnJoin.addEventListener("click", async () => {
       login_identity: login_identity
     };
     const r = await httpPost("/start", payload);
-    currentSessionCode = code; // Store the session code
+    currentSessionCode = code;
 
-    // Notify background script to start monitoring
     chrome.runtime.sendMessage({
       type: "SESSION_STARTED",
       sessionCode: code,
@@ -335,19 +324,16 @@ btnJoin.addEventListener("click", async () => {
       studentLoginIdentity: login_identity
     });
 
-    setMsg(`✅ Joined. Session: ${code}`);
+    setMsg(`Joined. Session: ${code}`);
     await refreshStatus();
   } catch (err) {
-    setMsg("❌ " + err.message, true);
+    setMsg(err.message, true);
     setLive(false);
   }
 });
 
-// init
 loadSettings();
 boxes[0].focus();
 refreshStatus();
 loadDetectedIdentity();
-
-// Refresh status periodically to catch external changes
 setInterval(refreshStatus, 5000);

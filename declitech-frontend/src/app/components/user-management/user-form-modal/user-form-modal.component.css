@@ -1,4 +1,3 @@
-/* Custom scrollbar for modal */
 :host ::ng-deep .overflow-y-auto::-webkit-scrollbar {
   width: 8px;
 }

@@ -2,7 +2,10 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { SessionService } from '../../services/session.service';
-import { AlertService, Alert } from '../../services/alert.service';
+import { AlertService } from '../../services/alert.service';
+import { Alert } from '../../models/alert';
+import { AuthService } from '../../services/auth.service';
+import { LayoutService } from '../../services/layout.service';
 import { Subscription, interval } from 'rxjs';
 
 @Component({
@@ -16,16 +19,31 @@ export class SidebarComponent implements OnInit, OnDestroy {
   sessionCode: string = '';
   elapsedTime: string = '';
   recentAlerts: Alert[] = [];
+  showEndSessionModal = false;
+  endingSession = false;
+  isMobileOpen = false;
+  isAdmin = false;
+  isInstructor = false;
 
   private subscription = new Subscription();
 
   constructor(
     private sessionService: SessionService,
-    private alertService: AlertService
+    private alertService: AlertService,
+    private authService: AuthService,
+    public layoutService: LayoutService
   ) { }
 
   ngOnInit(): void {
-    // Subscribe to session updates
+    const role = this.authService.getRole();
+    this.isAdmin = role === 'ADMIN';
+    this.isInstructor = role === 'INSTRUCTOR';
+    this.subscription.add(
+      this.layoutService.sidebarOpen$.subscribe(open => {
+        this.isMobileOpen = open;
+      })
+    );
+
     this.subscription.add(
       this.sessionService.sessionData$.subscribe(session => {
         this.sessionCode = session?.code || '';
@@ -38,17 +56,15 @@ export class SidebarComponent implements OnInit, OnDestroy {
       })
     );
 
-    // Subscribe to alerts
     this.subscription.add(
       this.alertService.alerts$.subscribe(() => {
         this.updateRecentAlerts();
       })
     );
 
-    // Update relative time every 10 seconds
     this.subscription.add(
       interval(10000).subscribe(() => {
-        this.recentAlerts = [...this.recentAlerts]; // Trigger change detection
+        this.recentAlerts = [...this.recentAlerts];
       })
     );
   }
@@ -58,14 +74,22 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   onEndSession() {
-    if (confirm('Are you sure you want to end this live session?')) {
-      this.sessionService.endSession();
-    }
+    this.showEndSessionModal = true;
+  }
+
+  closeEndSessionModal(): void {
+    this.showEndSessionModal = false;
+  }
+
+  confirmEndSession(): void {
+    this.endingSession = true;
+    this.sessionService.endSession();
+    this.endingSession = false;
+    this.showEndSessionModal = false;
   }
 
   private updateRecentAlerts(): void {
     const allAlerts = this.alertService.getAllRecentAlerts();
-    // Get the 4 most recent alerts, sorted by timestamp (newest first)
     this.recentAlerts = allAlerts
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, 4);

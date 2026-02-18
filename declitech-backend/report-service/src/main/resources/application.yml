@@ -44,6 +44,10 @@ spring:
     topic:
       participant-alerts: participant-alerts
 
+gateway:
+  secret: declitech-gateway-secret-2024
+  require-header: true
+
 eureka:
   client:
     service-url:

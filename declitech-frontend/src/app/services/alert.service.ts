@@ -1,17 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, Subject, BehaviorSubject } from 'rxjs';
 import { environment } from '../../environments/environment';
-
-export interface Alert {
-    participantId: string;
-    sessionId: string;
-    studentLoginIdentity?: string;
-    alertType: 'TAB_SWITCH' | 'MULTIPLE_SWITCHES' | 'OFF_PLATFORM' | 'INACTIVITY' | 'LOW_ENGAGEMENT' | 'DISTRACTION' | 'FOCUS_LOSS' | 'ALERT_RESOLVED' | 'MOUSE_INACTIVITY';
-    severity: 'LOW' | 'MEDIUM' | 'HIGH';
-    message: string;
-    timestamp: string;
-    metadata?: any;
-}
+import { Alert } from '../models/alert';
 
 @Injectable({
     providedIn: 'root'
@@ -21,7 +11,7 @@ export class AlertService {
     private alertSubject = new Subject<Alert>();
     private connectionStatusSubject = new BehaviorSubject<boolean>(false);
     private recentAlerts = new Map<string, Alert[]>();
-    private readonly ALERT_RETENTION_MS = 30000; // 30 seconds
+    private identityToParticipantId = new Map<string, string>();
 
     public alerts$ = this.alertSubject.asObservable();
     public connectionStatus$ = this.connectionStatusSubject.asObservable();
@@ -32,22 +22,17 @@ export class AlertService {
         this.disconnect();
 
         const url = `${environment.apiUrl}/api/alerts/stream?sessionId=${sessionCode}`;
-        console.log('🔌 Connecting to SSE:', url);
 
         this.eventSource = new EventSource(url);
 
-        this.eventSource.addEventListener('connected', (event: MessageEvent) => {
-            console.log('✅ SSE connection established:', JSON.parse(event.data));
+        this.eventSource.addEventListener('connected', () => {
             this.connectionStatusSubject.next(true);
         });
 
         this.eventSource.addEventListener('alert', (event: MessageEvent) => {
             const alert: Alert = JSON.parse(event.data);
-            console.log('🚨 Alert received:', alert);
 
-            // If alert is resolved, clear all alerts for this participant
             if (alert.alertType === 'ALERT_RESOLVED') {
-                console.log('✅ Clearing alerts for participant:', alert.participantId);
                 this.clearAlertsForParticipant(alert.participantId);
             } else {
                 this.addRecentAlert(alert);
@@ -56,28 +41,29 @@ export class AlertService {
             this.alertSubject.next(alert);
         });
 
-        this.eventSource.addEventListener('heartbeat', (event: MessageEvent) => {
-            console.log('💓 Heartbeat received');
-        });
+        this.eventSource.addEventListener('heartbeat', () => {});
 
-        this.eventSource.onerror = (error) => {
-            console.error('❌ SSE connection error:', error);
+        this.eventSource.onerror = () => {
             this.connectionStatusSubject.next(false);
         };
     }
 
     disconnect(): void {
         if (this.eventSource) {
-            console.log('🔌 Disconnecting from SSE');
             this.eventSource.close();
             this.eventSource = undefined;
             this.connectionStatusSubject.next(false);
             this.recentAlerts.clear();
+            this.identityToParticipantId.clear();
         }
     }
 
     private addRecentAlert(alert: Alert): void {
         const key = alert.participantId;
+
+        if (alert.studentLoginIdentity) {
+            this.identityToParticipantId.set(alert.studentLoginIdentity, key);
+        }
 
         if (!this.recentAlerts.has(key)) {
             this.recentAlerts.set(key, []);
@@ -85,25 +71,34 @@ export class AlertService {
 
         const alerts = this.recentAlerts.get(key)!;
         alerts.push(alert);
-
-        // Clean up old alerts
-        setTimeout(() => {
-            const index = alerts.indexOf(alert);
-            if (index > -1) {
-                alerts.splice(index, 1);
-            }
-            if (alerts.length === 0) {
-                this.recentAlerts.delete(key);
-            }
-        }, this.ALERT_RETENTION_MS);
     }
 
     getRecentAlertsForParticipant(participantId: string): Alert[] {
-        return this.recentAlerts.get(participantId) || [];
+        const direct = this.recentAlerts.get(participantId);
+        if (direct && direct.length > 0) {
+            return direct;
+        }
+        for (const [, alerts] of this.recentAlerts) {
+            if (alerts.length > 0 && alerts.some(a => a.studentLoginIdentity === participantId)) {
+                return alerts;
+            }
+        }
+        return [];
     }
 
-    hasRecentAlert(participantId: string, alertType?: string): boolean {
-        const alerts = this.getRecentAlertsForParticipant(participantId);
+    getRecentAlertsForIdentity(studentLoginIdentity: string): Alert[] {
+        const pid = this.identityToParticipantId.get(studentLoginIdentity);
+        if (pid) {
+            return this.recentAlerts.get(pid) || [];
+        }
+        return [];
+    }
+
+    hasRecentAlert(participantId: string, alertType?: string, studentLoginIdentity?: string): boolean {
+        let alerts = this.getRecentAlertsForParticipant(participantId);
+        if (alerts.length === 0 && studentLoginIdentity) {
+            alerts = this.getRecentAlertsForIdentity(studentLoginIdentity);
+        }
         if (alertType) {
             return alerts.some(a => a.alertType === alertType);
         }
@@ -116,7 +111,11 @@ export class AlertService {
 
     clearAlertsForParticipant(participantId: string): void {
         this.recentAlerts.delete(participantId);
-        console.log('🧹 Cleared all alerts for participant:', participantId);
+        for (const [identity, pid] of this.identityToParticipantId) {
+            if (pid === participantId) {
+                this.identityToParticipantId.delete(identity);
+            }
+        }
     }
 
     getAllRecentAlerts(): Alert[] {

@@ -19,6 +19,7 @@ public class SessionDTO {
     private Long instructorId;
     private String instructorUsername;
     private String instructorEmail;
+    private Long moduleId;
     private Double durationHours;
     
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -27,8 +28,7 @@ public class SessionDTO {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime expiresAt;
     
-    private Boolean isActive;
-    private Boolean isExpired;
+    private String status; // ACTIVE, ENDED, EXPIRED, CANCELLED
     private Integer participantCount;
     private Integer reportCount;
 }

@@ -24,6 +24,4 @@ bootstrapApplication(App, {
       multi: true
     }
   ]
-}).catch(err => {
-  console.error('❌ Failed to start Angular application:', err);
-});
+}).catch(() => {});

@@ -20,7 +20,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
 public class AuthController {
 
     private final AuthService authService;
@@ -29,23 +28,21 @@ public class AuthController {
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
         LoginResponse loginResponse = authService.login(request);
         
-        // Set tokens as httpOnly cookies
         Cookie accessTokenCookie = new Cookie("accessToken", loginResponse.getAccessToken());
         accessTokenCookie.setHttpOnly(true);
-        accessTokenCookie.setSecure(false); // Set to true in production with HTTPS
+        accessTokenCookie.setSecure(false);
         accessTokenCookie.setPath("/");
-        accessTokenCookie.setMaxAge(24 * 60 * 60); // 24 hours
+        accessTokenCookie.setMaxAge(24 * 60 * 60);
         
         Cookie refreshTokenCookie = new Cookie("refreshToken", loginResponse.getRefreshToken());
         refreshTokenCookie.setHttpOnly(true);
-        refreshTokenCookie.setSecure(false); // Set to true in production with HTTPS
+        refreshTokenCookie.setSecure(false);
         refreshTokenCookie.setPath("/");
-        refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60); // 7 days
+        refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60);
         
         response.addCookie(accessTokenCookie);
         response.addCookie(refreshTokenCookie);
         
-        // Return user info only (no tokens in body)
         LoginResponse responseBody = LoginResponse.builder()
                 .firstName(loginResponse.getFirstName())
                 .lastName(loginResponse.getLastName())
@@ -58,7 +55,6 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<TokenResponse> refreshToken(HttpServletRequest request, HttpServletResponse response) {
-        // Get refresh token from cookie
         String refreshToken = null;
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
@@ -75,7 +71,6 @@ public class AuthController {
         
         TokenResponse tokenResponse = authService.refreshToken(refreshToken);
         
-        // Update cookies with new tokens
         Cookie accessTokenCookie = new Cookie("accessToken", tokenResponse.getAccessToken());
         accessTokenCookie.setHttpOnly(true);
         accessTokenCookie.setSecure(false);
@@ -96,7 +91,6 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<Map<String, String>> logout(HttpServletResponse response) {
-        // Clear cookies
         Cookie accessTokenCookie = new Cookie("accessToken", null);
         accessTokenCookie.setHttpOnly(true);
         accessTokenCookie.setPath("/");
@@ -117,7 +111,6 @@ public class AuthController {
 
     @GetMapping("/validate")
     public ResponseEntity<Map<String, Object>> validateToken(HttpServletRequest request) {
-        // Get token from cookie
         String token = null;
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
@@ -136,6 +129,11 @@ public class AuthController {
         
         Map<String, Object> response = new HashMap<>();
         response.put("valid", isValid);
+
+        if (isValid) {
+            String role = authService.extractRoleFromToken(token);
+            response.put("role", role);
+        }
         
         return ResponseEntity.ok(response);
     }

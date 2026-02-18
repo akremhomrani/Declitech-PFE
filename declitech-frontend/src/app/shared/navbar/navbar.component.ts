@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { SessionService } from '../../services/session.service';
+import { LayoutService } from '../../services/layout.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -26,13 +27,13 @@ export class NavbarComponent implements OnInit, OnDestroy {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private sessionService: SessionService
+    private sessionService: SessionService,
+    private layoutService: LayoutService
   ) {}
 
   ngOnInit(): void {
     this.loadUserInfo();
-    
-    // Subscribe to session updates
+
     this.subscription.add(
       this.sessionService.sessionData$.subscribe(session => {
         this.sessionCode = session?.code || '';
@@ -57,6 +58,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   closeDropdown(): void {
     this.isDropdownOpen = false;
+  }
+
+  toggleMobileSidebar(): void {
+    this.layoutService.toggleSidebar();
   }
 
   goToProfile(): void {

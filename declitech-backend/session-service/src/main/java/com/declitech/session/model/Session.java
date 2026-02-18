@@ -38,6 +38,9 @@ public class Session {
     @Column(name = "instructor_email")
     private String instructorEmail;
 
+    @Column(name = "module_id")
+    private Long moduleId;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -45,17 +48,10 @@ public class Session {
     @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
 
-    @Column(name = "is_active", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
     @Builder.Default
-    private Boolean isActive = true;
-
-    @Column(name = "participant_count")
-    @Builder.Default
-    private Integer participantCount = 0;
-
-    @Column(name = "report_count")
-    @Builder.Default
-    private Integer reportCount = 0;
+    private SessionStatus status = SessionStatus.ACTIVE;
 
     @PrePersist
     protected void onCreate() {

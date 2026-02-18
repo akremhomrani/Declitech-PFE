@@ -37,6 +37,10 @@ public class JwtTokenProvider {
         return extractAllClaims(token).getExpiration().before(new Date());
     }
 
+    public String extractRole(String token) {
+        return extractAllClaims(token).get("role", String.class);
+    }
+
     public boolean validateToken(String token) {
         try {
             extractAllClaims(token);

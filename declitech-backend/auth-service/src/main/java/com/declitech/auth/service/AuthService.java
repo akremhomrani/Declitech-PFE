@@ -60,9 +60,10 @@ public class AuthService {
                 throw new UserInactiveException("User account is inactive: " + user.getUsername());
             }
 
-            // Create extra claims to include userId in token
             Map<String, Object> extraClaims = new HashMap<>();
             extraClaims.put("userId", user.getId());
+            extraClaims.put("role", user.getRole());
+            extraClaims.put("email", user.getEmail());
             
             String accessToken = jwtService.generateToken(extraClaims, userDetails);
             String refreshToken = jwtService.generateRefreshToken(userDetails);
@@ -114,15 +115,15 @@ public class AuthService {
                 throw new InvalidTokenException("Invalid or expired refresh token for user: " + username);
             }
 
-            // Fetch user details to include userId in new token
             UserDto user = fetchUserByUsernameOrEmail(username);
             if (user == null) {
                 throw new InvalidTokenException("User not found: " + username);
             }
 
-            // Create extra claims to include userId in token
             Map<String, Object> extraClaims = new HashMap<>();
             extraClaims.put("userId", user.getId());
+            extraClaims.put("role", user.getRole());
+            extraClaims.put("email", user.getEmail());
             
             String newAccessToken = jwtService.generateToken(extraClaims, userDetails);
             String newRefreshToken = jwtService.generateRefreshToken(userDetails);
@@ -167,6 +168,14 @@ public class AuthService {
             return jwtService.isTokenValid(token, userDetails);
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    public String extractRoleFromToken(String token) {
+        try {
+            return jwtService.extractClaim(token, claims -> claims.get("role", String.class));
+        } catch (Exception e) {
+            return null;
         }
     }
 

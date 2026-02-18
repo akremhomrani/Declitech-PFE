@@ -1,13 +1,9 @@
-<!-- login.component.html -->
 <div class="flex flex-col md:flex-row min-h-screen w-full">
-  <!-- Left Section: 60% Visual -->
   <div class="hidden md:flex md:w-[60%] relative overflow-hidden bg-[#0d1b1c]">
     <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDb9k7494IqPsMfCyHb34TbYn8e9DsaGeKLHKrQkbSdBT_L7w7IW0fkRzCCCgY2Cr_yKQv_TAa1pcNyizGxjhvxF8tUWosgNo4RpkEdLJbM4fvmkEbXs5-BgwS6vZkxpGyVMNbNBBv0qbzvdvB9CD4IipnrdPPjFEI9aRYeDiiHaPdgqAZ4jQV2wGC2cHk2YNLuLyo6g6NShv1uh8rESgg5D7CHNqMiwFRuGGf_XOdcc_6ao5A1fl9dghtVHYh_KeomyxK9LQ2P710');">
-      <!-- Dark Teal Overlay -->
       <div class="absolute inset-0 bg-[#0d1b1c]/70"></div>
     </div>
     
-    <!-- Content on Overlay -->
     <div class="relative z-10 flex flex-col justify-between p-12 lg:p-20 h-full w-full">
       <div class="flex items-center gap-3 text-white">
         <div class="size-8 text-[#0bd0da]">
@@ -33,10 +29,8 @@
     </div>
   </div>
 
-  <!-- Right Section: 40% Login Form -->
   <div class="flex-1 flex items-center justify-center p-8 bg-white dark:bg-[#152a2b]">
     <div class="w-full max-w-[440px] flex flex-col">
-      <!-- Mobile Logo -->
       <div class="flex md:hidden items-center gap-3 mb-10 text-[#0d1b1c] dark:text-white">
         <div class="size-6 text-[#0bd0da]">
           <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
@@ -51,7 +45,6 @@
         <p class="text-[#49989c] dark:text-[#a0c5c7]">Welcome back! Please enter your details.</p>
       </div>
 
-      <!-- Error message -->
       <div *ngIf="errorMessage" class="mb-4 rounded-xl bg-red-50 dark:bg-red-900/20 p-4 border border-red-200 dark:border-red-800">
         <div class="flex items-center gap-2">
           <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -62,7 +55,6 @@
       </div>
 
       <form class="space-y-4" (ngSubmit)="onSubmit()" #loginForm="ngForm">
-        <!-- Email/Username Field -->
         <div class="relative group">
           <label class="flex flex-col w-full">
             <p class="text-[#0d1b1c] dark:text-white text-sm font-medium leading-normal pb-1.5 px-1">Email or Username</p>
@@ -80,7 +72,6 @@
           </label>
         </div>
 
-        <!-- Password Field -->
         <div class="relative group">
           <label class="flex flex-col w-full">
             <div class="flex justify-between items-center pb-1.5 px-1">
@@ -138,7 +129,6 @@
         </div>
       </div>
 
-      <!-- SSO Options -->
       <div class="grid grid-cols-2 gap-4">
         <button
           type="button"

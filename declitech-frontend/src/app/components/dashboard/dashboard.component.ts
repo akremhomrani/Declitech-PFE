@@ -2,10 +2,11 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EmotionService } from '../../services/emotion.service';
 import { SessionService } from '../../services/session.service';
-import { AlertService, Alert } from '../../services/alert.service';
+import { AlertService } from '../../services/alert.service';
+import { Alert } from '../../models/alert';
 import { EmotionReport, SessionStatistics } from '../../models/emotion-report.model';
 import { interval, Subscription, of } from 'rxjs';
-import { switchMap, filter } from 'rxjs/operators';
+import { switchMap } from 'rxjs/operators';
 import { NavbarComponent } from '../../shared/navbar/navbar.component';
 import { SidebarComponent } from '../../shared/sidebar/sidebar.component';
 
@@ -38,7 +39,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit() {
-    // Subscribe to active session changes
     this.sessionSubscription = this.sessionService.sessionData$.subscribe(session => {
       this.activeSessionCode = session?.code || '';
 
@@ -80,9 +80,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.students = reports;
         this.calculateStatistics();
       },
-      error: (error: any) => {
-        console.error('Error loading students:', error);
-      }
+      error: () => {}
     });
   }
 
@@ -101,22 +99,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
           this.students = reports;
           this.calculateStatistics();
         },
-        error: (error: any) => {
-          console.error('Error refreshing students:', error);
-        }
+        error: () => {}
       });
   }
 
   subscribeToAlerts() {
     this.alertSubscription = this.alertService.alerts$.subscribe({
       next: (alert: Alert) => {
-        console.log('🚨 Dashboard received alert:', alert);
-        // Force UI update when alert is received
+        this.students = [...this.students];
         this.calculateStatistics();
       },
-      error: (error: any) => {
-        console.error('Error receiving alerts:', error);
-      }
+      error: () => {}
     });
   }
 
@@ -144,26 +137,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   getStudentStatusClass(student: EmotionReport): string {
-    // Check for recent alerts first (highest priority)
-    if (this.alertService.hasRecentAlert(student.participantId)) {
-      // Priority 1: Tab switch alerts (RED)
-      const hasTabSwitch = this.alertService.hasRecentAlert(student.participantId, 'TAB_SWITCH') ||
-        this.alertService.hasRecentAlert(student.participantId, 'MULTIPLE_SWITCHES');
+    const pid = student.participantId;
+    const identity = student.studentLoginIdentity;
+
+    if (this.alertService.hasRecentAlert(pid, undefined, identity)) {
+      const hasTabSwitch = this.alertService.hasRecentAlert(pid, 'TAB_SWITCH', identity) ||
+        this.alertService.hasRecentAlert(pid, 'MULTIPLE_SWITCHES', identity);
       if (hasTabSwitch) {
         return 'border-red-500 border-4 shadow-lg shadow-red-500/20';
       }
 
-      // Priority 2: Mouse inactivity (ORANGE)
-      const hasMouseInactivity = this.alertService.hasRecentAlert(student.participantId, 'MOUSE_INACTIVITY');
+      const hasMouseInactivity = this.alertService.hasRecentAlert(pid, 'MOUSE_INACTIVITY', identity);
       if (hasMouseInactivity) {
         return 'border-orange-500 border-4 shadow-lg shadow-orange-500/20';
       }
 
-      // Priority 3: Other alerts (AMBER)
       return 'border-amber-500 border-4 shadow-lg shadow-amber-500/20';
     }
 
-    // Default emotion-based styling
     if (student.status === 'IN_PROGRESS') {
       if (student.dominantEmotion === 'happy' || student.dominantEmotion === 'neutral') {
         return 'border-primary border-2';
@@ -172,11 +163,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
       } else if (student.dominantEmotion === 'fear') {
         return 'border-red-500 border-2';
       }
-      // If IN_PROGRESS but no emotion detected yet
       return 'border-primary border-2';
     }
 
-    // Default for any other status (CONNECTED, etc.) - blue border
     return 'border-primary border-2';
   }
 
@@ -188,36 +177,45 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   getAlertCount(student: EmotionReport): number {
-    return this.alertService.getAlertCount(student.participantId);
+    let count = this.alertService.getAlertCount(student.participantId);
+    if (count === 0) {
+      const alerts = this.alertService.getRecentAlertsForIdentity(student.studentLoginIdentity);
+      count = alerts.length;
+    }
+    return count;
   }
 
   hasActiveAlert(student: EmotionReport): boolean {
-    return this.alertService.hasRecentAlert(student.participantId);
+    return this.alertService.hasRecentAlert(student.participantId, undefined, student.studentLoginIdentity);
   }
 
   getAlertBadgeType(student: EmotionReport): string {
-    if (this.alertService.hasRecentAlert(student.participantId, 'TAB_SWITCH') ||
-      this.alertService.hasRecentAlert(student.participantId, 'MULTIPLE_SWITCHES')) {
+    const pid = student.participantId;
+    const identity = student.studentLoginIdentity;
+    if (this.alertService.hasRecentAlert(pid, 'TAB_SWITCH', identity) ||
+      this.alertService.hasRecentAlert(pid, 'MULTIPLE_SWITCHES', identity)) {
       return 'SECURITY';
     }
-    if (this.alertService.hasRecentAlert(student.participantId, 'MOUSE_INACTIVITY')) {
+    if (this.alertService.hasRecentAlert(pid, 'MOUSE_INACTIVITY', identity)) {
       return 'BLOCKED';
     }
-    if (this.alertService.hasRecentAlert(student.participantId)) {
+    if (this.alertService.hasRecentAlert(pid, undefined, identity)) {
       return 'DISTRACTED';
     }
     return 'FOCUSED';
   }
 
   getAlertMessage(student: EmotionReport): string {
-    if (this.alertService.hasRecentAlert(student.participantId, 'TAB_SWITCH') ||
-      this.alertService.hasRecentAlert(student.participantId, 'MULTIPLE_SWITCHES')) {
+    const pid = student.participantId;
+    const identity = student.studentLoginIdentity;
+    if (this.alertService.hasRecentAlert(pid, 'TAB_SWITCH', identity) ||
+      this.alertService.hasRecentAlert(pid, 'MULTIPLE_SWITCHES', identity)) {
       return 'Tab Switched';
     }
-    if (this.alertService.hasRecentAlert(student.participantId, 'MOUSE_INACTIVITY')) {
+    if (this.alertService.hasRecentAlert(pid, 'MOUSE_INACTIVITY', identity)) {
       return 'No Movement';
     }
-    if (this.alertService.hasRecentAlert(student.participantId)) {
+    if (this.alertService.hasRecentAlert(pid, undefined, identity)) {
       return 'Distracted';
     }
     return 'On Task';

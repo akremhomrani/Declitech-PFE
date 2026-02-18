@@ -4,29 +4,25 @@
   <div class="flex flex-1 overflow-hidden">
     <app-sidebar></app-sidebar>
 
-    <main class="flex-1 overflow-y-auto custom-scrollbar">
+    <main *ngIf="isInstructor; else notAuthorized" class="flex-1 overflow-y-auto custom-scrollbar">
   
 
-      <div class="p-10 max-w-6xl mx-auto w-full">
-        <!-- Page Title -->
-        <div class="mb-12">
-          <h2 class="text-4xl font-bold tracking-tight text-slate-900 mb-3">Create New Monitoring Session</h2>
-          <p class="text-slate-500 max-w-2xl leading-relaxed">
+      <div class="p-4 sm:p-6 md:p-10 max-w-6xl mx-auto w-full">
+        <div class="mb-6 sm:mb-8 md:mb-12">
+          <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900 mb-2 sm:mb-3">Create New Monitoring Session</h2>
+          <p class="text-slate-500 max-w-2xl leading-relaxed text-sm sm:text-base">
             Set up your AI-powered engagement environment. Generate a secure access code for your students to begin tracking real-time attention metrics and browser activity.
           </p>
         </div>
 
-        <!-- Main Content -->
-        <div class="grid grid-cols-12 gap-8">
+        <div class="grid grid-cols-12 gap-4 sm:gap-6 md:gap-8">
           
-          <!-- Main Card - Left Side -->
           <div class="col-span-12 lg:col-span-8">
-            <div class="bg-white rounded-2xl border border-slate-200 glow-teal overflow-hidden transition-all flex flex-col min-h-[400px] justify-center">
-              <div class="p-10">
+            <div class="bg-white rounded-2xl border border-slate-200 glow-teal overflow-hidden transition-all flex flex-col min-h-[300px] sm:min-h-[400px] justify-center">
+              <div class="p-4 sm:p-6 md:p-10">
                 
-                <!-- Generate Session View -->
-                <div *ngIf="!sessionGenerated" class="flex flex-col items-center justify-center py-6 text-center">
-                  <div class="mb-8 inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-primary/5 border border-primary/10 text-primary">
+                <div *ngIf="!sessionGenerated" class="flex flex-col items-center justify-center py-4 sm:py-6 text-center">
+                  <div class="mb-6 sm:mb-8 inline-flex items-center gap-2 sm:gap-2.5 px-4 sm:px-5 py-2 rounded-full bg-primary/5 border border-primary/10 text-primary">
                     <span class="relative flex h-2.5 w-2.5">
                       <span class="absolute inline-flex h-full w-full rounded-full bg-primary opacity-40"></span>
                       <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
@@ -34,22 +30,21 @@
                     <span class="text-xs font-bold tracking-widest uppercase">Live Agent Ready</span>
                   </div>
                   
-                  <div class="mb-10 max-w-sm">
-                    <h3 class="text-2xl font-bold text-slate-900 mb-4">Ready to start?</h3>
-                    <p class="text-slate-500 text-sm mb-8">Generate a unique session code to invite students and begin monitoring engagement through the DecliTech extension.</p>
+                  <div class="mb-6 sm:mb-10 max-w-sm w-full px-2 sm:px-0">
+                    <h3 class="text-xl sm:text-2xl font-bold text-slate-900 mb-3 sm:mb-4">Ready to start?</h3>
+                    <p class="text-slate-500 text-xs sm:text-sm mb-6 sm:mb-8">Generate a unique session code to invite students and begin monitoring engagement through the DecliTech extension.</p>
                     
                     <button 
                       (click)="openModal()"
-                      class="w-full bg-primary hover:bg-primary-hover text-white font-bold py-6 px-8 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-xl shadow-primary/25 text-lg group">
-                      <span class="material-symbols-outlined text-2xl group-hover:rotate-12 transition-transform">add_circle</span>
+                      class="w-full bg-primary hover:bg-primary-hover text-white font-bold py-4 sm:py-6 px-6 sm:px-8 rounded-2xl flex items-center justify-center gap-2 sm:gap-3 transition-all shadow-xl shadow-primary/25 text-base sm:text-lg group">
+                      <span class="material-symbols-outlined text-xl sm:text-2xl group-hover:rotate-12 transition-transform">add_circle</span>
                       <span>Generate New Session Code</span>
                     </button>
                   </div>
                 </div>
 
-                <!-- Active Session View -->
-                <div *ngIf="sessionGenerated" class="flex flex-col items-center justify-center py-6 text-center">
-                  <div class="mb-8 inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600">
+                <div *ngIf="sessionGenerated" class="flex flex-col items-center justify-center py-4 sm:py-6 text-center">
+                  <div class="mb-6 sm:mb-8 inline-flex items-center gap-2 sm:gap-2.5 px-4 sm:px-5 py-2 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600">
                     <span class="relative flex h-2.5 w-2.5">
                       <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
                       <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
@@ -57,40 +52,27 @@
                     <span class="text-xs font-bold tracking-widest uppercase">Live Agent Ready</span>
                   </div>
 
-                  <p class="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">Student Access Code</p>
+                  <p class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4 sm:mb-6">Student Access Code</p>
                   
-                  <!-- Session Code Display -->
-                  <div class="flex items-center justify-center gap-3 mb-8">
+                  <div class="flex items-center justify-center gap-1.5 sm:gap-3 mb-4 cursor-pointer group" (click)="copyCode()">
                     <div *ngFor="let char of getCodeArray()" 
-                         class="w-16 h-20 code-block rounded-xl flex items-center justify-center border-2 border-primary/10">
-                      <span class="text-4xl font-black text-primary">{{ char }}</span>
+                         class="w-10 h-13 sm:w-14 sm:h-18 md:w-16 md:h-20 code-block rounded-lg sm:rounded-xl flex items-center justify-center border-2 border-primary/10 group-hover:border-primary/30 group-hover:shadow-md transition-all">
+                      <span class="text-2xl sm:text-3xl md:text-4xl font-black text-primary">{{ char }}</span>
                     </div>
                   </div>
 
-                  <!-- Action Buttons -->
-                  <div class="flex items-center justify-center gap-3 mb-8">
-                    <button 
-                      (click)="copyCode()"
-                      class="bg-primary hover:bg-primary-hover text-white font-bold py-3 px-6 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-primary/25">
-                      <span class="material-symbols-outlined text-xl">content_copy</span>
-                      <span>Copy Code</span>
-                    </button>
-                    <button 
-                      (click)="showQR()"
-                      class="bg-white hover:bg-slate-50 text-slate-700 font-bold py-3 px-6 rounded-xl flex items-center gap-2 transition-all border-2 border-slate-200">
-                      <span class="material-symbols-outlined text-xl">qr_code_2</span>
-                      <span>Show QR</span>
-                    </button>
-                  </div>
+                  <p class="text-xs text-slate-400 font-semibold mb-6 sm:mb-8 flex items-center justify-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm">{{ codeCopied ? 'check_circle' : 'touch_app' }}</span>
+                    {{ codeCopied ? 'Copied to clipboard!' : 'Click the code to copy' }}
+                  </p>
 
-                  <!-- Connection Status -->
-                  <div class="flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 max-w-xl mx-auto w-full">
+                  <div class="flex flex-col sm:flex-row items-center justify-between px-3 sm:px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 max-w-xl mx-auto w-full gap-2 sm:gap-0">
                     <div class="flex items-center gap-2 text-primary">
                       <span class="relative flex h-2 w-2">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                       </span>
-                      <span class="text-sm font-semibold italic">Waiting for students to connect...</span>
+                      <span class="text-xs sm:text-sm font-semibold italic">Waiting for students to connect...</span>
                     </div>
                     <div class="flex items-center gap-2">
                       <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Connected:</span>
@@ -102,11 +84,9 @@
             </div>
           </div>
 
-          <!-- Configuration Sidebar - Right Side -->
-          <div class="col-span-12 lg:col-span-4 flex flex-col gap-6">
-            <!-- Configuration Card -->
-            <div class="bg-white rounded-2xl border border-slate-200 p-7 shadow-sm">
-              <h3 class="text-xs font-black uppercase tracking-widest text-slate-900 mb-6 flex items-center gap-2">
+          <div class="col-span-12 lg:col-span-4 flex flex-col gap-4 sm:gap-6">
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-7 shadow-sm">
+              <h3 class="text-xs font-black uppercase tracking-widest text-slate-900 mb-4 sm:mb-6 flex items-center gap-2">
                 <span class="material-symbols-outlined text-primary text-xl">tune</span>
                 Configuration
               </h3>
@@ -142,8 +122,7 @@
               </div>
             </div>
 
-            <!-- Setup Guide Card -->
-            <div class="bg-accent-teal/40 border border-primary/10 rounded-2xl p-6 relative overflow-hidden">
+            <div class="bg-accent-teal/40 border border-primary/10 rounded-2xl p-4 sm:p-6 relative overflow-hidden">
               <h4 class="text-sm font-bold text-primary mb-3 flex items-center gap-2">
                 <span class="material-symbols-outlined text-lg">lightbulb</span>
                 Setup Guide
@@ -156,7 +135,6 @@
               </div>
             </div>
 
-            <!-- Start Session Button -->
             <button 
               [disabled]="!sessionGenerated"
               [class.cursor-not-allowed]="!sessionGenerated"
@@ -165,7 +143,7 @@
               [class.bg-primary]="sessionGenerated"
               [class.text-slate-400]="!sessionGenerated"
               [class.text-white]="sessionGenerated"
-              class="w-full py-5 px-6 rounded-2xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3 border-2 border-dashed transition-all"
+              class="w-full py-4 sm:py-5 px-4 sm:px-6 rounded-2xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 sm:gap-3 border-2 border-dashed transition-all"
               [class.border-slate-200]="!sessionGenerated"
               [class.border-primary]="sessionGenerated">
               <span>Start Session Feed</span>
@@ -174,45 +152,46 @@
           </div>
         </div>
 
-        <!-- Recent Sessions Section -->
   
       </div>
     </main>
   </div>
 </div>
 
-<!-- Session Details Modal -->
-<div *ngIf="isModalOpen" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
+<div *ngIf="isModalOpen" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+  <div class="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-md w-full p-5 sm:p-6 relative">
     <button 
       (click)="closeModal()"
       class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors">
       <span class="material-symbols-outlined text-xl">close</span>
     </button>
 
+    <div class="w-8 h-1 bg-slate-300 rounded-full mx-auto mb-4 sm:hidden"></div>
+
     <div class="mb-5">
       <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/5 border border-primary/10 text-primary mb-3">
         <span class="material-symbols-outlined text-base">settings</span>
         <span class="text-xs font-bold tracking-widest uppercase">Session Configuration</span>
       </div>
-      <h3 class="text-xl font-bold text-slate-900 mb-1">Setup Your Session</h3>
-      <p class="text-slate-500 text-sm">Enter the details for your monitoring session</p>
+      <h3 class="text-lg sm:text-xl font-bold text-slate-900 mb-1">Setup Your Session</h3>
+      <p class="text-slate-500 text-xs sm:text-sm">Select a module and set the session duration</p>
     </div>
 
     <div class="space-y-4 mb-6">
-      <!-- Session Title -->
       <div>
         <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-2">
-          Session Title
+          Module
         </label>
-        <input 
-          type="text" 
-          [(ngModel)]="modalTitle"
-          placeholder="e.g., Web Development Class - Sprint 3"
-          class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-slate-900 font-medium">
+        <select 
+          [(ngModel)]="selectedModuleOption"
+          class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-slate-900 font-medium bg-white">
+          <option value="">-- Select a module --</option>
+          <option *ngFor="let option of moduleOptions" [value]="option.id">
+            {{ option.label }}
+          </option>
+        </select>
       </div>
 
-      <!-- Session Duration -->
       <div>
         <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-2">
           Duration (minutes)
@@ -234,9 +213,9 @@
       </button>
       <button 
         (click)="generateSession()"
-        [disabled]="!modalTitle || modalDuration <= 0"
-        [class.opacity-50]="!modalTitle || modalDuration <= 0"
-        [class.cursor-not-allowed]="!modalTitle || modalDuration <= 0"
+        [disabled]="!selectedModuleOption || modalDuration <= 0"
+        [class.opacity-50]="!selectedModuleOption || modalDuration <= 0"
+        [class.cursor-not-allowed]="!selectedModuleOption || modalDuration <= 0"
         class="flex-1 py-3 px-5 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold transition-all shadow-lg shadow-primary/25 flex items-center justify-center gap-2">
         <span class="material-symbols-outlined text-lg">check_circle</span>
         <span>Generate Code</span>
@@ -244,3 +223,18 @@
     </div>
   </div>
 </div>
+
+<ng-template #notAuthorized>
+  <main class="flex-1 flex items-center justify-center bg-background-light">
+    <div class="bg-white p-8 rounded-xl shadow-lg text-center max-w-md">
+      <div class="bg-orange-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+        <span class="material-symbols-outlined text-orange-600 text-4xl">lock</span>
+      </div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-2">Instructors Only</h2>
+      <p class="text-gray-600 mb-6">You do not have permission to access this page. This section is only available to instructors.</p>
+      <a routerLink="/dashboard" class="inline-block bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg font-semibold transition-all">
+        Go to Dashboard
+      </a>
+    </div>
+  </main>
+</ng-template>

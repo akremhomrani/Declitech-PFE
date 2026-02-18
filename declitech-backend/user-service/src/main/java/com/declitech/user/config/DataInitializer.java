@@ -19,6 +19,7 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         createDefaultUser();
+        createAdminUser();
     }
 
     private void createDefaultUser() {
@@ -41,5 +42,27 @@ public class DataInitializer implements CommandLineRunner {
                 .build();
 
         userRepository.save(defaultUser);
+    }
+
+    private void createAdminUser() {
+        String adminEmail = "admin@declitech.com";
+
+        if (userRepository.findByEmail(adminEmail).isPresent()) {
+            return;
+        }
+
+        User adminUser = User.builder()
+                .firstName("Akrem")
+                .lastName("Admin")
+                .username("admin")
+                .email(adminEmail)
+                .password(passwordEncoder.encode("akrem123"))
+                .sexe(Sexe.MALE)
+                .phoneNumber("+216 00 000 001")
+                .role(Role.ADMIN)
+                .active(true)
+                .build();
+
+        userRepository.save(adminUser);
     }
 }

@@ -1,44 +1,61 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { NavbarComponent } from '../../shared/navbar/navbar.component';
 import { SidebarComponent } from '../../shared/sidebar/sidebar.component';
 import { SessionService } from '../../services/session.service';
+import { ModuleService } from '../../services/module.service';
+import { AuthService } from '../../services/auth.service';
 import { EmotionService } from '../../services/emotion.service';
+import { Module } from '../../models/module';
 import { Subscription, interval } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-session-creation',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent, SidebarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent, SidebarComponent],
   templateUrl: './session-creation.component.html',
   styleUrls: ['./session-creation.component.css']
 })
 export class SessionCreationComponent implements OnInit, OnDestroy {
-  // Session state
   sessionGenerated = false;
   sessionCode = '';
   sessionTitle = '';
   sessionDuration = 0;
   connectedStudents = 0;
   elapsedTime = '0m 0s';
+  isInstructor = false;
   
   private subscription = new Subscription();
   private pollSubscription?: Subscription;
-  
-  // Modal state
+
   isModalOpen = false;
   modalTitle = '';
-  modalDuration = 60; // default 60 minutes
+  modalDuration = 60;
+  codeCopied = false;
+  
+  modules: Module[] = [];
+  moduleOptions: { id: number; label: string; site: string }[] = [];
+  selectedModuleOption: string = '';
   
   constructor(
     private sessionService: SessionService,
-    private emotionService: EmotionService
+    private moduleService: ModuleService,
+    private emotionService: EmotionService,
+    private authService: AuthService
   ) {}
   
   ngOnInit(): void {
-    // Subscribe to session data
+    this.isInstructor = this.authService.getRole() === 'INSTRUCTOR';
+    
+    if (!this.isInstructor) {
+      return;
+    }
+
+    this.loadModules();
+
     this.subscription.add(
       this.sessionService.sessionData$.subscribe(session => {
         if (session) {
@@ -46,12 +63,10 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
           this.sessionCode = session.code;
           this.sessionTitle = session.title;
           this.sessionDuration = session.duration;
-          // Start polling for connected students count
           this.startPollingConnectedStudents();
         } else {
           this.sessionGenerated = false;
           this.sessionCode = '';
-          // Stop polling when session ends
           this.stopPollingConnectedStudents();
         }
       })
@@ -70,13 +85,10 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
   }
 
   private startPollingConnectedStudents(): void {
-    // Stop any existing polling
     this.stopPollingConnectedStudents();
-    
-    // Poll immediately once
+
     this.updateConnectedStudentsCount();
-    
-    // Poll every 5 seconds
+
     this.pollSubscription = interval(5000)
       .pipe(
         switchMap(() => this.emotionService.getReportCountBySessionCode(this.sessionCode))
@@ -85,9 +97,7 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
         next: (count) => {
           this.connectedStudents = count;
         },
-        error: (error) => {
-          console.error('Error fetching connected students count:', error);
-        }
+        error: () => {}
       });
   }
 
@@ -104,11 +114,42 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
         next: (count) => {
           this.connectedStudents = count;
         },
-        error: (error) => {
-          console.error('Error fetching connected students count:', error);
-        }
+        error: () => {}
       });
     }
+  }
+
+  private loadModules(): void {
+    this.moduleService.getAllModules().subscribe({
+      next: (modules) => {
+        this.modules = modules;
+        this.buildModuleOptions();
+      },
+      error: (error) => {
+        console.error('Error loading modules:', error);
+      }
+    });
+  }
+
+  private buildModuleOptions(): void {
+    this.moduleOptions = [];
+    this.modules.forEach(module => {
+      if (module.sites && module.sites.length > 0) {
+        module.sites.forEach(site => {
+          this.moduleOptions.push({
+            id: module.id,
+            label: `${module.title} - ${site}`,
+            site: site
+          });
+        });
+      } else {
+        this.moduleOptions.push({
+          id: module.id,
+          label: module.title,
+          site: ''
+        });
+      }
+    });
   }
   
   openModal(): void {
@@ -119,34 +160,30 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
     this.isModalOpen = false;
     this.modalTitle = '';
     this.modalDuration = 60;
+    this.selectedModuleOption = '';
   }
   
   generateSession(): void {
-    if (!this.modalTitle || this.modalDuration <= 0) {
+    if (!this.selectedModuleOption || this.modalDuration <= 0) {
       return;
     }
     
-    this.sessionService.createSession(this.modalTitle, this.modalDuration);
+    const moduleId = parseInt(this.selectedModuleOption);
+    const selectedOption = this.moduleOptions.find(opt => opt.id === moduleId);
+    const sessionTitle = selectedOption ? selectedOption.label : 'Session';
+    
+    this.sessionService.createSession(sessionTitle, this.modalDuration, moduleId);
     this.closeModal();
   }
   
   copyCode(): void {
     navigator.clipboard.writeText(this.sessionCode).then(() => {
-      alert('Session code copied to clipboard!');
+      this.codeCopied = true;
+      setTimeout(() => this.codeCopied = false, 2000);
     });
-  }
-  
-  showQR(): void {
-    alert('QR Code feature coming soon!');
   }
   
   getCodeArray(): string[] {
     return this.sessionCode.split('');
-  }
-  
-  endSession(): void {
-    if (confirm('Are you sure you want to end this live session?')) {
-      this.sessionService.endSession();
-    }
   }
 }

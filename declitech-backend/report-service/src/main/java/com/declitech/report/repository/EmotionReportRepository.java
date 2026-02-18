@@ -19,7 +19,13 @@ public interface EmotionReportRepository extends JpaRepository<EmotionReport, Lo
     // Session code queries (new)
     List<EmotionReport> findBySessionCode(String sessionCode);
     
+    // Numeric session ID query
+    List<EmotionReport> findBySessionId(Long sessionId);
+    
     Integer countBySessionCode(String sessionCode);
+    
+    @Query("SELECT COUNT(DISTINCT r.studentLoginIdentity) FROM EmotionReport r WHERE r.sessionCode = :sessionCode")
+    Long countDistinctParticipantsBySessionCode(@Param("sessionCode") String sessionCode);
     
     List<EmotionReport> findByStudentLoginIdentity(String studentLoginIdentity);
     

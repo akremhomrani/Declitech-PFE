@@ -4,8 +4,7 @@
   <div class="flex flex-1 overflow-hidden">
     <app-sidebar></app-sidebar>
 
-    <main class="flex-1 flex flex-col overflow-y-auto custom-scrollbar p-8">
-      <!-- Statistics Cards -->
+    <main class="flex-1 flex flex-col overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8">
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <div class="bg-white border border-slate-200 rounded-2xl p-6 flex items-center justify-between shadow-sm">
           <div>
@@ -51,32 +50,30 @@
         </div>
       </div>
 
-      <!-- Title and Controls -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+      <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 sm:mb-8 gap-4">
         <div>
-          <h2 class="text-2xl font-black tracking-tight text-text-main flex items-center gap-3">
+          <h2 class="text-xl sm:text-2xl font-black tracking-tight text-text-main flex items-center gap-3">
             Live Engagement Monitor
             <span
               class="text-[10px] bg-primary text-white px-3 py-1 rounded-full uppercase font-black tracking-wider">Live</span>
           </h2>
-          <p class="text-text-muted text-sm mt-1">Real-time AI telemetry from local agents and extensions</p>
+          <p class="text-text-muted text-xs sm:text-sm mt-1">Real-time AI telemetry from local agents and extensions</p>
         </div>
-        <div class="flex gap-3">
+        <div class="flex gap-2 sm:gap-3">
           <button
-            class="flex items-center gap-2 px-5 py-2.5 bg-white text-text-main text-xs font-bold rounded-xl hover:bg-slate-50 transition-all border border-slate-200 shadow-sm">
+            class="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-white text-text-main text-xs font-bold rounded-xl hover:bg-slate-50 transition-all border border-slate-200 shadow-sm">
             <span class="material-symbols-outlined text-lg">filter_alt</span>
-            Filter View
+            <span class="hidden sm:inline">Filter View</span>
           </button>
           <button
-            class="flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-xs font-black rounded-xl hover:bg-primary-dark transition-all shadow-md shadow-primary/10">
+            class="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-primary text-white text-xs font-black rounded-xl hover:bg-primary-dark transition-all shadow-md shadow-primary/10">
             <span class="material-symbols-outlined text-lg">sort</span>
-            Sort: Engagement
+            <span class="hidden sm:inline">Sort: Engagement</span>
           </button>
         </div>
       </div>
 
-      <!-- Student Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
         <div *ngFor="let student of students"
           class="group relative bg-white rounded-2xl p-5 border-2 student-card-shadow transition-all hover:-translate-y-1"
           [ngClass]="getStudentStatusClass(student)">
@@ -86,12 +83,10 @@
               <span class="material-symbols-outlined text-2xl text-primary">person</span>
             </div>
             <div class="flex flex-col items-end gap-2">
-              <!-- Status Badge (SECURITY/BLOCKED/DISTRACTED/FOCUSED) -->
               <span class="px-3 py-1.5 text-white text-[10px] font-black rounded-lg uppercase tracking-widest"
                 [ngClass]="getBadgeColor(getAlertBadgeType(student))">
                 {{ getAlertBadgeType(student) }}
               </span>
-              <!-- Connection Status -->
               <div class="flex items-center gap-1.5">
                 <span class="size-2 rounded-full" [ngClass]="{
                         'bg-accent-teal status-pulse': student.status === 'IN_PROGRESS',
@@ -107,7 +102,6 @@
 
           <div class="mb-4">
             <h3 class="font-bold text-lg leading-tight text-text-main">{{ student.studentLoginIdentity }}</h3>
-            <!-- Alert Message / Activity Status -->
             <p class="text-xs mt-1.5 font-semibold" [ngClass]="{
                  'text-red-600': getAlertBadgeType(student) === 'SECURITY',
                  'text-orange-600': getAlertBadgeType(student) === 'BLOCKED',
@@ -133,8 +127,8 @@
       </div>
 
       <footer
-        class="mt-auto pt-12 pb-6 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between text-text-muted text-[10px] font-black uppercase tracking-widest">
-        <div class="flex items-center gap-8 mb-4 md:mb-0">
+        class="mt-auto pt-8 sm:pt-12 pb-4 sm:pb-6 border-t border-slate-200 flex flex-col items-center justify-between text-text-muted text-[10px] font-black uppercase tracking-widest gap-4">
+        <div class="flex flex-wrap items-center justify-center gap-4 sm:gap-8">
           <div class="flex items-center gap-2.5">
             <div class="size-2 rounded-full bg-primary"></div>
             <span>DecliTech AI Engine: v4.2 stable</span>
@@ -144,7 +138,7 @@
             <span>Data Sync: 0.2ms Latency</span>
           </div>
         </div>
-        <div class="flex gap-8">
+        <div class="flex flex-wrap justify-center gap-4 sm:gap-8">
           <a class="hover:text-primary transition-colors" href="#">Export Session Analytics</a>
           <a class="hover:text-primary transition-colors" href="#">System Health</a>
           <span>© 2024 DecliTech Solutions</span>

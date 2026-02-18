@@ -1,18 +1,15 @@
-// auth.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { LoginRequest } from '../models/auth/login-request.model';
-import { LoginResponse } from '../models/auth/login-response.model';
-import { UserPayload } from '../models/auth/user-payload.model';
+import { LoginRequest, LoginResponse, UserPayload } from '../models/auth';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = `${environment.authApiUrl}/auth`;
+  private apiUrl = `${environment.apiUrl}/api/auth`;
   private firstNameKey = 'user_first_name';
   private lastNameKey = 'user_last_name';
   private usernameKey = 'user_username';
@@ -26,12 +23,10 @@ export class AuthService {
 
   login(credentials: LoginRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials, {
-      withCredentials: true  // Enable sending/receiving cookies
+      withCredentials: true
     }).pipe(
       tap(response => {
-        // Store only user display info in localStorage
         this.storeUserInfo(response);
-        // Set current user from response
         this.setCurrentUser(response);
       }),
       catchError(this.handleError)
@@ -39,7 +34,6 @@ export class AuthService {
   }
 
   refreshToken(): Observable<any> {
-    // Refresh token is sent automatically via httpOnly cookie
     return this.http.post<any>(`${this.apiUrl}/refresh`, {}, {
       withCredentials: true
     }).pipe(
@@ -51,18 +45,10 @@ export class AuthService {
   }
 
   logout(): void {
-    // Call backend to clear cookies
+    this.clearUserData();
     this.http.post(`${this.apiUrl}/logout`, {}, {
       withCredentials: true
-    }).subscribe({
-      complete: () => {
-        this.clearUserData();
-      },
-      error: () => {
-        // Clear data even if backend call fails
-        this.clearUserData();
-      }
-    });
+    }).subscribe();
   }
 
   private clearUserData(): void {
@@ -74,17 +60,30 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean {
-    // Check if user info exists in localStorage as a quick check
     const username = this.getUsername();
     return username !== null;
   }
 
   validateToken(): Observable<boolean> {
-    // Call backend validate endpoint to check if cookie token is valid
     return this.http.get<any>(`${this.apiUrl}/validate`, {
       withCredentials: true
     }).pipe(
       map(response => response.valid === true),
+      catchError(() => {
+        this.clearUserData();
+        return throwError(() => new Error('Token validation failed'));
+      })
+    );
+  }
+
+  validateTokenWithRole(): Observable<{ valid: boolean; role: string | null }> {
+    return this.http.get<any>(`${this.apiUrl}/validate`, {
+      withCredentials: true
+    }).pipe(
+      map(response => ({
+        valid: response.valid === true,
+        role: response.role || null
+      })),
       catchError(() => {
         this.clearUserData();
         return throwError(() => new Error('Token validation failed'));
@@ -131,13 +130,12 @@ export class AuthService {
     const user: UserPayload = {
       sub: response.username,
       role: response.role,
-      exp: 0  // Not needed since we validate on backend
+      exp: 0
     };
     this.currentUserSubject.next(user);
   }
 
   private loadUserInfo(): void {
-    // Load user info from localStorage on app startup
     const username = this.getUsername();
     const role = this.getRole();
     if (username && role) {
@@ -154,10 +152,8 @@ export class AuthService {
     let errorMessage = 'An error occurred';
     
     if (error.error instanceof ErrorEvent) {
-      // Client-side error
       errorMessage = error.error.message;
     } else {
-      // Server-side error
       switch (error.status) {
         case 400:
           errorMessage = 'Invalid credentials';

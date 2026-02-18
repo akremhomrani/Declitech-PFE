@@ -1,15 +1,14 @@
-// login.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { LoginRequest } from '../../models/auth/login-request.model';
+import { LoginRequest } from '../../models/auth';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
@@ -29,7 +28,6 @@ export class LoginComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // If already logged in, redirect to dashboard
     if (this.authService.isLoggedIn()) {
       this.router.navigate(['/dashboard']);
     }
@@ -52,7 +50,6 @@ export class LoginComponent implements OnInit {
       error: (error) => {
         this.isLoading = false;
         this.errorMessage = error.message || 'Login failed. Please check your credentials.';
-        console.error('Login error:', error);
       }
     });
   }

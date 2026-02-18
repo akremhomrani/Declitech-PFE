@@ -1,17 +1,8 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
-
-export interface SessionData {
-  id?: number;
-  code: string;
-  title: string;
-  duration: number;
-  connectedStudents: number;
-  startTime: Date;
-  expiresAt?: string;
-  isActive?: boolean;
-}
+import { environment } from '../../environments/environment';
+import { SessionData, SessionHistory, PagedSessionResponse } from '../models/session';
 
 @Injectable({
   providedIn: 'root'
@@ -25,35 +16,25 @@ export class SessionService {
   private elapsedTimeSubject = new BehaviorSubject<string>('0m 0s');
   public elapsedTime$: Observable<string> = this.elapsedTimeSubject.asObservable();
 
-  // Event emitter for session ended
   private sessionEndedSubject = new Subject<{ code: string; reason: string }>();
   public sessionEnded$ = this.sessionEndedSubject.asObservable();
 
-  private apiUrl = 'http://localhost:8084/api/sessions'; // SessionService endpoint
+  private apiUrl = `${environment.apiUrl}/api/sessions`;
 
   constructor(private http: HttpClient) {
-    // Load session from localStorage on service init
     this.loadSessionFromStorage();
   }
 
-  createSession(title: string, duration: number): void {
-    console.log('Creating session:', { title, duration });
-
-    // Convert minutes to hours for API
+  createSession(title: string, duration: number, moduleId?: number): void {
     const durationHours = duration / 60;
+    const request: any = { title, durationHours };
+    
+    if (moduleId) {
+      request.moduleId = moduleId;
+    }
 
-    const request = {
-      title,
-      durationHours
-    };
-
-    console.log('Sending request to backend:', request);
-
-    // Note: JWT token is sent automatically via httpOnly cookie
-    // The JwtInterceptor adds withCredentials: true to all requests
-    this.http.post<any>(this.apiUrl, request).subscribe({
+    this.http.post<any>(this.apiUrl, request, { withCredentials: true }).subscribe({
       next: (response) => {
-        console.log('Backend response:', response);
         const sessionData: SessionData = {
           id: response.id,
           code: response.sessionCode,
@@ -69,25 +50,14 @@ export class SessionService {
         this.saveSessionToStorage(sessionData);
         this.startTimer(sessionData.startTime);
         this.startSessionExpirationTimer(sessionData);
-        console.log('✅ Session created on backend:', sessionData);
       },
-      error: (error) => {
-        console.error('❌ Failed to create session on backend:', {
-          status: error.status,
-          message: error.message,
-          error: error.error,
-          url: error.url
-        });
-        
-        // Fallback: Create locally if backend fails
-        console.log('⚠️ Falling back to local session creation');
+      error: () => {
         this.createSessionLocally(title, duration);
       }
     });
   }
 
   private createSessionLocally(title: string, duration: number): void {
-    // Fallback: Generate random code if backend fails
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let code = '';
     for (let i = 0; i < 6; i++) {
@@ -118,15 +88,13 @@ export class SessionService {
       clearTimeout(this.sessionExpirationTimeout);
     }
     
-    // Emit session ended event with the session code
     if (currentSession) {
       this.sessionEndedSubject.next({ code: currentSession.code, reason });
-      
-      // Call backend to end session if it was created on backend
+
       if (currentSession.id) {
-        this.http.post(`${this.apiUrl}/${currentSession.id}/end`, {}).subscribe({
-          next: () => console.log('✅ Session ended on backend'),
-          error: (err) => console.error('Failed to end session on backend:', err)
+        this.http.post(`${this.apiUrl}/${currentSession.id}/end`, {}, { withCredentials: true }).subscribe({
+          next: () => {},
+          error: () => {}
         });
       }
     }
@@ -134,6 +102,10 @@ export class SessionService {
     this.sessionDataSubject.next(null);
     this.elapsedTimeSubject.next('0m 0s');
     localStorage.removeItem('active_session');
+  }
+
+  getAllActiveSessions(): Observable<SessionHistory[]> {
+    return this.http.get<SessionHistory[]>(`${this.apiUrl}/active`, { withCredentials: true });
   }
 
   getCurrentSession(): SessionData | null {
@@ -144,8 +116,35 @@ export class SessionService {
     return this.sessionDataSubject.value?.code || '';
   }
 
+  getSessionById(id: number): Observable<SessionHistory> {
+    return this.http.get<SessionHistory>(`${this.apiUrl}/${id}`);
+  }
+
   getElapsedTime(): string {
     return this.elapsedTimeSubject.value;
+  }
+
+  getSessionHistory(page: number = 0, size: number = 10): Observable<PagedSessionResponse> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+    return this.http.get<PagedSessionResponse>(`${this.apiUrl}/history/paginated`, { params });
+  }
+
+  filterSessionHistory(filters: any, page: number = 0, size: number = 10): Observable<PagedSessionResponse> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+
+    if (filters.search) params = params.set('search', filters.search);
+    if (filters.title) params = params.set('title', filters.title);
+    if (filters.sessionCode) params = params.set('sessionCode', filters.sessionCode);
+    if (filters.instructorUsername) params = params.set('instructorUsername', filters.instructorUsername);
+    if (filters.isActive !== null && filters.isActive !== undefined) {
+      params = params.set('isActive', filters.isActive.toString());
+    }
+
+    return this.http.get<PagedSessionResponse>(`${this.apiUrl}/history/paginated`, { params });
   }
 
   private startTimer(startTime: Date): void {
@@ -166,21 +165,15 @@ export class SessionService {
       clearTimeout(this.sessionExpirationTimeout);
     }
 
-    // Calculate remaining time in milliseconds
-    const durationMs = sessionData.duration * 60 * 1000; // duration is in minutes
+    const durationMs = sessionData.duration * 60 * 1000;
     const elapsedMs = new Date().getTime() - new Date(sessionData.startTime).getTime();
     const remainingMs = Math.max(0, durationMs - elapsedMs);
 
-    console.log(`⏱️ Session will auto-end in ${Math.floor(remainingMs / 60000)} minutes`);
-
     if (remainingMs > 0) {
       this.sessionExpirationTimeout = setTimeout(() => {
-        console.log('⏰ Session time expired - auto-ending session');
         this.endSession('expired');
       }, remainingMs);
     } else {
-      // Already expired
-      console.log('⏰ Session already expired - ending immediately');
       this.endSession('expired');
     }
   }
@@ -196,13 +189,10 @@ export class SessionService {
         const sessionData: SessionData = JSON.parse(stored);
         sessionData.startTime = new Date(sessionData.startTime);
         
-        // Check if session is already expired
         const durationMs = sessionData.duration * 60 * 1000;
         const elapsedMs = new Date().getTime() - sessionData.startTime.getTime();
         
         if (elapsedMs >= durationMs) {
-          // Session already expired, clear it
-          console.log('⏰ Stored session was expired - clearing');
           localStorage.removeItem('active_session');
           return;
         }

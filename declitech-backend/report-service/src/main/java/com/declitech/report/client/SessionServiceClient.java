@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 @FeignClient(name = "session-service")
 public interface SessionServiceClient {
-
-    @PostMapping("/api/sessions/code/{sessionCode}/report")
-    void notifyReportCreated(@PathVariable("sessionCode") String sessionCode);
+    // No methods needed currently
+    // Participants and reports are now counted dynamically from emotion_reports table
 }

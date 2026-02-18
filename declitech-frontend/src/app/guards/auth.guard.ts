@@ -1,4 +1,3 @@
-// auth.guard.ts
 import { Injectable } from '@angular/core';
 import {
   CanActivate,
@@ -25,7 +24,6 @@ export class AuthGuard implements CanActivate {
       return true;
     }
 
-    // Redirect to login page
     this.router.navigate(['/login'], {
       queryParams: { returnUrl: state.url }
     });

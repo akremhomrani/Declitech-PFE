@@ -1,23 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { NavbarComponent } from '../../shared/navbar/navbar.component';
 import { SidebarComponent } from '../../shared/sidebar/sidebar.component';
-import { HttpClient } from '@angular/common/http';
-
-interface SessionHistory {
-  id: number;
-  sessionCode: string;
-  title: string;
-  instructorId: number;
-  durationHours: number;
-  participantCount: number;
-  reportCount: number;
-  isActive: boolean;
-  isExpired: boolean;
-  createdAt: string;
-  expiresAt: string;
-}
+import { SessionService } from '../../services/session.service';
+import { AuthService } from '../../services/auth.service';
+import { SessionHistory, PagedSessionResponse } from '../../models/session';
 
 @Component({
   selector: 'app-session-history',
@@ -26,83 +15,153 @@ interface SessionHistory {
   templateUrl: './session-history.component.html',
   styleUrls: ['./session-history.component.css']
 })
-export class SessionHistoryComponent implements OnInit {
+export class SessionHistoryComponent implements OnInit, OnDestroy {
   sessions: SessionHistory[] = [];
-  filteredSessions: SessionHistory[] = [];
   isLoading = true;
   searchTerm = '';
   filterStatus: 'all' | 'active' | 'expired' = 'all';
+  isAdmin = false;
+  isInstructor = false;
+  currentUsername: string | null = null;
 
-  private apiUrl = 'http://localhost:8084/api/sessions';
+  currentPage = 1;
+  totalPages = 1;
+  totalElements = 0;
+  pageSize = 10;
+  hasNext = false;
+  hasPrevious = false;
 
-  constructor(private http: HttpClient) {}
+  private searchTimeout: any;
+
+  constructor(
+    private sessionService: SessionService,
+    private authService: AuthService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
+    const role = this.authService.getRole();
+    this.isAdmin = role === 'ADMIN';
+    this.isInstructor = role === 'INSTRUCTOR';
+    this.currentUsername = this.authService.getUsername();
     this.loadSessions();
+  }
+
+  ngOnDestroy(): void {
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+    }
   }
 
   loadSessions(): void {
     this.isLoading = true;
-    this.http.get<SessionHistory[]>(`${this.apiUrl}/history`).subscribe({
-      next: (sessions) => {
-        this.sessions = sessions.sort((a, b) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-        this.applyFilters();
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading sessions:', error);
-        this.isLoading = false;
+    const page = this.currentPage - 1;
+
+    const hasFilters = this.searchTerm || this.filterStatus !== 'all' || this.isInstructor;
+
+    if (hasFilters) {
+      const filters: any = {};
+      if (this.searchTerm) {
+        filters.search = this.searchTerm;
       }
-    });
-  }
+      if (this.filterStatus === 'active') {
+        filters.isActive = true;
+      } else if (this.filterStatus === 'expired') {
+        filters.isActive = false;
+      }
+      if (this.isInstructor && this.currentUsername) {
+        filters.instructorUsername = this.currentUsername;
+      }
 
-  applyFilters(): void {
-    let result = [...this.sessions];
-
-    // Filter by status
-    if (this.filterStatus === 'active') {
-      result = result.filter(s => s.isActive && !s.isExpired);
-    } else if (this.filterStatus === 'expired') {
-      result = result.filter(s => !s.isActive || s.isExpired);
+      this.sessionService.filterSessionHistory(filters, page, this.pageSize).subscribe({
+        next: (response: PagedSessionResponse) => {
+          this.sessions = response.sessions;
+          this.currentPage = response.currentPage + 1;
+          this.totalPages = response.totalPages;
+          this.totalElements = response.totalElements;
+          this.pageSize = response.pageSize;
+          this.hasNext = this.currentPage < this.totalPages;
+          this.hasPrevious = this.currentPage > 1;
+          this.isLoading = false;
+        },
+        error: () => {
+          this.isLoading = false;
+        }
+      });
+    } else {
+      this.sessionService.getSessionHistory(page, this.pageSize).subscribe({
+        next: (response: PagedSessionResponse) => {
+          this.sessions = response.sessions;
+          this.currentPage = response.currentPage + 1;
+          this.totalPages = response.totalPages;
+          this.totalElements = response.totalElements;
+          this.pageSize = response.pageSize;
+          this.hasNext = this.currentPage < this.totalPages;
+          this.hasPrevious = this.currentPage > 1;
+          this.isLoading = false;
+        },
+        error: () => {
+          this.isLoading = false;
+        }
+      });
     }
-
-    // Filter by search term
-    if (this.searchTerm.trim()) {
-      const term = this.searchTerm.toLowerCase();
-      result = result.filter(s => 
-        s.sessionCode.toLowerCase().includes(term) ||
-        s.title.toLowerCase().includes(term)
-      );
-    }
-
-    this.filteredSessions = result;
   }
 
   onSearchChange(): void {
-    this.applyFilters();
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+    }
+    this.searchTimeout = setTimeout(() => {
+      this.currentPage = 1;
+      this.loadSessions();
+    }, 500);
   }
 
   onFilterChange(): void {
-    this.applyFilters();
+    this.currentPage = 1;
+    this.loadSessions();
+  }
+
+  nextPage(): void {
+    if (this.hasNext) {
+      this.currentPage++;
+      this.loadSessions();
+    }
+  }
+
+  previousPage(): void {
+    if (this.hasPrevious) {
+      this.currentPage--;
+      this.loadSessions();
+    }
   }
 
   getStatusClass(session: SessionHistory): string {
-    if (session.isActive && !session.isExpired) {
-      return 'bg-emerald-100 text-emerald-700';
+    switch (session.status) {
+      case 'ACTIVE':
+        return 'bg-emerald-100 text-emerald-700';
+      case 'EXPIRED':
+        return 'bg-red-100 text-red-700';
+      case 'CANCELLED':
+        return 'bg-amber-100 text-amber-700';
+      case 'ENDED':
+      default:
+        return 'bg-slate-100 text-slate-600';
     }
-    return 'bg-slate-100 text-slate-600';
   }
 
   getStatusText(session: SessionHistory): string {
-    if (session.isActive && !session.isExpired) {
-      return 'Active';
+    switch (session.status) {
+      case 'ACTIVE':
+        return 'Active';
+      case 'EXPIRED':
+        return 'Expired';
+      case 'CANCELLED':
+        return 'Cancelled';
+      case 'ENDED':
+      default:
+        return 'Ended';
     }
-    if (session.isExpired) {
-      return 'Expired';
-    }
-    return 'Ended';
   }
 
   formatDate(dateString: string): string {
@@ -132,6 +191,10 @@ export class SessionHistoryComponent implements OnInit {
   }
 
   getActiveCount(): number {
-    return this.sessions.filter(s => s.isActive && !s.isExpired).length;
+    return this.sessions.filter(s => s.status === 'ACTIVE').length;
+  }
+
+  viewSessionDetails(sessionId: number): void {
+    this.router.navigate(['/session/details', sessionId]);
   }
 }
