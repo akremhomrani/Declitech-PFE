@@ -18,51 +18,83 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        createDefaultUser();
+        createDefaultInstructor();
         createAdminUser();
+        createSecondAdminUser();
     }
 
-    private void createDefaultUser() {
-        String defaultEmail = "eya@gmail.com";
-        
-        if (userRepository.findByEmail(defaultEmail).isPresent()) {
+    // =========================
+    // DEFAULT INSTRUCTOR
+    // =========================
+    private void createDefaultInstructor() {
+        String email = "eya@gmail.com";
+
+        if (userRepository.findByEmail(email).isPresent()) {
             return;
         }
 
-        User defaultUser = User.builder()
+        User user = User.builder()
                 .firstName("Eya")
                 .lastName("Ben Attig")
                 .username("eya")
-                .email(defaultEmail)
+                .email(email)
                 .password(passwordEncoder.encode("eya123"))
                 .sexe(Sexe.FEMALE)
-                .phoneNumber("+216 00 000 000")
+                .phoneNumber("+21600000000")
                 .role(Role.INSTRUCTOR)
                 .active(true)
                 .build();
 
-        userRepository.save(defaultUser);
+        userRepository.save(user);
     }
 
+    // =========================
+    // ADMIN 1
+    // =========================
     private void createAdminUser() {
-        String adminEmail = "admin@declitech.com";
+        String email = "admin@declitech.com";
 
-        if (userRepository.findByEmail(adminEmail).isPresent()) {
+        if (userRepository.findByEmail(email).isPresent()) {
             return;
         }
 
-        User adminUser = User.builder()
+        User admin = User.builder()
                 .firstName("Akrem")
                 .lastName("Admin")
                 .username("admin")
-                .email(adminEmail)
+                .email(email)
                 .password(passwordEncoder.encode("akrem123"))
                 .sexe(Sexe.MALE)
-                .phoneNumber("+216 00 000 001")
+                .phoneNumber("+21600000001")
                 .role(Role.ADMIN)
                 .active(true)
                 .build();
 
-        userRepository.save(adminUser);
+        userRepository.save(admin);
+    }
+
+    // =========================
+    // ADMIN 2
+    // =========================
+    private void createSecondAdminUser() {
+        String email = "admin2@declitech.com";
+
+        if (userRepository.findByEmail(email).isPresent()) {
+            return;
+        }
+
+        User admin = User.builder()
+                .firstName("Sami")
+                .lastName("SuperAdmin")
+                .username("admin2")
+                .email(email)
+                .password(passwordEncoder.encode("sami123"))
+                .sexe(Sexe.MALE)
+                .phoneNumber("+21600000002")
+                .role(Role.ADMIN)
+                .active(true)
+                .build();
+
+        userRepository.save(admin);
     }
 }

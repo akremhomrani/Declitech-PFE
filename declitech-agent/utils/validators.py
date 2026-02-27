@@ -34,4 +34,6 @@ def validate_session_code(session_code: str) -> Tuple[bool, str, Optional[Dict[s
         return True, "ok", data
         
     except Exception:
-        return False, "error", None
+        # En cas d'erreur réseau : on considère la session toujours valide
+        # (évite la déconnexion automatique si le serveur est temporairement injoignable)
+        return True, "server_unreachable", None

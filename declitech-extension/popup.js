@@ -168,12 +168,18 @@ function startSessionValidityCheck() {
     try {
       const validation = await httpGet(`/validate/${currentSessionCode}`);
 
+      // Ne déconnecter QUE si la session est explicitement inactive ou expirée
+      // (pas en cas d'erreur réseau ou de réponse ambiguë)
       if (!validation.valid) {
-        setMsg(`Session ended: ${validation.reason}`, false);
-        await autoDisconnect();
+        const reason = validation.reason || "";
+        if (reason === "inactive" || reason === "expired") {
+          setMsg(`Session ended: ${reason}`, false);
+          await autoDisconnect();
+        }
+        // Autres raisons (erreur réseau, not_found, etc.) → on ignore, la session continue
       }
     } catch (e) {
-      
+      // Erreur réseau : on ignore, ne pas couper la caméra
     }
   }, SESSION_CHECK_INTERVAL);
 }
