@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DecliTech - Join Session",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Join session + detect pseudonyme/email from the current page.",
   "action": {
     "default_popup": "popup.html",
@@ -18,7 +18,10 @@
   ],
   "host_permissions": [
     "http://127.0.0.1:8765/*",
+    "http://localhost:8765/*",
+    "http://localhost:8081/*",
     "http://localhost:8083/*",
-    "https://*/*"
+    "https://*/*",
+    "http://*/*"
   ]
 }

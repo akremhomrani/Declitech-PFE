@@ -1,177 +1,231 @@
-const KAFKA_ALERT_URL = "http://localhost:8083/api/alerts/publish";
-const ALLOWED_URL_PREFIX = "https://app.decli.tech/";
-const CHECK_INTERVAL = 2000;
+// =========================================================
+//  DecliTech Extension — Background Service Worker
+//  Utilise chrome.storage.session pour persister l'état entre les
+//  redémarrages du Service Worker (MV3)
+// =========================================================
 
-let activeSessionCode = null;
-let activeParticipantId = null;
-let studentLoginIdentity = null;
-let lastUrl = null;
-let tabSwitchCount = 0;
-let lastAlertTime = 0;
-let isCurrentlyOnWrongSite = false;
+const KAFKA_ALERT_URL = "http://localhost:8081/api/alerts/publish";
 const ALERT_COOLDOWN = 5000;
-
-let lastMouseMoveTime = Date.now();
-let mouseInactivityCheckInterval = null;
-let mouseInactivityAlertSent = false;
-const MOUSE_INACTIVITY_THRESHOLD = 30 * 1000;
+const MOUSE_INACTIVITY_THRESHOLD = 30 * 1000; // 30 secondes
 const MOUSE_CHECK_INTERVAL = 5000;
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === "SESSION_STARTED") {
-        activeSessionCode = message.sessionCode;
-        activeParticipantId = message.participantId;
-        studentLoginIdentity = message.studentLoginIdentity;
-        tabSwitchCount = 0;
-        lastUrl = null;
-        isCurrentlyOnWrongSite = false;
-        lastMouseMoveTime = Date.now();
-        mouseInactivityAlertSent = false;
-        startMonitoring();
-        startMouseInactivityTracking();
-        sendResponse({ success: true });
-    } else if (message.type === "SESSION_STOPPED") {
-        activeSessionCode = null;
-        activeParticipantId = null;
-        studentLoginIdentity = null;
-        tabSwitchCount = 0;
-        lastUrl = null;
-        isCurrentlyOnWrongSite = false;
-        mouseInactivityAlertSent = false;
-        stopMouseInactivityTracking();
-        sendResponse({ success: true });
-    } else if (message.type === "MOUSE_MOVED") {
-        lastMouseMoveTime = Date.now();
-        mouseInactivityAlertSent = false;
-        sendResponse({ success: true });
-    }
-    return true;
-});
+// Sites autorisés — tous les autres déclenchent une alerte TAB_SWITCH
+const ALLOWED_ORIGINS = [
+    "https://app.decli.tech",
+    "http://localhost:4200",
+    "http://localhost:3000"
+];
 
-function startMonitoring() {
-    setInterval(checkActiveTab, CHECK_INTERVAL);
+// Pages système Chrome — ignorées (pas d'alerte)
+const SYSTEM_PREFIXES = [
+    "chrome://", "chrome-extension://", "about:",
+    "file://", "edge://", "moz-extension://"
+];
+
+// Variables en mémoire (perdues si SW dort — valeurs lues depuis storage)
+let lastMouseMoveTime = Date.now();
+let mouseInactivityCheckInterval = null;
+
+// =========================================================
+//  Helpers — stockage session persistant
+// =========================================================
+
+async function getState() {
+    const data = await chrome.storage.session.get([
+        'activeSessionCode', 'activeParticipantId', 'studentLoginIdentity',
+        'lastUrl', 'tabSwitchCount', 'lastAlertTime', 'isCurrentlyOnWrongSite',
+        'mouseInactivityAlertSent', 'lastMouseMoveTime'
+    ]);
+    return {
+        activeSessionCode: data.activeSessionCode || null,
+        activeParticipantId: data.activeParticipantId || null,
+        studentLoginIdentity: data.studentLoginIdentity || null,
+        lastUrl: data.lastUrl || null,
+        tabSwitchCount: data.tabSwitchCount || 0,
+        lastAlertTime: data.lastAlertTime || 0,
+        isCurrentlyOnWrongSite: data.isCurrentlyOnWrongSite || false,
+        mouseInactivityAlertSent: data.mouseInactivityAlertSent || false,
+        lastMouseMoveTime: data.lastMouseMoveTime || Date.now()
+    };
 }
 
-async function checkActiveTab() {
-    if (!activeSessionCode) return;
+async function setState(patch) {
+    await chrome.storage.session.set(patch);
+}
 
-    try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (!tab || !tab.url) return;
+// =========================================================
+//  Messages depuis popup.js / content.js
+// =========================================================
 
-        const currentUrl = tab.url;
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    (async () => {
+        if (message.type === "SESSION_STARTED") {
+            await setState({
+                activeSessionCode: message.sessionCode,
+                activeParticipantId: message.participantId,
+                studentLoginIdentity: message.studentLoginIdentity,
+                lastUrl: null,
+                tabSwitchCount: 0,
+                lastAlertTime: 0,
+                isCurrentlyOnWrongSite: false,
+                mouseInactivityAlertSent: false,
+                lastMouseMoveTime: Date.now()
+            });
+            lastMouseMoveTime = Date.now();
+            startMouseInactivityTracking();
+            // Vérification initiale
+            await checkUrl();
+            sendResponse({ success: true });
 
-        if (currentUrl !== lastUrl) {
-            lastUrl = currentUrl;
+        } else if (message.type === "SESSION_STOPPED") {
+            await setState({
+                activeSessionCode: null,
+                activeParticipantId: null,
+                studentLoginIdentity: null,
+                lastUrl: null,
+                tabSwitchCount: 0,
+                lastAlertTime: 0,
+                isCurrentlyOnWrongSite: false,
+                mouseInactivityAlertSent: false
+            });
+            stopMouseInactivityTracking();
+            sendResponse({ success: true });
 
-            const urlIsAllowed = isUrlAllowed(currentUrl);
+        } else if (message.type === "MOUSE_MOVED") {
+            const state = await getState();
+            const wasSentBefore = state.mouseInactivityAlertSent;
+            lastMouseMoveTime = Date.now();
+            await setState({ lastMouseMoveTime, mouseInactivityAlertSent: false });
 
-            if (!urlIsAllowed && !isCurrentlyOnWrongSite) {
-                isCurrentlyOnWrongSite = true;
-                await sendTabSwitchAlert(currentUrl);
+            // Si une alerte d'inactivité était active → la résoudre (effacer badge BLOCKED)
+            if (wasSentBefore && state.activeSessionCode) {
+                await postAlert({
+                    participantId: state.activeParticipantId,
+                    sessionId: state.activeSessionCode,
+                    studentLoginIdentity: state.studentLoginIdentity,
+                    alertType: "ALERT_RESOLVED",
+                    severity: "LOW",
+                    message: "Activité souris détectée — alerte d'inactivité résolue",
+                    timestamp: new Date().toISOString(),
+                    metadata: { resolved: true, resolvedType: "MOUSE_INACTIVITY" }
+                });
             }
-            else if (urlIsAllowed && isCurrentlyOnWrongSite) {
-                isCurrentlyOnWrongSite = false;
-                tabSwitchCount = 0;
-                await sendAlertResolved(currentUrl);
+            sendResponse({ success: true });
+        }
+    })();
+    return true; // async response
+});
+
+// =========================================================
+//  Détection changement d'onglet — événements natifs Chrome
+// =========================================================
+
+// Déclenché immédiatement quand l'utilisateur clique sur un autre onglet
+chrome.tabs.onActivated.addListener((activeInfo) => {
+    chrome.tabs.get(activeInfo.tabId, (tab) => {
+        if (chrome.runtime.lastError || !tab || !tab.url) return;
+        handleUrlChange(tab.url);
+    });
+});
+
+// Déclenché quand la navigation est complète dans un onglet
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.status === 'complete' && tab.url) {
+        handleUrlChange(tab.url);
+    }
+});
+
+// Vérification initiale de tous les onglets actifs
+async function checkUrl() {
+    const state = await getState();
+    if (!state.activeSessionCode) return;
+    try {
+        const tabs = await chrome.tabs.query({ active: true });
+        for (const tab of tabs) {
+            if (tab.url && !isUrlAllowed(tab.url)) {
+                await handleUrlChange(tab.url);
+                return;
             }
         }
-    } catch (error) {
-        
+    } catch (e) { }
+}
+
+// Logique centrale de décision alerte
+async function handleUrlChange(url) {
+    if (!url) return;
+
+    // Pages système → ignorer
+    if (SYSTEM_PREFIXES.some(p => url.startsWith(p))) return;
+
+    const state = await getState();
+    if (!state.activeSessionCode) return; // pas de session active
+    if (url === state.lastUrl) return;    // même URL → ignorer
+
+    await setState({ lastUrl: url });
+
+    const allowed = isUrlAllowed(url);
+
+    if (!allowed && !state.isCurrentlyOnWrongSite) {
+        await setState({ isCurrentlyOnWrongSite: true });
+        await sendTabSwitchAlert(url, state);
+
+    } else if (allowed && state.isCurrentlyOnWrongSite) {
+        await setState({ isCurrentlyOnWrongSite: false, tabSwitchCount: 0 });
+        await sendAlertResolved(url, state);
     }
 }
 
 function isUrlAllowed(url) {
-    return url.startsWith(ALLOWED_URL_PREFIX);
+    if (!url) return true;
+    if (SYSTEM_PREFIXES.some(p => url.startsWith(p))) return true;
+    return ALLOWED_ORIGINS.some(origin => url.startsWith(origin));
 }
 
-async function sendTabSwitchAlert(currentUrl) {
+// =========================================================
+//  Envoi des alertes
+// =========================================================
+
+async function sendTabSwitchAlert(currentUrl, state) {
     const now = Date.now();
+    if (now - state.lastAlertTime < ALERT_COOLDOWN) return;
 
-    if (now - lastAlertTime < ALERT_COOLDOWN) {
-        return;
-    }
+    const newCount = (state.tabSwitchCount || 0) + 1;
+    await setState({ lastAlertTime: now, tabSwitchCount: newCount });
 
-    lastAlertTime = now;
-    tabSwitchCount++;
+    const alertType = newCount >= 5 ? "MULTIPLE_SWITCHES" : "TAB_SWITCH";
+    const severity = newCount >= 5 ? "HIGH" : newCount >= 3 ? "MEDIUM" : "LOW";
 
-    const alertType = tabSwitchCount >= 5 ? "MULTIPLE_SWITCHES" : "TAB_SWITCH";
-    const severity = tabSwitchCount >= 5 ? "HIGH" : tabSwitchCount >= 3 ? "MEDIUM" : "LOW";
-
-    const alert = {
-        participantId: activeParticipantId,
-        sessionId: activeSessionCode,
-        studentLoginIdentity: studentLoginIdentity,
-        alertType: alertType,
-        severity: severity,
-        message: `Student navigated to: ${currentUrl}`,
+    await postAlert({
+        participantId: state.activeParticipantId,
+        sessionId: state.activeSessionCode,
+        studentLoginIdentity: state.studentLoginIdentity,
+        alertType,
+        severity,
+        message: `Étudiant a navigué vers : ${currentUrl}`,
         timestamp: new Date().toISOString(),
-        metadata: {
-            switchCount: tabSwitchCount,
-            currentUrl: currentUrl,
-            allowedUrlPrefix: ALLOWED_URL_PREFIX
-        }
-    };
-
-    try {
-        const response = await fetch(KAFKA_ALERT_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(alert)
-        });
-
-        if (response.ok) {
-            
-        } else {
-            
-        }
-    } catch (error) {
-        
-    }
+        metadata: { switchCount: newCount, currentUrl, allowedOrigins: ALLOWED_ORIGINS }
+    });
 }
 
-async function sendAlertResolved(currentUrl) {
-    const alert = {
-        participantId: activeParticipantId,
-        sessionId: activeSessionCode,
-        studentLoginIdentity: studentLoginIdentity,
+async function sendAlertResolved(currentUrl, state) {
+    await postAlert({
+        participantId: state.activeParticipantId,
+        sessionId: state.activeSessionCode,
+        studentLoginIdentity: state.studentLoginIdentity,
         alertType: "ALERT_RESOLVED",
         severity: "LOW",
-        message: `Student returned to allowed site: ${currentUrl}`,
+        message: `Étudiant retourné sur le site autorisé : ${currentUrl}`,
         timestamp: new Date().toISOString(),
-        metadata: {
-            currentUrl: currentUrl,
-            allowedUrlPrefix: ALLOWED_URL_PREFIX,
-            resolved: true
-        }
-    };
-
-    try {
-        const response = await fetch(KAFKA_ALERT_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(alert)
-        });
-
-        if (response.ok) {
-            
-        } else {
-            
-        }
-    } catch (error) {
-        
-    }
+        metadata: { currentUrl, resolved: true }
+    });
 }
 
-function startMouseInactivityTracking() {
-    if (mouseInactivityCheckInterval) {
-        clearInterval(mouseInactivityCheckInterval);
-    }
+// =========================================================
+//  Inactivité souris
+// =========================================================
 
+function startMouseInactivityTracking() {
+    if (mouseInactivityCheckInterval) clearInterval(mouseInactivityCheckInterval);
     mouseInactivityCheckInterval = setInterval(checkMouseInactivity, MOUSE_CHECK_INTERVAL);
 }
 
@@ -183,48 +237,39 @@ function stopMouseInactivityTracking() {
 }
 
 async function checkMouseInactivity() {
-    if (!activeSessionCode || mouseInactivityAlertSent) return;
+    const state = await getState();
+    if (!state.activeSessionCode || state.mouseInactivityAlertSent) return;
 
-    const now = Date.now();
-    const timeSinceLastMove = now - lastMouseMoveTime;
+    const storedLastMove = state.lastMouseMoveTime || lastMouseMoveTime;
+    const timeSinceLastMove = Date.now() - storedLastMove;
 
     if (timeSinceLastMove >= MOUSE_INACTIVITY_THRESHOLD) {
-        await sendMouseInactivityAlert();
+        await setState({ mouseInactivityAlertSent: true });
+        await postAlert({
+            participantId: state.activeParticipantId,
+            sessionId: state.activeSessionCode,
+            studentLoginIdentity: state.studentLoginIdentity,
+            alertType: "MOUSE_INACTIVITY",
+            severity: "MEDIUM",
+            message: `Aucun mouvement de souris depuis ${Math.round(timeSinceLastMove / 1000)}s`,
+            timestamp: new Date().toISOString(),
+            metadata: { inactivityDurationMs: timeSinceLastMove }
+        });
     }
 }
 
-async function sendMouseInactivityAlert() {
-    mouseInactivityAlertSent = true;
+// =========================================================
+//  Helper HTTP
+// =========================================================
 
-    const alert = {
-        participantId: activeParticipantId,
-        sessionId: activeSessionCode,
-        studentLoginIdentity: studentLoginIdentity,
-        alertType: "MOUSE_INACTIVITY",
-        severity: "MEDIUM",
-        message: `Enfant bloqué - Aucun mouvement de souris détecté pendant 5 minutes`,
-        timestamp: new Date().toISOString(),
-        metadata: {
-            inactivityDurationMs: Date.now() - lastMouseMoveTime,
-            lastMouseMoveTime: new Date(lastMouseMoveTime).toISOString()
-        }
-    };
-
+async function postAlert(alertPayload) {
     try {
-        const response = await fetch(KAFKA_ALERT_URL, {
+        await fetch(KAFKA_ALERT_URL, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(alert)
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(alertPayload)
         });
-
-        if (response.ok) {
-            
-        } else {
-            
-        }
-    } catch (error) {
-        
+    } catch (e) {
+        // Réseau indisponible — ignorer silencieusement
     }
 }

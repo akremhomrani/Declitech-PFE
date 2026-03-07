@@ -40,7 +40,7 @@ public class AlertKafkaConsumer {
         }
     }
 
-    private void broadcastToSession(String sessionId, AlertEvent alertEvent) {
+    public void broadcastToSession(String sessionId, AlertEvent alertEvent) {
         CopyOnWriteArrayList<SseEmitter> emitters = sessionEmitters.get(sessionId);
         
         if (emitters == null || emitters.isEmpty()) {

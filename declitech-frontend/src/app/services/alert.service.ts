@@ -21,7 +21,8 @@ export class AlertService {
     connectToSession(sessionCode: string): void {
         this.disconnect();
 
-        const url = `${environment.apiUrl}/api/alerts/stream?sessionId=${sessionCode}`;
+        const url = `${environment.alertsUrl}/api/alerts/stream?sessionId=${sessionCode}`;
+        console.log('[AlertService] Connexion SSE :', url);
 
         this.eventSource = new EventSource(url);
 
@@ -33,7 +34,13 @@ export class AlertService {
             const alert: Alert = JSON.parse(event.data);
 
             if (alert.alertType === 'ALERT_RESOLVED') {
+                // Effacer TOUTES les alertes de ce participant
+                // (tab switch résolu ET inactivité souris résolue)
                 this.clearAlertsForParticipant(alert.participantId);
+                // Aussi par studentLoginIdentity
+                if (alert.studentLoginIdentity) {
+                    this.clearAlertsForParticipant(alert.studentLoginIdentity);
+                }
             } else {
                 this.addRecentAlert(alert);
             }
@@ -41,7 +48,7 @@ export class AlertService {
             this.alertSubject.next(alert);
         });
 
-        this.eventSource.addEventListener('heartbeat', () => {});
+        this.eventSource.addEventListener('heartbeat', () => { });
 
         this.eventSource.onerror = () => {
             this.connectionStatusSubject.next(false);
@@ -65,12 +72,19 @@ export class AlertService {
             this.identityToParticipantId.set(alert.studentLoginIdentity, key);
         }
 
+        // Stocker par participantId
         if (!this.recentAlerts.has(key)) {
             this.recentAlerts.set(key, []);
         }
+        this.recentAlerts.get(key)!.push(alert);
 
-        const alerts = this.recentAlerts.get(key)!;
-        alerts.push(alert);
+        // Stocker aussi par studentLoginIdentity pour matching robuste
+        if (alert.studentLoginIdentity && alert.studentLoginIdentity !== key) {
+            if (!this.recentAlerts.has(alert.studentLoginIdentity)) {
+                this.recentAlerts.set(alert.studentLoginIdentity, []);
+            }
+            this.recentAlerts.get(alert.studentLoginIdentity)!.push(alert);
+        }
     }
 
     getRecentAlertsForParticipant(participantId: string): Alert[] {
@@ -109,11 +123,39 @@ export class AlertService {
         return this.getRecentAlertsForParticipant(participantId).length;
     }
 
+    // Efface TOUTES les alertes d'un participant (fin de session)
     clearAlertsForParticipant(participantId: string): void {
         this.recentAlerts.delete(participantId);
         for (const [identity, pid] of this.identityToParticipantId) {
             if (pid === participantId) {
                 this.identityToParticipantId.delete(identity);
+            }
+        }
+    }
+
+    // Efface UNIQUEMENT les alertes liées aux changements d'onglet (ALERT_RESOLVED)
+    // Garde les alertes MOUSE_INACTIVITY → badge BLOCKED persiste
+    clearTabSwitchAlertsForParticipant(participantId: string): void {
+        const tabSwitchTypes = ['TAB_SWITCH', 'MULTIPLE_SWITCHES', 'OFF_PLATFORM'];
+
+        const clearByKey = (key: string) => {
+            const alerts = this.recentAlerts.get(key);
+            if (alerts) {
+                const kept = alerts.filter(a => !tabSwitchTypes.includes(a.alertType));
+                if (kept.length > 0) {
+                    this.recentAlerts.set(key, kept);
+                } else {
+                    this.recentAlerts.delete(key);
+                }
+            }
+        };
+
+        clearByKey(participantId);
+
+        // Aussi par identity (double stockage)
+        for (const [identity, pid] of this.identityToParticipantId) {
+            if (pid === participantId) {
+                clearByKey(identity);
             }
         }
     }

@@ -34,6 +34,13 @@ public class GatewayFilter implements Filter {
             return;
         }
 
+        // Allow alert endpoints — called by browser extension (cannot add custom headers)
+        // and by EventSource (SSE cannot send headers)
+        if (requestURI.startsWith("/api/alerts/")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         // If gateway header is not required, allow all requests
         if (!requireGatewayHeader) {
             chain.doFilter(request, response);

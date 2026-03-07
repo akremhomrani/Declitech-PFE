@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EmotionService } from '../../services/emotion.service';
 import { SessionService } from '../../services/session.service';
@@ -35,7 +35,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   constructor(
     private emotionService: EmotionService,
     private sessionService: SessionService,
-    private alertService: AlertService
+    private alertService: AlertService,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit() {
@@ -80,7 +81,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.students = reports;
         this.calculateStatistics();
       },
-      error: () => {}
+      error: () => { }
     });
   }
 
@@ -99,17 +100,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
           this.students = reports;
           this.calculateStatistics();
         },
-        error: () => {}
+        error: () => { }
       });
   }
 
   subscribeToAlerts() {
     this.alertSubscription = this.alertService.alerts$.subscribe({
       next: (alert: Alert) => {
+        console.log('[Dashboard] Alerte reçue :', alert.alertType, '| participant:', alert.participantId);
+        // Créer une nouvelle référence de tableau pour déclencher la détection de changement Angular
         this.students = [...this.students];
         this.calculateStatistics();
+        // Forcer la détection de changement (SSE hors zone Angular)
+        this.cdr.detectChanges();
       },
-      error: () => {}
+      error: () => { }
     });
   }
 
