@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DecliTech</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="brand-name">DecliTech</div>
+      </div>
+
+      <div class="header-actions">
+        <button class="icon-btn" id="btnSettings" title="Settings" aria-label="Settings">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path fill="currentColor" d="M19.14,12.94a7.43,7.43,0,0,0,.05-.94,7.43,7.43,0,0,0-.05-.94l2.11-1.65a.5.5,0,0,0,.12-.63l-2-3.46a.5.5,0,0,0-.6-.22l-2.49,1a7.28,7.28,0,0,0-1.63-.94l-.38-2.65A.5.5,0,0,0,11.8,1H8.2a.5.5,0,0,0-.49.42L7.33,4.07a7.28,7.28,0,0,0-1.63.94l-2.49-1a.5.5,0,0,0-.6.22l-2,3.46a.5.5,0,0,0,.12.63L2.86,11.06a7.43,7.43,0,0,0-.05.94,7.43,7.43,0,0,0,.05.94L.75,14.59a.5.5,0,0,0-.12.63l2,3.46a.5.5,0,0,0,.6.22l2.49-1a7.28,7.28,0,0,0,1.63.94l.38,2.65A.5.5,0,0,0,8.2,23h3.6a.5.5,0,0,0,.49-.42l.38-2.65a7.28,7.28,0,0,0,1.63-.94l2.49,1a.5.5,0,0,0,.6-.22l2-3.46a.5.5,0,0,0-.12-.63ZM10,15.5A3.5,3.5,0,1,1,13.5,12,3.5,3.5,0,0,1,10,15.5Z"/>
+          </svg>
+        </button>
+        <div class="avatar" title="Student"></div>
+      </div>
+    </div>
+
+    <div class="content">
+      <h1>Enter Session Code to Join</h1>
+      <p class="subtitle">Ask your instructor for the 6-character code</p>
+
+      <div class="code-row" aria-label="Session code">
+        <input class="code-box" maxlength="1" />
+        <input class="code-box" maxlength="1" />
+        <input class="code-box" maxlength="1" />
+        <input class="code-box" maxlength="1" />
+        <input class="code-box" maxlength="1" />
+        <input class="code-box" maxlength="1" />
+      </div>
+
+      <button class="primary-btn" id="btnJoin">
+        Join Session <span class="arrow">→</span>
+      </button>
+
+      <div class="session-active" id="sessionActive" style="display: none;">
+        <div class="pulse-dot"></div>
+        <span>Session Active - Monitoring...</span>
+      </div>
+
+      <p class="terms">
+        By joining, you agree to the monitoring terms<br/>
+        set by your institution.
+      </p>
+
+      <div class="detected">
+        <div class="det-title">Detected identity (username/email)</div>
+        <div id="detIdentity" class="det-value">—</div>
+        <div id="detHint" class="det-hint">Open the login page and type your username/email.</div>
+        <button class="small-btn" id="btnClear">Clear</button>
+      </div>
+
+      <div class="message" id="message"></div>
+    </div>
+
+    <div class="footer">
+      <div class="left">
+        <div class="shield" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path fill="currentColor" d="M12 2l8 4v6c0 5-3.4 9.4-8 10-4.6-.6-8-5-8-10V6l8-4z"/>
+          </svg>
+        </div>
+        <div class="agent-text">
+          <span class="muted">Agent Status:</span>
+          <span id="agentStatus" class="status-value">Checking...</span>
+        </div>
+      </div>
+
+      <div class="right">
+        <span class="dot" id="liveDot"></span>
+        <span id="liveText" class="live-text">LIVE</span>
+      </div>
+    </div>
+
+    <div class="drawer" id="drawer">
+      <div class="drawer-head">
+        <div class="drawer-title">Settings</div>
+        <button class="icon-btn" id="btnCloseDrawer">✕</button>
+      </div>
+      <div class="drawer-body">
+        <label class="field-label">Student ID</label>
+        <input id="studentId" class="field" placeholder="ex: E12" />
+
+        <label class="field-label">Device ID</label>
+        <input id="deviceId" class="field" placeholder="ex: PC-001" />
+
+        <label class="field-label">Duration (min)</label>
+        <input id="durationMin" class="field" type="number" min="1" max="240" value="30" />
+
+        <label class="field-label">Interval (min)</label>
+        <input id="intervalMin" class="field" type="number" min="1" max="60" value="15" />
+
+        <button class="secondary-btn" id="btnSaveSettings">Save</button>
+      </div>
+    </div>
+
+    <div class="backdrop" id="backdrop"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

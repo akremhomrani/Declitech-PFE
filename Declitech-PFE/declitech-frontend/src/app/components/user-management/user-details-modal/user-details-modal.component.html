@@ -1,0 +1,113 @@
+<div *ngIf="isOpen" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" (click)="close()">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
+    <div class="sticky top-0 bg-white border-b border-gray-200 px-8 py-6 rounded-t-2xl">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900">User Details</h2>
+          <p class="text-gray-500 mt-1">View comprehensive user information</p>
+        </div>
+        <button (click)="close()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+          <span class="material-symbols-outlined text-gray-600 text-2xl">close</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="px-8 py-6">
+      <div *ngIf="errorMessage" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+        <span class="material-symbols-outlined text-red-600">error</span>
+        <p class="text-red-700 text-sm font-medium">{{ errorMessage }}</p>
+      </div>
+
+      <div *ngIf="isLoading" class="text-center py-12">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+        <p class="text-gray-500 mt-4">Loading user details...</p>
+      </div>
+
+      <div *ngIf="!isLoading && user" class="space-y-6">
+        <div class="flex items-center gap-4 p-6 bg-gradient-to-br from-primary/10 to-cyan-50 rounded-xl">
+          <div class="size-20 rounded-full bg-gradient-to-br from-primary to-cyan-600 flex items-center justify-center text-white font-bold text-2xl flex-shrink-0">
+            {{ getInitials(user.firstName, user.lastName) }}
+          </div>
+          <div class="flex-1">
+            <h3 class="text-2xl font-bold text-gray-900">{{ user.firstName }} {{ user.lastName }}</h3>
+            <p class="text-gray-600 mt-1">&#64;{{ user.username }}</p>
+            <div class="flex items-center gap-2 mt-2">
+              <span [ngClass]="getRoleBadgeClass(user.role)">{{ user.role }}</span>
+              <span *ngIf="user.active" class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                Active
+              </span>
+              <span *ngIf="!user.active" class="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                Inactive
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">person</span>
+            Personal Information
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-gray-50 rounded-lg p-4">
+              <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">First Name</label>
+              <p class="text-gray-900 font-semibold text-lg">{{ user.firstName }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+              <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Last Name</label>
+              <p class="text-gray-900 font-semibold text-lg">{{ user.lastName }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+              <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Gender</label>
+              <p class="text-gray-900 font-semibold text-lg">{{ user.sexe }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+              <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Phone Number</label>
+              <p class="text-gray-900 font-semibold text-lg">{{ formatPhoneNumber(user.phoneNumber) }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">account_circle</span>
+            Account Information
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-gray-50 rounded-lg p-4">
+              <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Username</label>
+              <p class="text-gray-900 font-semibold text-lg">{{ user.username }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+              <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Email Address</label>
+              <p class="text-gray-900 font-semibold text-lg">{{ user.email }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+              <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Role</label>
+              <span [ngClass]="getRoleBadgeClass(user.role)">{{ user.role }}</span>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+              <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Account Status</label>
+              <span *ngIf="user.active" class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                Active
+              </span>
+              <span *ngIf="!user.active" class="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                Inactive
+              </span>
+            </div>
+          </div>
+        </div>
+
+ 
+      </div>
+    </div>
+
+    <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-8 py-4 rounded-b-2xl">
+      <div class="flex items-center justify-end">
+        <button (click)="close()" class="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

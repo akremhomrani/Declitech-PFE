@@ -1,0 +1,202 @@
+<div class="min-h-screen flex flex-col">
+  <app-navbar></app-navbar>
+
+  <div class="flex flex-1 overflow-hidden">
+    <app-sidebar></app-sidebar>
+
+    <main *ngIf="isAdmin; else notAuthorized" class="flex-1 flex flex-col overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8 bg-background-light">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Module Management</h1>
+          <p class="text-gray-500 text-sm sm:text-base mt-1">Manage and organize training modules</p>
+        </div>
+        <button (click)="openCreateModal()" class="bg-primary hover:bg-primary/90 text-white px-4 sm:px-6 py-2.5 rounded-lg font-semibold shadow-sm hover:shadow-md transition-all flex items-center gap-2 justify-center">
+          <span class="material-symbols-outlined text-lg sm:hidden">add</span>
+          <span class="hidden sm:inline">Create New Module</span>
+          <span class="sm:hidden">New Module</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-500 text-sm font-medium">Total Modules</p>
+              <p class="text-3xl font-bold text-gray-900 mt-2">{{ totalItems }}</p>
+            </div>
+            <div class="bg-primary/10 p-3 rounded-lg">
+              <span class="material-symbols-outlined text-primary text-3xl">school</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-500 text-sm font-medium">Current Page</p>
+              <p class="text-3xl font-bold text-gray-900 mt-2">{{ modules.length }}</p>
+            </div>
+            <div class="bg-blue-100 p-3 rounded-lg">
+              <span class="material-symbols-outlined text-blue-600 text-3xl">inventory_2</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-500 text-sm font-medium">Total Pages</p>
+              <p class="text-3xl font-bold text-gray-900 mt-2">{{ totalPages }}</p>
+            </div>
+            <div class="bg-purple-100 p-3 rounded-lg">
+              <span class="material-symbols-outlined text-purple-600 text-3xl">pages</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div class="p-4 sm:p-6 border-b border-gray-200">
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+            <div class="flex-1 relative">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+              <input 
+                type="text" 
+                [(ngModel)]="searchTerm"
+                (input)="onSearch()"
+                placeholder="Search modules..." 
+                class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm sm:text-base"
+              />
+            </div>
+            <button class="border border-gray-300 px-4 py-2.5 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-gray-600">filter_list</span>
+              <span class="text-gray-700 font-medium">Filters</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[700px]">
+            <thead>
+              <tr class="bg-gray-50 border-b border-gray-200">
+                <th class="text-left py-3 sm:py-4 px-4 sm:px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">Title</th>
+                <th class="text-left py-3 sm:py-4 px-4 sm:px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">Description</th>
+                <th class="text-left py-3 sm:py-4 px-4 sm:px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">Linked Sites</th>
+                <th class="text-left py-3 sm:py-4 px-4 sm:px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr *ngFor="let module of modules" class="hover:bg-gray-50 transition-colors">
+                <td class="py-3 sm:py-4 px-4 sm:px-6">
+                  <div class="flex items-center gap-3">
+                    <div class="size-9 sm:size-10 rounded-full bg-gradient-to-br from-primary to-cyan-600 flex items-center justify-center text-white font-bold text-sm">
+                      {{ module.title.charAt(0).toUpperCase() }}
+                    </div>
+                    <div>
+                      <p class="font-semibold text-gray-900 text-sm sm:text-base">{{ module.title }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-3 sm:py-4 px-4 sm:px-6">
+                  <p class="text-gray-700 text-sm sm:text-base truncate max-w-[300px]">{{ module.description || 'No description' }}</p>
+                </td>
+                <td class="py-3 sm:py-4 px-4 sm:px-6">
+                  <div class="flex flex-wrap gap-1">
+                    <span *ngFor="let site of module.sites" [ngClass]="getSiteBadgeClass(module.id, site)">
+                      {{ site }}
+                    </span>
+                  </div>
+                </td>
+            
+                <td class="py-3 sm:py-4 px-4 sm:px-6">
+                  <div class="flex items-center gap-1 sm:gap-2">
+                    <button (click)="viewModuleSessions(module.id)" class="p-2 hover:bg-gray-100 rounded-lg transition-colors group" title="View Sessions">
+                      <span class="material-symbols-outlined text-blue-600 text-xl group-hover:scale-110 transition-transform">assignment</span>
+                    </button>
+                    <button (click)="openEditModal(module.id)" class="p-2 hover:bg-gray-100 rounded-lg transition-colors group" title="Edit">
+                      <span class="material-symbols-outlined text-gray-700 text-xl group-hover:scale-110 transition-transform">edit</span>
+                    </button>
+                    <button (click)="deleteModule(module.id)" class="p-2 hover:bg-gray-100 rounded-lg transition-colors group" title="Delete">
+                      <span class="material-symbols-outlined text-gray-700 text-xl group-hover:scale-110 transition-transform">delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div *ngIf="modules.length === 0" class="p-12 text-center">
+          <span class="material-symbols-outlined text-gray-300 text-6xl">school</span>
+          <p class="text-gray-500 mt-4">No modules found</p>
+        </div>
+
+        <!-- Pagination -->
+        <div *ngIf="totalPages > 0" class="px-4 sm:px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="text-sm text-gray-700">
+            Showing <span class="font-semibold">{{ currentPage * pageSize + 1 }}</span> to 
+            <span class="font-semibold">{{ Math.min((currentPage + 1) * pageSize, totalItems) }}</span> of 
+            <span class="font-semibold">{{ totalItems }}</span> results
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button 
+              (click)="previousPage()" 
+              [disabled]="!hasPrevious"
+              [class.opacity-50]="!hasPrevious"
+              [class.cursor-not-allowed]="!hasPrevious"
+              class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:hover:bg-white">
+              <span class="material-symbols-outlined text-sm">chevron_left</span>
+            </button>
+
+            <div class="flex gap-1">
+              <button 
+                *ngFor="let page of pageArray.slice(Math.max(0, currentPage - 2), Math.min(totalPages, currentPage + 3))"
+                (click)="goToPage(page)"
+                [class.bg-primary]="page === currentPage"
+                [class.text-white]="page === currentPage"
+                [class.border-primary]="page === currentPage"
+                class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
+                {{ page + 1 }}
+              </button>
+            </div>
+
+            <button 
+              (click)="nextPage()" 
+              [disabled]="!hasNext"
+              [class.opacity-50]="!hasNext"
+              [class.cursor-not-allowed]="!hasNext"
+              class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:hover:bg-white">
+              <span class="material-symbols-outlined text-sm">chevron_right</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <ng-template #notAuthorized>
+      <main class="flex-1 flex items-center justify-center p-8 bg-background-light">
+        <div class="text-center">
+          <span class="material-symbols-outlined text-gray-300 text-8xl">block</span>
+          <h2 class="text-2xl font-bold text-gray-900 mt-4">Access Denied</h2>
+          <p class="text-gray-500 mt-2">You don't have permission to access this page.</p>
+        </div>
+      </main>
+    </ng-template>
+  </div>
+
+  <app-module-form-modal
+    [isOpen]="isModalOpen"
+    [moduleId]="selectedModuleId"
+    [mode]="modalMode"
+    (closeModal)="closeModal()"
+    (moduleSaved)="onModuleSaved()"
+  />
+
+  <app-module-sessions-modal
+    [isOpen]="isSessionsModalOpen"
+    [sessions]="selectedModuleSessions"
+    [moduleTitle]="selectedModuleTitle"
+    (closeModal)="closeSessionsModal()"
+  />
+</div>

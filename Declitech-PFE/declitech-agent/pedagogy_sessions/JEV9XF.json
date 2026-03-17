@@ -1,0 +1,304 @@
+{
+  "sessionId": "JEV9XF",
+  "students": {
+    "eyabenattig2": {
+      "studentId": "eyabenattig2",
+      "site": "codecombat.com",
+      "startedAt": "2026-03-17T01:48:17.566463+00:00",
+      "summary": {
+        "levelsCompleted": 1,
+        "currentLevel": "10A. WALK IT OFF A",
+        "totalEvents": 27
+      },
+      "events": [
+        {
+          "timestamp": "2026-03-17T01:48:14.413Z",
+          "levelName": "10. PROMENADE",
+          "levelSlug": "walk-it-off",
+          "phase": "IN_PROGRESS",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève avance progressivement dans sa quête d'épanouissement à travers le \"10. PROMENADE\". Continuez à soutenir son développement personnel !",
+          "score": 0
+        },
+        {
+          "timestamp": "2026-03-17T01:48:44.409Z",
+          "levelName": "10. PROMENADE",
+          "levelSlug": "walk-it-off",
+          "phase": "IN_PROGRESS",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève avance progressivement dans sa marche avec confiance, sans écrire actuellement sur le bloc \"10 PROMENADE\". Continuez à soutenir son développement physique et psychologique !",
+          "score": 0
+        },
+        {
+          "timestamp": "2026-03-17T01:48:59.446Z",
+          "levelName": "CodeCombat",
+          "levelSlug": "the-raft",
+          "phase": "IN_PROGRESS",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève montre des progrès notables en écrivant du code dans CodeCombat malgré un nombre limité d'écritures, c'est une belle ambition à poursuivre !",
+          "score": 0
+        },
+        {
+          "timestamp": "2026-03-17T01:48:58.946Z",
+          "levelName": "CodeCombat",
+          "levelSlug": "the-raft",
+          "phase": "NEW_LEVEL",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève progresse avec entrain dans CodeCombat, excellenciellement naviguant à travers les défis du jeu!",
+          "score": 0
+        },
+        {
+          "timestamp": "2026-03-17T01:48:59.196Z",
+          "levelName": "CodeCombat",
+          "levelSlug": "the-raft",
+          "phase": "IN_PROGRESS",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "📝 L'élève progresse et ajoute du code.",
+          "score": 0
+        },
+        {
+          "timestamp": "2026-03-17T01:49:02.714Z",
+          "levelName": "L'X",
+          "levelSlug": "gem-square",
+          "phase": "NEW_LEVEL",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "⬆️ L'élève passe au niveau suivant — belle progression !",
+          "score": 0
+        },
+        {
+          "timestamp": "2026-03-17T01:49:04.452Z",
+          "levelName": "CodeCombat",
+          "levelSlug": "shiny",
+          "phase": "NEW_LEVEL",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "⬆️ L'élève passe au niveau suivant — belle progression !",
+          "score": 0
+        },
+        {
+          "timestamp": "2026-03-17T01:50:14.411Z",
+          "levelName": "10. PROMENADE",
+          "levelSlug": "walk-it-off",
+          "phase": "IN_PROGRESS",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève a fait preuve d'une grande curiosité lors de notre dernière promenade, montrant un intérêt constant pour les découvertes environnementales.",
+          "score": 0
+        },
+        {
+          "timestamp": "2026-03-17T01:49:16.956Z",
+          "levelName": "Progression: 100%",
+          "levelSlug": "overview",
+          "phase": "STALLED",
+          "blocksCount": 1,
+          "studentWork": "Progression: 100%",
+          "completed": true,
+          "aiPhrase": "L'élève a atteint le 100% mais reste captivé par ce progrès impressionnant, merci pour l'encouragement continu!",
+          "score": 100
+        },
+        {
+          "timestamp": "2026-03-17T01:56:33.368Z",
+          "levelName": "10. PROMENADE",
+          "levelSlug": "walk-it-off",
+          "phase": "STARTED",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève a débuté la pérennée \"10. Promenade\", sans bloque, avec optimisme.",
+          "score": 10
+        },
+        {
+          "timestamp": "2026-03-17T01:51:39.364Z",
+          "levelName": "10. PROMENADE",
+          "levelSlug": "walk-it-off",
+          "phase": "STARTED",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève a débuté la pédagogie en mouvement, niveaux 10 et au-delà, sans bloqueurs!",
+          "score": 10
+        },
+        {
+          "timestamp": "2026-03-17T01:51:59.369Z",
+          "levelName": "10. PROMENADE",
+          "levelSlug": "walk-it-off",
+          "phase": "STARTED",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "🚀 L'élève vient de démarrer \"10. PROMENADE\".",
+          "score": 10
+        },
+        {
+          "timestamp": "2026-03-17T01:54:33.368Z",
+          "levelName": "10. PROMENADE",
+          "levelSlug": "walk-it-off",
+          "phase": "STARTED",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève a débuté la pédestre à 10ème niveau sans bloqueurs.",
+          "score": 10
+        },
+        {
+          "timestamp": "2026-03-17T01:51:49.356Z",
+          "levelName": "10. PROMENADE",
+          "levelSlug": "walk-it-off",
+          "phase": "STARTED",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève a débuté la pédagogie 10ème, promenade sans bloques.",
+          "score": 10
+        },
+        {
+          "timestamp": "2026-03-17T01:54:14.411Z",
+          "levelName": "10. PROMENADE",
+          "levelSlug": "walk-it-off",
+          "phase": "IN_PROGRESS",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève a progressé en apprenant le niveau 10, mais il manque encore des éléries pour compléter la promenade scolaire.",
+          "score": 10
+        },
+        {
+          "timestamp": "2026-03-17T01:52:14.414Z",
+          "levelName": "10. PROMENADE",
+          "levelSlug": "walk-it-off",
+          "phase": "IN_PROGRESS",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève avance en promenade, sans écrire actuellement.",
+          "score": 10
+        },
+        {
+          "timestamp": "2026-03-17T01:51:44.409Z",
+          "levelName": "10. PROMENADE",
+          "levelSlug": "walk-it-off",
+          "phase": "IN_PROGRESS",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève avance en pédagogique, a réussi le bloque 10 sans écrire.",
+          "score": 10
+        },
+        {
+          "timestamp": "2026-03-17T01:57:14.414Z",
+          "levelName": "10. PROMENADE",
+          "levelSlug": "walk-it-off",
+          "phase": "IN_PROGRESS",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève a progressé en apprenant le niveau 10, promenade sans écrire actuellement.",
+          "score": 10
+        },
+        {
+          "timestamp": "2026-03-17T01:55:44.404Z",
+          "levelName": "10. PROMENADE",
+          "levelSlug": "walk-it-off",
+          "phase": "IN_PROGRESS",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève a progressé en passant le test de promenade avec succès, sans écrire de blocs pour l'instruction \"10\".",
+          "score": 10
+        },
+        {
+          "timestamp": "2026-03-17T01:53:33.360Z",
+          "levelName": "10. PROMENADE",
+          "levelSlug": "walk-it-off",
+          "phase": "STARTED",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève a débuté la pédestre en classe 10, sans bloqueurs.",
+          "score": 10
+        },
+        {
+          "timestamp": "2026-03-17T01:55:33.363Z",
+          "levelName": "10. PROMENADE",
+          "levelSlug": "walk-it-off",
+          "phase": "STARTED",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève a débuté la péronade au niveau 10 sans bloqueurs.",
+          "score": 10
+        },
+        {
+          "timestamp": "2026-03-17T01:58:04.633Z",
+          "levelName": "10. PROMENADE",
+          "levelSlug": "walk-it-off",
+          "phase": "STARTED",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève a débuté la péronade au niveau 10, sans bloqueurs.",
+          "score": 10
+        },
+        {
+          "timestamp": "2026-03-17T01:58:36.939Z",
+          "levelName": "10. PROMENADE",
+          "levelSlug": "walk-it-off",
+          "phase": "STARTED",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève a commencé la pédestrement à travers les niveaux 10, sans bloqueurs.",
+          "score": 10
+        },
+        {
+          "timestamp": "2026-03-17T01:58:43.273Z",
+          "levelName": "Promenade",
+          "levelSlug": "walk-it-off-a",
+          "phase": "NEW_LEVEL",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève progresse et est maintenant prêt à la Promenade!",
+          "score": 10
+        },
+        {
+          "timestamp": "2026-03-17T01:59:06.925Z",
+          "levelName": "10A. WALK IT OFF A",
+          "levelSlug": "walk-it-off-a",
+          "phase": "IN_PROGRESS",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève a rejoint le niveau 10A, marchant avec assurance sans erreurs écrites.",
+          "score": 10
+        },
+        {
+          "timestamp": "2026-03-17T01:59:36.927Z",
+          "levelName": "10A. WALK IT OFF A",
+          "levelSlug": "walk-it-off-a",
+          "phase": "IN_PROGRESS",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "L'élève a progressé en écrivant le niveau 10A, bien que sans bloques supplémentaires pour \"WALK IT OFF A\".",
+          "score": 10
+        }
+      ],
+      "lastUpdatedAt": "2026-03-17T01:59:56.747935+00:00"
+    }
+  }
+}

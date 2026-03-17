@@ -1,0 +1,50 @@
+# Root workspace .gitignore
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+target/
+out/
+
+# Archives (keep declitech-extension.rar if needed)
+# *.rar
+# *.zip
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
