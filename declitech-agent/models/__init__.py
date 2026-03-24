@@ -2,7 +2,9 @@ from .schemas import (
     StartRequest,
     StatusResponse,
     SessionValidationResponse,
-    AgentControlResponse
+    AgentControlResponse,
+    ScreenAnalysisRequest,
+    ScreenAnalysisResponse
 )
 from .emotion_model import EmotionModel
 
@@ -11,5 +13,7 @@ __all__ = [
     "StatusResponse",
     "SessionValidationResponse",
     "AgentControlResponse",
+    "ScreenAnalysisRequest",
+    "ScreenAnalysisResponse",
     "EmotionModel"
 ]

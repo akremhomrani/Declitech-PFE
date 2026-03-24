@@ -1,0 +1,289 @@
+{
+  "sessionId": "PJNZ2O",
+  "students": {
+    "Akrem homrani1": {
+      "studentId": "Akrem homrani1",
+      "site": "codecombat.com",
+      "startedAt": "2026-03-18T01:55:06.690464+00:00",
+      "summary": {
+        "levelsCompleted": 1,
+        "currentLevel": "Faire le tour",
+        "totalEvents": 13
+      },
+      "events": [
+        {
+          "timestamp": "2026-03-18T01:55:04.065Z",
+          "levelName": "Progression: 100%",
+          "levelSlug": "overview",
+          "phase": "LEVEL_COMPLETE",
+          "blocksCount": 1,
+          "studentWork": "Progression: 100%",
+          "completed": true,
+          "aiPhrase": "Student has successfully completed Progression: 100%.",
+          "score": 100,
+          "correct": true,
+          "onTrack": true,
+          "mistakes": [],
+          "wrongBlocks": [],
+          "missingBlocks": [],
+          "extraBlocks": [],
+          "feedback": "🏆 Level completed successfully! Excellent work!",
+          "timeAnalysis": "Level completed."
+        },
+        {
+          "timestamp": "2026-03-18T01:55:09.501Z",
+          "levelName": "Randonneur",
+          "levelSlug": "hiker",
+          "phase": "NEW_LEVEL",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "Congratulations, the student has advanced to the Randonneur level.",
+          "score": 0,
+          "correct": false,
+          "onTrack": false,
+          "mistakes": [
+            "No code submitted yet — waiting for student to start"
+          ],
+          "wrongBlocks": [],
+          "missingBlocks": [],
+          "extraBlocks": [],
+          "feedback": "⏳ Waiting for you to start coding!",
+          "timeAnalysis": "No code after unknown — student may need help or is stuck."
+        },
+        {
+          "timestamp": "2026-03-18T01:55:24.461Z",
+          "levelName": "13. RANDONNEUR",
+          "levelSlug": "hiker",
+          "phase": "IN_PROGRESS",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "The student is making good progress on 13. RANDONNEUR with no blocks written.",
+          "score": 0,
+          "correct": false,
+          "onTrack": false,
+          "mistakes": [
+            "No code submitted yet — waiting for student to start"
+          ],
+          "wrongBlocks": [],
+          "missingBlocks": [],
+          "extraBlocks": [],
+          "feedback": "⏳ Waiting for you to start coding!",
+          "timeAnalysis": "No code after unknown — student may need help or is stuck."
+        },
+        {
+          "timestamp": "2026-03-18T01:55:24.461Z",
+          "levelName": "13. RANDONNEUR",
+          "levelSlug": "hiker",
+          "phase": "IN_PROGRESS",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "The student is making good progress on 13. RANDONNEUR with no blocks written.",
+          "score": 0,
+          "correct": false,
+          "onTrack": false,
+          "mistakes": [
+            "No code submitted yet — waiting for student to start"
+          ],
+          "wrongBlocks": [],
+          "missingBlocks": [],
+          "extraBlocks": [],
+          "feedback": "⏳ Waiting for you to start coding!",
+          "timeAnalysis": "No code after 21s — student may need help or is stuck."
+        },
+        {
+          "timestamp": "2026-03-18T01:55:00.283Z",
+          "levelName": "13.Hiker",
+          "levelSlug": "overview",
+          "phase": "STARTED",
+          "blocksCount": 1,
+          "studentWork": "Progression: 7% | 13.Hiker",
+          "completed": false,
+          "aiPhrase": "The student has begun level 13.Hiker with 1 block—great progress!",
+          "score": 30,
+          "correct": false,
+          "onTrack": true,
+          "mistakes": [
+            "Only 1 block(s) placed — need more blocks to solve the level"
+          ],
+          "wrongBlocks": [],
+          "missingBlocks": [],
+          "extraBlocks": [],
+          "feedback": "🔄 Good start! Add more blocks to solve this.",
+          "timeAnalysis": "Student started: 1 block(s) placed in unknown."
+        },
+        {
+          "timestamp": "2026-03-18T01:55:00.283Z",
+          "levelName": "13.Hiker",
+          "levelSlug": "overview",
+          "phase": "STARTED",
+          "blocksCount": 1,
+          "studentWork": "Progression: 7% | 13.Hiker",
+          "completed": false,
+          "aiPhrase": "The student has begun level 13.Hiker with 1 block—great progress!",
+          "score": 30,
+          "correct": false,
+          "onTrack": true,
+          "mistakes": [
+            "Only 1 block(s) placed — need more blocks to solve the level"
+          ],
+          "wrongBlocks": [],
+          "missingBlocks": [],
+          "extraBlocks": [],
+          "feedback": "🔄 Good start! Add more blocks to solve this.",
+          "timeAnalysis": "Student started: 1 block(s) placed in 29s."
+        },
+        {
+          "timestamp": "2026-03-18T01:55:47.543Z",
+          "levelName": "Long Couloir",
+          "levelSlug": "long-hall",
+          "phase": "NEW_LEVEL",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "The student is progressing to the Long Couloir level.",
+          "score": 0,
+          "correct": false,
+          "onTrack": false,
+          "mistakes": [
+            "No code submitted yet — waiting for student to start"
+          ],
+          "wrongBlocks": [],
+          "missingBlocks": [],
+          "extraBlocks": [],
+          "feedback": "⏳ Waiting for you to start coding!",
+          "timeAnalysis": "No code after unknown — student may need help or is stuck."
+        },
+        {
+          "timestamp": "2026-03-18T01:55:54.471Z",
+          "levelName": "14. LONG COULOIR",
+          "levelSlug": "long-hall",
+          "phase": "IN_PROGRESS",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "The student is making good progress on 14. LONG COULOIR with no blocks written.",
+          "score": 0,
+          "correct": false,
+          "onTrack": false,
+          "mistakes": [
+            "No code submitted yet — waiting for student to start"
+          ],
+          "wrongBlocks": [],
+          "missingBlocks": [],
+          "extraBlocks": [],
+          "feedback": "⏳ Waiting for you to start coding!",
+          "timeAnalysis": "No code after unknown — student may need help or is stuck."
+        },
+        {
+          "timestamp": "2026-03-18T01:55:54.471Z",
+          "levelName": "14. LONG COULOIR",
+          "levelSlug": "long-hall",
+          "phase": "IN_PROGRESS",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "The student is making good progress on 14. LONG COULOIR with no blocks written.",
+          "score": 0,
+          "correct": false,
+          "onTrack": false,
+          "mistakes": [
+            "No code submitted yet — waiting for student to start"
+          ],
+          "wrongBlocks": [],
+          "missingBlocks": [],
+          "extraBlocks": [],
+          "feedback": "⏳ Waiting for you to start coding!",
+          "timeAnalysis": "No code after 10s — student may need help or is stuck."
+        },
+        {
+          "timestamp": "2026-03-18T01:56:15.356Z",
+          "levelName": "Changement d'étape",
+          "levelSlug": "step-change",
+          "phase": "NEW_LEVEL",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "The student is progressing to the next level with confidence and enthusiasm.",
+          "score": 0,
+          "correct": false,
+          "onTrack": false,
+          "mistakes": [
+            "No code submitted yet — waiting for student to start"
+          ],
+          "wrongBlocks": [],
+          "missingBlocks": [],
+          "extraBlocks": [],
+          "feedback": "⏳ Waiting for you to start coding!",
+          "timeAnalysis": "No code after unknown — student may need help or is stuck."
+        },
+        {
+          "timestamp": "2026-03-18T01:56:24.476Z",
+          "levelName": "15. CHANGEMENT D'ÉTAPE",
+          "levelSlug": "step-change",
+          "phase": "IN_PROGRESS",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "The student is making good progress on \"15. CHANGEMENT D'ÉTAPE\" with no blocks written.",
+          "score": 0,
+          "correct": false,
+          "onTrack": false,
+          "mistakes": [
+            "No code submitted yet — waiting for student to start"
+          ],
+          "wrongBlocks": [],
+          "missingBlocks": [],
+          "extraBlocks": [],
+          "feedback": "⏳ Waiting for you to start coding!",
+          "timeAnalysis": "No code after unknown — student may need help or is stuck."
+        },
+        {
+          "timestamp": "2026-03-18T01:56:24.476Z",
+          "levelName": "15. CHANGEMENT D'ÉTAPE",
+          "levelSlug": "step-change",
+          "phase": "IN_PROGRESS",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "The student is making good progress on \"15. CHANGEMENT D'ÉTAPE\" with no blocks written.",
+          "score": 0,
+          "correct": false,
+          "onTrack": false,
+          "mistakes": [
+            "No code submitted yet — waiting for student to start"
+          ],
+          "wrongBlocks": [],
+          "missingBlocks": [],
+          "extraBlocks": [],
+          "feedback": "⏳ Waiting for you to start coding!",
+          "timeAnalysis": "No code after 15s — student may need help or is stuck."
+        },
+        {
+          "timestamp": "2026-03-18T01:56:33.289Z",
+          "levelName": "Faire le tour",
+          "levelSlug": "go-around",
+          "phase": "NEW_LEVEL",
+          "blocksCount": 0,
+          "studentWork": "",
+          "completed": false,
+          "aiPhrase": "The student is progressing well and ready to move to the new level Faire le tour.",
+          "score": 0,
+          "correct": false,
+          "onTrack": false,
+          "mistakes": [
+            "No code submitted yet — waiting for student to start"
+          ],
+          "wrongBlocks": [],
+          "missingBlocks": [],
+          "extraBlocks": [],
+          "feedback": "⏳ Waiting for you to start coding!",
+          "timeAnalysis": "No code after unknown — student may need help or is stuck."
+        }
+      ],
+      "lastUpdatedAt": "2026-03-18T01:56:35.348318+00:00"
+    }
+  }
+}

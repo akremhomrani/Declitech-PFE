@@ -1,0 +1,37 @@
+{
+  "sessionId": "46EOGQ",
+  "students": {
+    "Akrem homrani1": {
+      "studentId": "Akrem homrani1",
+      "site": "codecombat.com",
+      "startedAt": "2026-03-18T01:49:23.738626+00:00",
+      "summary": {
+        "levelsCompleted": 0,
+        "currentLevel": "Progression: 100%",
+        "totalEvents": 1
+      },
+      "events": [
+        {
+          "timestamp": "2026-03-18T01:49:20.348Z",
+          "levelName": "Progression: 100%",
+          "levelSlug": "overview",
+          "phase": "STALLED",
+          "blocksCount": 1,
+          "studentWork": "Progression: 100%",
+          "completed": true,
+          "aiPhrase": "The student has reached 100% progression and is currently paused.",
+          "score": 100,
+          "correct": true,
+          "onTrack": true,
+          "mistakes": [],
+          "wrongBlocks": [],
+          "missingBlocks": [],
+          "extraBlocks": [],
+          "feedback": "🏆 Level completed successfully! Excellent work!",
+          "timeAnalysis": "Level completed."
+        }
+      ],
+      "lastUpdatedAt": "2026-03-18T01:49:23.738626+00:00"
+    }
+  }
+}

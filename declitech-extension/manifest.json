@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DecliTech - Join Session",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Join session + detect pseudonyme/email from the current page.",
   "action": {
     "default_popup": "popup.html",
@@ -10,6 +10,30 @@
   "background": {
     "service_worker": "background.js"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://codecombat.com/*",
+        "https://www.codecombat.com/*",
+        "https://code.org/*",
+        "https://studio.code.org/*",
+        "https://app.decli.tech/*",
+        "http://localhost:4200/*"
+      ],
+      "js": [
+        "content_decli_app.js",
+        "content_pedagogy_codecombat.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content_vittascience.js"],
+      "all_frames": true,
+      "run_at": "document_idle"
+    }
+  ],
   "permissions": [
     "storage",
     "activeTab",

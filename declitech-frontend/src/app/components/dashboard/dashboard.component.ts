@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http';
 import { EmotionService } from '../../services/emotion.service';
 import { SessionService } from '../../services/session.service';
 import { AlertService } from '../../services/alert.service';
@@ -9,17 +10,19 @@ import { interval, Subscription, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { NavbarComponent } from '../../shared/navbar/navbar.component';
 import { SidebarComponent } from '../../shared/sidebar/sidebar.component';
+import { PedagogyPanelComponent } from '../pedagogy/pedagogy-panel.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, NavbarComponent, SidebarComponent],
+  imports: [CommonModule, HttpClientModule, NavbarComponent, SidebarComponent, PedagogyPanelComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   students: EmotionReport[] = [];
   activeSessionCode: string = '';
+  activeTab: 'monitoring' | 'pedagogy' = 'monitoring';
   statistics: SessionStatistics = {
     totalStudents: 30,
     connectedStudents: 0,

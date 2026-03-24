@@ -1,12 +1,13 @@
 from fastapi import APIRouter, HTTPException
 
-from models import StartRequest, StatusResponse, AgentControlResponse
-from services import SessionService
+from models import StartRequest, StatusResponse, AgentControlResponse, ScreenAnalysisRequest, ScreenAnalysisResponse
+from services import SessionService, ScreenAnalysisService
 from utils import validate_session_code
 
 router = APIRouter(tags=["Agent Control"])
 
 session_service = SessionService()
+screen_analysis_service = ScreenAnalysisService()
 
 
 @router.get("/")
@@ -20,6 +21,7 @@ def root():
             "start": "/start",
             "stop": "/stop",
             "validate": "/validate/{session_code}",
+            "analyze-screen": "/analyze-screen",
             "docs": "/docs"
         }
     }
@@ -68,3 +70,11 @@ def start_session(request: StartRequest):
 def stop_session():
     session_service.stop()
     return AgentControlResponse(status="STOPPED")
+
+@router.post("/analyze-screen", response_model=ScreenAnalysisResponse)
+def analyze_screen(request: ScreenAnalysisRequest):
+    try:
+        response = screen_analysis_service.analyze_screen(request)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

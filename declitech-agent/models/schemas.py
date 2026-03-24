@@ -29,3 +29,21 @@ class AgentControlResponse(BaseModel):
     status: str = Field(..., description="Operation status")
     session_id: Optional[str] = Field(None, description="Session ID (if started)")
     participant_id: Optional[str] = Field(None, description="Participant ID (if started)")
+
+
+class ScreenAnalysisRequest(BaseModel):
+    session_id: str = Field(..., description="Session code")
+    participant_id: Optional[str] = Field(None, description="Participant ID")
+    student_login_identity: Optional[str] = Field(None, description="Student login identity")
+    timestamp: str = Field(..., description="Capture timestamp (ISO format)")
+    screenshot_base64: str = Field(..., description="Base64-encoded JPEG screenshot")
+    page_url: Optional[str] = Field(None, description="Current page URL")
+    dom_data: Optional[dict] = Field(None, description="Extracted DOM data from Vittascience")
+
+
+class ScreenAnalysisResponse(BaseModel):
+    status: str = Field(..., description="Analysis status")
+    exercise_name: Optional[str] = Field(None, description="Detected exercise name")
+    progress_level: Optional[str] = Field(None, description="NOT_STARTED, STARTING, IN_PROGRESS, NEAR_COMPLETE, COMPLETE")
+    on_track: Optional[bool] = Field(None, description="Whether the student is on track")
+    observations: Optional[str] = Field(None, description="AI observations about student work")

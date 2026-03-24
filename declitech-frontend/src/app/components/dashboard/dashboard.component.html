@@ -50,80 +50,99 @@
         </div>
       </div>
 
-      <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 sm:mb-8 gap-4">
-        <div>
-          <h2 class="text-xl sm:text-2xl font-black tracking-tight text-text-main flex items-center gap-3">
-            Live Engagement Monitor
-            <span
-              class="text-[10px] bg-primary text-white px-3 py-1 rounded-full uppercase font-black tracking-wider">Live</span>
-          </h2>
-          <p class="text-text-muted text-xs sm:text-sm mt-1">Real-time AI telemetry from local agents and extensions</p>
-        </div>
-        <div class="flex gap-2 sm:gap-3">
-          <button
-            class="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-white text-text-main text-xs font-bold rounded-xl hover:bg-slate-50 transition-all border border-slate-200 shadow-sm">
-            <span class="material-symbols-outlined text-lg">filter_alt</span>
-            <span class="hidden sm:inline">Filter View</span>
-          </button>
-          <button
-            class="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-primary text-white text-xs font-black rounded-xl hover:bg-primary-dark transition-all shadow-md shadow-primary/10">
-            <span class="material-symbols-outlined text-lg">sort</span>
-            <span class="hidden sm:inline">Sort: Engagement</span>
-          </button>
-        </div>
+      <!-- ===== ONGLETS ===== -->
+      <div class="flex gap-2 mb-6">
+        <button (click)="activeTab = 'monitoring'" [class.active-tab]="activeTab === 'monitoring'" class="tab-btn">
+          📊 Suivi en temps réel
+        </button>
+        <button (click)="activeTab = 'pedagogy'" [class.active-tab]="activeTab === 'pedagogy'" class="tab-btn">
+          🎓 Suivi Pédagogique
+        </button>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
-        <div *ngFor="let student of students"
-          class="group relative bg-white rounded-2xl p-5 border-2 student-card-shadow transition-all hover:-translate-y-1"
-          [ngClass]="getStudentStatusClass(student)">
-          <div class="flex justify-between items-start mb-5">
-            <div
-              class="size-16 bg-gradient-to-br from-primary/20 to-accent-teal/20 rounded-2xl ring-4 ring-primary/5 flex items-center justify-center">
-              <span class="material-symbols-outlined text-2xl text-primary">person</span>
-            </div>
-            <div class="flex flex-col items-end gap-2">
-              <span class="px-3 py-1.5 text-white text-[10px] font-black rounded-lg uppercase tracking-widest"
-                [ngClass]="getBadgeColor(getAlertBadgeType(student))">
-                {{ getAlertBadgeType(student) }}
-              </span>
-              <div class="flex items-center gap-1.5">
-                <span class="size-2 rounded-full" [ngClass]="{
+      <!-- ===== TAB : MONITORING ===== -->
+      <div *ngIf="activeTab === 'monitoring'">
+        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 sm:mb-8 gap-4">
+          <div>
+            <h2 class="text-xl sm:text-2xl font-black tracking-tight text-text-main flex items-center gap-3">
+              Live Engagement Monitor
+              <span
+                class="text-[10px] bg-primary text-white px-3 py-1 rounded-full uppercase font-black tracking-wider">Live</span>
+            </h2>
+            <p class="text-text-muted text-xs sm:text-sm mt-1">Real-time AI telemetry from local agents and extensions
+            </p>
+          </div>
+          <div class="flex gap-2 sm:gap-3">
+            <button
+              class="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-white text-text-main text-xs font-bold rounded-xl hover:bg-slate-50 transition-all border border-slate-200 shadow-sm">
+              <span class="material-symbols-outlined text-lg">filter_alt</span>
+              <span class="hidden sm:inline">Filter View</span>
+            </button>
+            <button
+              class="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-primary text-white text-xs font-black rounded-xl hover:bg-primary-dark transition-all shadow-md shadow-primary/10">
+              <span class="material-symbols-outlined text-lg">sort</span>
+              <span class="hidden sm:inline">Sort: Engagement</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
+          <div *ngFor="let student of students"
+            class="group relative bg-white rounded-2xl p-5 border-2 student-card-shadow transition-all hover:-translate-y-1"
+            [ngClass]="getStudentStatusClass(student)">
+            <div class="flex justify-between items-start mb-5">
+              <div
+                class="size-16 bg-gradient-to-br from-primary/20 to-accent-teal/20 rounded-2xl ring-4 ring-primary/5 flex items-center justify-center">
+                <span class="material-symbols-outlined text-2xl text-primary">person</span>
+              </div>
+              <div class="flex flex-col items-end gap-2">
+                <span class="px-3 py-1.5 text-white text-[10px] font-black rounded-lg uppercase tracking-widest"
+                  [ngClass]="getBadgeColor(getAlertBadgeType(student))">
+                  {{ getAlertBadgeType(student) }}
+                </span>
+                <div class="flex items-center gap-1.5">
+                  <span class="size-2 rounded-full" [ngClass]="{
                         'bg-accent-teal status-pulse': student.status === 'IN_PROGRESS',
                         'bg-slate-400': student.status === 'COMPLETED'
                       }">
-                </span>
-                <span class="text-[10px] text-text-muted uppercase font-black tracking-tighter">
-                  {{ student.status === 'IN_PROGRESS' ? 'Connected' : 'Offline' }}
-                </span>
+                  </span>
+                  <span class="text-[10px] text-text-muted uppercase font-black tracking-tighter">
+                    {{ student.status === 'IN_PROGRESS' ? 'Connected' : 'Offline' }}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="mb-4">
-            <h3 class="font-bold text-lg leading-tight text-text-main">{{ student.studentLoginIdentity }}</h3>
-            <p class="text-xs mt-1.5 font-semibold" [ngClass]="{
+            <div class="mb-4">
+              <h3 class="font-bold text-lg leading-tight text-text-main">{{ student.studentLoginIdentity }}</h3>
+              <p class="text-xs mt-1.5 font-semibold" [ngClass]="{
                  'text-red-600': getAlertBadgeType(student) === 'SECURITY',
                  'text-orange-600': getAlertBadgeType(student) === 'BLOCKED',
                  'text-amber-600': getAlertBadgeType(student) === 'DISTRACTED',
                  'text-primary': getAlertBadgeType(student) === 'FOCUSED'
                }">
-              Activity: <span class="font-black">{{ getAlertMessage(student) }}</span>
-            </p>
-          </div>
-
-          <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
-            <div class="flex gap-1.5 items-end h-6">
-              <div class="w-1.5 h-3 bg-primary/20 rounded-full"></div>
-              <div class="w-1.5 h-5 bg-primary/60 rounded-full"></div>
-              <div class="w-1.5 h-4 bg-primary/80 rounded-full"></div>
-              <div class="w-1.5 h-6 bg-primary rounded-full"></div>
+                Activity: <span class="font-black">{{ getAlertMessage(student) }}</span>
+              </p>
             </div>
-            <button class="text-slate-400 hover:text-primary transition-colors">
-              <span class="material-symbols-outlined text-xl">open_in_new</span>
-            </button>
+
+            <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+              <div class="flex gap-1.5 items-end h-6">
+                <div class="w-1.5 h-3 bg-primary/20 rounded-full"></div>
+                <div class="w-1.5 h-5 bg-primary/60 rounded-full"></div>
+                <div class="w-1.5 h-4 bg-primary/80 rounded-full"></div>
+                <div class="w-1.5 h-6 bg-primary rounded-full"></div>
+              </div>
+              <button class="text-slate-400 hover:text-primary transition-colors">
+                <span class="material-symbols-outlined text-xl">open_in_new</span>
+              </button>
+            </div>
           </div>
-        </div>
+        </div> <!-- fin student-grid -->
+      </div> <!-- fin *ngIf="activeTab === 'monitoring'" -->
+
+      <!-- ===== TAB : PÉDAGOGIE ===== -->
+      <div *ngIf="activeTab === 'pedagogy'">
+        <app-pedagogy-panel [sessionId]="activeSessionCode"></app-pedagogy-panel>
       </div>
 
       <footer
