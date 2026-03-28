@@ -1,9 +1,9 @@
 import json
 import os
-import base64
 import logging
-from datetime import datetime, timezone
+import time
 from typing import Optional
+import requests
 
 from config import settings
 from models.schemas import ScreenAnalysisRequest, ScreenAnalysisResponse
@@ -20,8 +20,11 @@ except ImportError:
 class ScreenAnalysisService:
     def __init__(self):
         self.output_file = os.path.join(settings.BASE_DIR, "screen_analysis_output.jsonl")
-        self.sessions_dir = "pedagogy_sessions"
-        os.makedirs(self.sessions_dir, exist_ok=True)
+        self.use_ollama_vision = getattr(settings, "USE_OLLAMA_VISION", True)
+        self.ollama_base_url = getattr(settings, "OLLAMA_BASE_URL", "http://localhost:11434")
+        self.ollama_vision_model = getattr(settings, "OLLAMA_VISION_MODEL", "llama3.2-vision")
+        self._ollama_model_ready_cache_until = 0.0
+        self._ollama_model_ready = False
         
         if HAS_GENAI and getattr(settings, 'GEMINI_API_KEY', None):
             genai.configure(api_key=settings.GEMINI_API_KEY)
@@ -29,22 +32,8 @@ class ScreenAnalysisService:
         else:
             self.model = None
 
-    def analyze_screen(self, request: ScreenAnalysisRequest) -> ScreenAnalysisResponse:
-        # Prepare the base response
-        response = ScreenAnalysisResponse(
-            status="SUCCESS",
-            exercise_name="Unknown",
-            progress_level="NOT_STARTED",
-            on_track=True,
-            observations="N/A"
-        )
-        
-        # Merge DOM data and screenshot to analyze
-        dom_context = json.dumps(request.dom_data) if request.dom_data else "No DOM data available"
-        
-        if self.model:
-            try:
-                prompt = f"""
+    def _build_analysis_prompt(self, dom_context: str) -> str:
+        return f"""
                 You are an AI educational tutor observing a student's screen on the Vittascience platform.
                 Analyze the provided screenshot and the following DOM data extracted from the page:
                 
@@ -66,7 +55,101 @@ class ScreenAnalysisService:
                 "exercise_name" (str), "progress_level" (str), "on_track" (bool), "observations" (str)
                 Do not wrap in Markdown blocks.
                 """
-                
+
+    def _parse_json_text(self, raw_text: str) -> dict:
+        text = (raw_text or "").strip()
+        if text.startswith("```"):
+            text = text.replace("```json", "").replace("```", "").strip()
+        return json.loads(text)
+
+    def _is_ollama_model_ready(self) -> bool:
+        now = time.time()
+        if now < self._ollama_model_ready_cache_until:
+            return self._ollama_model_ready
+
+        try:
+            tags_url = f"{self.ollama_base_url}/api/tags"
+            r = requests.get(tags_url, timeout=settings.API_TIMEOUT)
+            r.raise_for_status()
+            models = r.json().get("models", [])
+            names = {m.get("name", "") for m in models}
+            self._ollama_model_ready = self.ollama_vision_model in names
+        except Exception:
+            self._ollama_model_ready = False
+
+        # Refresh every 30 seconds to avoid hammering /api/tags
+        self._ollama_model_ready_cache_until = now + 30
+        return self._ollama_model_ready
+
+    def _ask_ollama_vision(self, prompt: str, screenshot_base64: str) -> dict:
+        url = f"{self.ollama_base_url}/api/generate"
+        payload = {
+            "model": self.ollama_vision_model,
+            "prompt": prompt,
+            "stream": False,
+            "format": "json",
+            "images": [screenshot_base64],
+            "options": {"temperature": 0.2}
+        }
+
+        response = requests.post(url, json=payload, timeout=settings.API_TIMEOUT)
+        if response.status_code == 404:
+            # Common case: model not pulled yet. Return clear status upstream.
+            try:
+                detail = response.json().get("error", "model not found")
+            except Exception:
+                detail = "model not found"
+            raise RuntimeError(f"OLLAMA_MODEL_NOT_READY: {detail}")
+
+        response.raise_for_status()
+        data = response.json()
+        return self._parse_json_text(data.get("response", ""))
+
+    def analyze_screen(self, request: ScreenAnalysisRequest) -> ScreenAnalysisResponse:
+        # Prepare the base response
+        response = ScreenAnalysisResponse(
+            status="SUCCESS",
+            exercise_name="Unknown",
+            progress_level="NOT_STARTED",
+            on_track=True,
+            observations="N/A"
+        )
+        
+        # Merge DOM data and screenshot to analyze
+        dom_context = json.dumps(request.dom_data) if request.dom_data else "No DOM data available"
+        prompt = self._build_analysis_prompt(dom_context)
+
+        # Prefer local Ollama vision to avoid external API quotas.
+        if self.use_ollama_vision:
+            if not self._is_ollama_model_ready():
+                response.status = "MODEL_NOT_READY_OLLAMA"
+                response.observations = f"Ollama model '{self.ollama_vision_model}' is not ready yet. Fallback to DOM data."
+                self._fallback_analysis(request.dom_data, response)
+                self._log_to_file(request, response)
+                return response
+
+            try:
+                result_json = self._ask_ollama_vision(prompt, request.screenshot_base64)
+                response.status = "SUCCESS_OLLAMA"
+                response.exercise_name = result_json.get("exercise_name", "Unknown")
+                response.progress_level = result_json.get("progress_level", "NOT_STARTED")
+                response.on_track = result_json.get("on_track", True)
+                response.observations = result_json.get("observations", "No observations")
+                self._log_to_file(request, response)
+                return response
+            except Exception as e:
+                err = str(e)
+                if err.startswith("OLLAMA_MODEL_NOT_READY:"):
+                    response.status = "MODEL_NOT_READY_OLLAMA"
+                else:
+                    response.status = f"ERROR_OLLAMA: {err}"
+                response.observations = "Error calling local Ollama. Fallback to DOM data."
+                self._fallback_analysis(request.dom_data, response)
+                self._log_to_file(request, response)
+                return response
+        
+        if not self.use_ollama_vision and self.model:
+            try:
                 # We need to construct the image part for Gemini API
                 image_parts = [
                     {
@@ -83,7 +166,7 @@ class ScreenAnalysisService:
                     )
                 )
                 
-                result_json = json.loads(result.text)
+                result_json = self._parse_json_text(result.text)
                 
                 response.exercise_name = result_json.get("exercise_name", "Unknown")
                 response.progress_level = result_json.get("progress_level", "NOT_STARTED")
@@ -99,11 +182,8 @@ class ScreenAnalysisService:
             response.status = "SUCCESS_NO_LLM"
             self._fallback_analysis(request.dom_data, response)
             
-        # Write to JSONL file for debugging
+        # Write detailed analysis results to JSONL file
         self._log_to_file(request, response)
-        
-        # Save to pedagogy session JSON file (main persistence)
-        self._save_vittascience_to_pedagogy_json(request, response)
         
         return response
 
@@ -148,7 +228,6 @@ class ScreenAnalysisService:
         log_entry = {
             "timestamp": request.timestamp,
             "session_id": request.session_id,
-            "participant_id": request.participant_id,
             "student_identity": request.student_login_identity,
             "page_url": request.page_url,
             "dom_data_received": bool(request.dom_data),
@@ -160,83 +239,3 @@ class ScreenAnalysisService:
                 f.write(json.dumps(log_entry, ensure_ascii=False) + '\n')
         except Exception:
             pass
-
-    def _save_vittascience_to_pedagogy_json(self, request: ScreenAnalysisRequest, response: ScreenAnalysisResponse):
-        """Save Vittascience analysis to pedagogy session JSON file (same format as CodeCombat)"""
-        logger.info(f"[Vittascience] Saving analysis - Session: {request.session_id}, Student: {request.student_login_identity}, Exercise: {response.exercise_name}")
-        
-        if not request.session_id:
-            logger.warning("[Vittascience] No session_id provided - skipping JSON save")
-            return
-        
-        filepath = os.path.join(self.sessions_dir, f"{request.session_id}.json")
-        logger.debug(f"[Vittascience] JSON path: {filepath}")
-        
-        # Load existing data or create new structure
-        data = {"sessionId": request.session_id, "students": {}}
-        if os.path.exists(filepath):
-            try:
-                with open(filepath, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                logger.debug(f"[Vittascience] Loaded existing file with {len(data.get('students', {}))} students")
-            except Exception as e:
-                logger.warning(f"[Vittascience] Failed to load existing file: {e}")
-                pass
-
-        # Use student identity or participant ID as the key
-        key = request.student_login_identity or request.participant_id or "anonymous"
-        logger.debug(f"[Vittascience] Using student key: {key}")
-        
-        # Initialize student record if not exists
-        if key not in data["students"]:
-            data["students"][key] = {
-                "studentId": key,
-                "site": "vittascience",
-                "startedAt": datetime.now(timezone.utc).isoformat(),
-                "summary": {
-                    "exercisesStarted": 0,
-                    "exercisesCompleted": 0,
-                    "currentExercise": response.exercise_name or "Unknown",
-                    "totalEvents": 0
-                },
-                "events": []
-            }
-            logger.info(f"[Vittascience] Created new student record for {key}")
-
-        student_data = data["students"][key]
-        student_data["lastUpdatedAt"] = datetime.now(timezone.utc).isoformat()
-        student_data["summary"]["currentExercise"] = response.exercise_name or "Unknown"
-        student_data["summary"]["totalEvents"] += 1
-        
-        # Update summary based on progress level
-        if response.progress_level == "COMPLETE":
-            student_data["summary"]["exercisesCompleted"] += 1
-        elif response.progress_level in ["IN_PROGRESS", "STARTING"]:
-            student_data["summary"]["exercisesStarted"] += 1
-
-        # Create event record
-        event = {
-            "timestamp": request.timestamp or datetime.now(timezone.utc).isoformat(),
-            "exerciseName": response.exercise_name or "Unknown",
-            "progressLevel": response.progress_level,
-            "onTrack": response.on_track,
-            "observations": response.observations,
-            "site": "vittascience",
-            "domDataReceived": bool(request.dom_data),
-            "domExtracted": {
-                "categories": request.dom_data.get("categories", []) if request.dom_data else [],
-                "predictions": request.dom_data.get("predictions", []) if request.dom_data else [],
-                "trainingState": request.dom_data.get("trainingState", {}) if request.dom_data else {}
-            } if request.dom_data else None
-        }
-
-        student_data["events"].append(event)
-        logger.debug(f"[Vittascience] Added event - Progress: {response.progress_level}, Exercise: {response.exercise_name}")
-
-        # Save updated data
-        try:
-            with open(filepath, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-            logger.info(f"[Vittascience] ✓ JSON saved: {filepath} ({len(data['students'][key]['events'])} events)")
-        except Exception as e:
-            logger.error(f"[Vittascience] ✗ Failed to save JSON: {e}", exc_info=True)

@@ -70,6 +70,9 @@ class Settings:
         self.FACE_MARGIN_PERCENT = float(os.getenv("FACE_MARGIN_PERCENT", "0.15"))
         self.MODEL_INPUT_SIZE = tuple(map(int, os.getenv("MODEL_INPUT_SIZE", "48,48").split(",")))
         self.GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+        self.USE_OLLAMA_VISION = os.getenv("USE_OLLAMA_VISION", "true").lower() in ("1", "true", "yes")
+        self.OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
+        self.OLLAMA_VISION_MODEL = os.getenv("OLLAMA_VISION_MODEL", "llama3.2-vision")
 
 
 settings = Settings()

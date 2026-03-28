@@ -14,7 +14,6 @@ import java.util.Map;
 public class EmotionReportDTO {
     private String sessionId;
     private String sessionCode;
-    private String participantId;
     private LocalDateTime generatedAt;
     private String studentLoginIdentity;
     

@@ -56,8 +56,7 @@ def start_session(request: StartRequest):
 
         return AgentControlResponse(
             status="STARTED",
-            session_id=session_service.session_id,
-            participant_id=session_service.participant_id
+            session_id=session_service.session_id
         )
 
     except HTTPException:

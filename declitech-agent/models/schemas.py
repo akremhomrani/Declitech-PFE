@@ -14,7 +14,6 @@ class StartRequest(BaseModel):
 class StatusResponse(BaseModel):
     running: bool = Field(..., description="Whether the agent is currently running")
     session_id: Optional[str] = Field(None, description="Current session ID")
-    participant_id: Optional[str] = Field(None, description="Current participant ID")
     last_error: Optional[str] = Field(None, description="Last error message, if any")
     login_identity: Optional[str] = Field(None, description="Current participant login identity")
 
@@ -28,12 +27,10 @@ class SessionValidationResponse(BaseModel):
 class AgentControlResponse(BaseModel):
     status: str = Field(..., description="Operation status")
     session_id: Optional[str] = Field(None, description="Session ID (if started)")
-    participant_id: Optional[str] = Field(None, description="Participant ID (if started)")
 
 
 class ScreenAnalysisRequest(BaseModel):
     session_id: str = Field(..., description="Session code")
-    participant_id: Optional[str] = Field(None, description="Participant ID")
     student_login_identity: Optional[str] = Field(None, description="Student login identity")
     timestamp: str = Field(..., description="Capture timestamp (ISO format)")
     screenshot_base64: str = Field(..., description="Base64-encoded JPEG screenshot")

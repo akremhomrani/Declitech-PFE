@@ -40,7 +40,7 @@ import { PedagogyProgress } from '../../models/pedagogy/pedagogy-progress.model'
 
       <!-- En-tête carte étudiant -->
       <div class="card-header">
-        <span class="student-name">{{ p.studentLoginIdentity || p.participantId || 'Élève' }}</span>
+        <span class="student-name">{{ p.studentLoginIdentity || 'Élève' }}</span>
         <span class="site-badge">{{ getSiteIcon(p.site) }} {{ p.site }}</span>
       </div>
 
@@ -262,8 +262,7 @@ export class PedagogyPanelComponent implements OnInit, OnDestroy {
             this.stopPolling = this.pedagogyService.startPolling(this.sessionId, 15000);
             this.pedagogyService.progress$.subscribe(p => {
                 const idx = this.progressList.findIndex(
-                    x => (x.studentLoginIdentity || x.participantId) ===
-                        (p.studentLoginIdentity || p.participantId)
+                    x => x.studentLoginIdentity === p.studentLoginIdentity
                 );
                 if (idx >= 0) this.progressList[idx] = p;
                 else this.progressList.push(p);

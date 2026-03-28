@@ -23,7 +23,6 @@ class SessionService:
 
         self.session_id: Optional[str] = None
         self.session_code: Optional[str] = None
-        self.participant_id: Optional[str] = None
         self.login_identity: Optional[str] = None
         self.token: Optional[str] = None
         self.last_error: Optional[str] = None
@@ -48,7 +47,6 @@ class SessionService:
             self._join_session(request.code)
         else:
             self.session_id = f"LOCAL-{request.code}"
-            self.participant_id = f"LOCAL-{request.student_id}"
             self.token = None
 
         self.stop_event.clear()
@@ -73,7 +71,6 @@ class SessionService:
         return {
             "running": self.running,
             "session_id": self.session_id,
-            "participant_id": self.participant_id,
             "last_error": self.last_error,
             "login_identity": self.login_identity
         }
@@ -91,7 +88,6 @@ class SessionService:
             )
 
         self.session_id = f"SESSION-{session_code}"
-        self.participant_id = f"PARTICIPANT-{session_code}"
         self.token = None
 
     def _send_heartbeat(self) -> None:
@@ -100,9 +96,8 @@ class SessionService:
 
         try:
             api_client = APIClient(token=self.token)
-            path = settings.HEARTBEAT_ENDPOINT.format(participantId=self.participant_id)
             api_client.post(
-                path,
+                settings.HEARTBEAT_ENDPOINT,
                 {
                     "ts": datetime.utcnow().isoformat(),
                     "online": True
@@ -118,9 +113,8 @@ class SessionService:
 
         try:
             api_client = APIClient(token=self.token)
-            path = settings.CAPTURE_ENDPOINT.format(participantId=self.participant_id)
             api_client.post(
-                path,
+                settings.CAPTURE_ENDPOINT,
                 {
                     "ts": timestamp,
                     "dominant": dominant,
@@ -151,7 +145,6 @@ class SessionService:
         session_metadata = {
             "sessionId": self.session_id,
             "sessionCode": self.session_code,
-            "participantId": self.participant_id,
             "studentLoginIdentity": self.login_identity,
             "sessionStartedAt": session_start_time
         }
@@ -242,7 +235,6 @@ class SessionService:
         final_report = {
             "sessionId": self.session_id,
             "sessionCode": self.session_code,
-            "participantId": self.participant_id,
             "generatedAt": datetime.utcnow().isoformat(),
             "studentLoginIdentity": self.login_identity,
             "summaryMean": summary_mean,

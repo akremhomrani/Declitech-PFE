@@ -66,6 +66,8 @@ async def _ask_ollama(prompt: str, temperature: float = 0.2) -> str:
     except Exception as e:
         logger.error(f"Ollama error: {e}")
         return ""
+    
+    return ""
 
 def _build_gemini_url(model: str, version: str) -> str:
     """Build Gemini API endpoint URL"""
@@ -129,6 +131,8 @@ async def _ask_gemini(prompt: str, temperature: float = 0.2) -> str:
         if USE_OLLAMA:
             return await _ask_ollama(prompt, temperature)
         return ""
+        
+    return ""
 
 async def is_ai_available() -> bool:
     return bool(GEMINI_API_KEY) or USE_OLLAMA

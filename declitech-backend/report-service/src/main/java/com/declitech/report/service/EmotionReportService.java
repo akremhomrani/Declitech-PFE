@@ -46,7 +46,6 @@ public class EmotionReportService {
         
         report.setSessionId_legacy(dto.getSessionId());
         report.setSessionCode(dto.getSessionCode() != null ? dto.getSessionCode() : dto.getSessionId());
-        report.setParticipantId(dto.getParticipantId());
         report.setGeneratedAt(dto.getGeneratedAt());
         report.setStudentLoginIdentity(dto.getStudentLoginIdentity());
         

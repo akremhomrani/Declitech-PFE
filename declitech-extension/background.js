@@ -1,5 +1,8 @@
 const KAFKA_ALERT_URL = "http://localhost:8083/api/alerts/publish";
-const ALLOWED_URL_PREFIX = "https://app.decli.tech/";
+const ALLOWED_SITES = [
+    "https://app.decli.tech/",
+    "https://codecombat.com/"
+];
 const CHECK_INTERVAL = 2000;
 
 let activeSessionCode = null;
@@ -46,11 +49,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         lastUrl = null;
         isCurrentlyOnWrongSite = false;
         mouseInactivityAlertSent = false;
+        stopScreenCapture();
         stopMouseInactivityTracking();
-        sendResponse({ success: true });
-    } else if (message.type === "MOUSE_MOVED") {
-        lastMouseMoveTime = Date.now();
-        mouseInactivityAlertSent = false;
         sendResponse({ success: true });
     } else if (message.type === "MOUSE_MOVED") {
         lastMouseMoveTime = Date.now();
@@ -59,47 +59,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     } else if (message.type === "VITTASCIENCE_DATA") {
         lastVittascienceData = message.data;
         sendResponse({ success: true });
-    } else if (message.type === "PEDAGOGY_UPDATE") {
-        // Forward pedagogy data to agent (like CodeCombat detection)
-        handlePedagogyUpdate(message.data);
-        sendResponse({ success: true });
     }
     return true;
 });
 
-// =========================================================
-//  Handle PEDAGOGY_UPDATE (from CodeCombat and Decli app)
-//  Forwards activity data to agent /pedagogy/progress endpoint
-// =========================================================
-async function handlePedagogyUpdate(data) {
-    if (!activeSessionCode) {
-        return; // No active session
-    }
-
-    try {
-        await fetch("http://localhost:8765/pedagogy/progress", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                ...data,
-                sessionId: activeSessionCode,
-                participantId: activeParticipantId,
-                studentLoginIdentity: studentLoginIdentity,
-                phase: data.phase || "IN_PROGRESS"
-            })
-        }).catch(() => { });
-    } catch (e) {
-        // Silent fail
-    }
-}
-
 function startMonitoring() {
     setInterval(checkActiveTab, CHECK_INTERVAL);
     startScreenCapture();
-}
-
-function stopMonitoring() {
-    stopScreenCapture();
 }
 
 async function checkActiveTab() {
@@ -132,7 +98,7 @@ async function checkActiveTab() {
 }
 
 function isUrlAllowed(url) {
-    return url.startsWith(ALLOWED_URL_PREFIX);
+    return ALLOWED_SITES.some(site => url.startsWith(site));
 }
 
 async function sendTabSwitchAlert(currentUrl) {
@@ -159,26 +125,20 @@ async function sendTabSwitchAlert(currentUrl) {
         metadata: {
             switchCount: tabSwitchCount,
             currentUrl: currentUrl,
-            allowedUrlPrefix: ALLOWED_URL_PREFIX
+            allowedSites: ALLOWED_SITES
         }
     };
 
     try {
-        const response = await fetch(KAFKA_ALERT_URL, {
+        await fetch(KAFKA_ALERT_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(alert)
         });
-
-        if (response.ok) {
-
-        } else {
-
-        }
     } catch (error) {
-
+        // Silently fail
     }
 }
 
@@ -193,27 +153,21 @@ async function sendAlertResolved(currentUrl) {
         timestamp: new Date().toISOString(),
         metadata: {
             currentUrl: currentUrl,
-            allowedUrlPrefix: ALLOWED_URL_PREFIX,
+            allowedSites: ALLOWED_SITES,
             resolved: true
         }
     };
 
     try {
-        const response = await fetch(KAFKA_ALERT_URL, {
+        await fetch(KAFKA_ALERT_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(alert)
         });
-
-        if (response.ok) {
-
-        } else {
-
-        }
     } catch (error) {
-
+        // Silently fail
     }
 }
 
@@ -252,7 +206,7 @@ async function sendMouseInactivityAlert() {
         studentLoginIdentity: studentLoginIdentity,
         alertType: "MOUSE_INACTIVITY",
         severity: "MEDIUM",
-        message: `Enfant bloqué - Aucun mouvement de souris détecté pendant 5 minutes`,
+        message: `Enfant bloqué - Aucun mouvement de souris détecté pendant 30 secondes`,
         timestamp: new Date().toISOString(),
         metadata: {
             inactivityDurationMs: Date.now() - lastMouseMoveTime,
@@ -261,21 +215,15 @@ async function sendMouseInactivityAlert() {
     };
 
     try {
-        const response = await fetch(KAFKA_ALERT_URL, {
+        await fetch(KAFKA_ALERT_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(alert)
         });
-
-        if (response.ok) {
-
-        } else {
-
-        }
     } catch (error) {
-
+        // Silently fail
     }
 }
 
@@ -286,26 +234,31 @@ async function sendMouseInactivityAlert() {
 // =========================================================
 
 const PEDAGOGY_SCAN_INTERVAL = 30000; // 30 secondes
-const PEDAGOGY_SITES = ['codecombat.com', 'code.org', 'studio.code.org'];
+const PEDAGOGY_SITES = ['codecombat.com', 'code.org'];
 
 // Scan immédiat quand une page pédago finit de charger (nouveau niveau)
+// ONLY if it's the active tab in the current window
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     if (changeInfo.status !== 'complete') return;
     if (!tab.url || !PEDAGOGY_SITES.some(s => tab.url.includes(s))) return;
+    
+    // Check if this tab is the active tab
+    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!activeTab || activeTab.id !== tabId) return;
+    
     setTimeout(() => scanSingleTab(tab, true), 1500);
 });
 
-// Scan périodique toutes les 30s
+// Scan périodique toutes les 30s (ONLY active tab)
 setInterval(scanPedagogyTabs, PEDAGOGY_SCAN_INTERVAL);
 
 async function scanPedagogyTabs() {
+    // Only scan pedagogy sites if the ACTIVE tab is a pedagogy site
     try {
-        const allTabs = await chrome.tabs.query({});
-        for (const tab of allTabs) {
-            if (!tab.url) continue;
-            if (!PEDAGOGY_SITES.some(s => tab.url.includes(s))) continue;
-            await scanSingleTab(tab, false);
-        }
+        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!activeTab || !activeTab.url) return;
+        if (!PEDAGOGY_SITES.some(s => activeTab.url.includes(s))) return;
+        await scanSingleTab(activeTab, false);
     } catch (_) { }
 }
 
@@ -525,12 +478,17 @@ async function captureAndAnalyze() {
     if (!activeSessionCode) return;
 
     try {
-        // Step 1: Capture visible tab screenshot
+        // Step 0: Only capture screenshots on app.decli.tech
         const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
         if (!tabs || tabs.length === 0) return;
 
         const tab = tabs[0];
-        if (!tab.url || SYSTEM_PREFIXES.some(p => tab.url.startsWith(p))) return;
+        if (!tab.url) return;
+
+        // Skip if not on app.decli.tech (pedagogy sites are handled separately)
+        if (!tab.url.startsWith("https://app.decli.tech/")) return;
+        
+        if (SYSTEM_PREFIXES.some(p => tab.url.startsWith(p))) return;
 
         let screenshotDataUrl = null;
         try {

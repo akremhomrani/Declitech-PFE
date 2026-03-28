@@ -1,7 +1,6 @@
 export interface PedagogyProgress {
     // Session
     sessionId: string;
-    participantId?: string;
     studentLoginIdentity?: string;
 
     // Site & niveau

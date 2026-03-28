@@ -87,7 +87,7 @@
                  'text-orange-900': getAlertColor(alert) === 'orange',
                  'text-amber-900': getAlertColor(alert) === 'amber'
                }">
-              {{ alert.studentLoginIdentity || alert.participantId }}
+              {{ alert.studentLoginIdentity }}
             </p>
             <p class="text-[10px] font-semibold uppercase tracking-tight" [ngClass]="{
                  'text-red-600': getAlertColor(alert) === 'red',

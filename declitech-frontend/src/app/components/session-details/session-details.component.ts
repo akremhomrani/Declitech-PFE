@@ -96,7 +96,7 @@ export class SessionDetailsComponent implements OnInit {
       
       return {
         id: `#${report.id || index + 1000}`,
-        name: report.studentLoginIdentity || report.participantId || 'Student',
+        name: report.studentLoginIdentity || 'Student',
         lastSessionDate: this.formatDate(report.generatedAt || report.createdAt || ''),
         avgFocusScore: focusScore,
         topEmotion: emotion,

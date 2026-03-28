@@ -11,7 +11,6 @@ export class AlertService {
     private alertSubject = new Subject<Alert>();
     private connectionStatusSubject = new BehaviorSubject<boolean>(false);
     private recentAlerts = new Map<string, Alert[]>();
-    private identityToParticipantId = new Map<string, string>();
 
     public alerts$ = this.alertSubject.asObservable();
     public connectionStatus$ = this.connectionStatusSubject.asObservable();
@@ -34,10 +33,7 @@ export class AlertService {
             const alert: Alert = JSON.parse(event.data);
 
             if (alert.alertType === 'ALERT_RESOLVED') {
-                // Effacer TOUTES les alertes de ce participant
-                // (tab switch résolu ET inactivité souris résolue)
-                this.clearAlertsForParticipant(alert.participantId);
-                // Aussi par studentLoginIdentity
+                // Clear all alerts for this student
                 if (alert.studentLoginIdentity) {
                     this.clearAlertsForParticipant(alert.studentLoginIdentity);
                 }
@@ -61,101 +57,54 @@ export class AlertService {
             this.eventSource = undefined;
             this.connectionStatusSubject.next(false);
             this.recentAlerts.clear();
-            this.identityToParticipantId.clear();
         }
     }
 
     private addRecentAlert(alert: Alert): void {
-        const key = alert.participantId;
+        const key = alert.studentLoginIdentity || alert.sessionId;
 
-        if (alert.studentLoginIdentity) {
-            this.identityToParticipantId.set(alert.studentLoginIdentity, key);
-        }
-
-        // Stocker par participantId
+        // Stocker par studentLoginIdentity ou sessionId
         if (!this.recentAlerts.has(key)) {
             this.recentAlerts.set(key, []);
         }
         this.recentAlerts.get(key)!.push(alert);
-
-        // Stocker aussi par studentLoginIdentity pour matching robuste
-        if (alert.studentLoginIdentity && alert.studentLoginIdentity !== key) {
-            if (!this.recentAlerts.has(alert.studentLoginIdentity)) {
-                this.recentAlerts.set(alert.studentLoginIdentity, []);
-            }
-            this.recentAlerts.get(alert.studentLoginIdentity)!.push(alert);
-        }
     }
 
-    getRecentAlertsForParticipant(participantId: string): Alert[] {
-        const direct = this.recentAlerts.get(participantId);
-        if (direct && direct.length > 0) {
-            return direct;
-        }
-        for (const [, alerts] of this.recentAlerts) {
-            if (alerts.length > 0 && alerts.some(a => a.studentLoginIdentity === participantId)) {
-                return alerts;
-            }
-        }
-        return [];
+    getRecentAlertsForParticipant(identity: string): Alert[] {
+        return this.recentAlerts.get(identity) || [];
     }
 
     getRecentAlertsForIdentity(studentLoginIdentity: string): Alert[] {
-        const pid = this.identityToParticipantId.get(studentLoginIdentity);
-        if (pid) {
-            return this.recentAlerts.get(pid) || [];
-        }
-        return [];
+        return this.recentAlerts.get(studentLoginIdentity) || [];
     }
 
-    hasRecentAlert(participantId: string, alertType?: string, studentLoginIdentity?: string): boolean {
-        let alerts = this.getRecentAlertsForParticipant(participantId);
-        if (alerts.length === 0 && studentLoginIdentity) {
-            alerts = this.getRecentAlertsForIdentity(studentLoginIdentity);
-        }
+    hasRecentAlert(identity: string, alertType?: string): boolean {
+        let alerts = this.getRecentAlertsForParticipant(identity);
         if (alertType) {
             return alerts.some(a => a.alertType === alertType);
         }
         return alerts.length > 0;
     }
 
-    getAlertCount(participantId: string): number {
-        return this.getRecentAlertsForParticipant(participantId).length;
+    getAlertCount(identity: string): number {
+        return this.getRecentAlertsForParticipant(identity).length;
     }
 
-    // Efface TOUTES les alertes d'un participant (fin de session)
-    clearAlertsForParticipant(participantId: string): void {
-        this.recentAlerts.delete(participantId);
-        for (const [identity, pid] of this.identityToParticipantId) {
-            if (pid === participantId) {
-                this.identityToParticipantId.delete(identity);
-            }
-        }
+    // Clear all alerts for an identity (end of session)
+    clearAlertsForParticipant(identity: string): void {
+        this.recentAlerts.delete(identity);
     }
 
-    // Efface UNIQUEMENT les alertes liées aux changements d'onglet (ALERT_RESOLVED)
-    // Garde les alertes MOUSE_INACTIVITY → badge BLOCKED persiste
-    clearTabSwitchAlertsForParticipant(participantId: string): void {
+    // Only clear tab switch alerts (keep MOUSE_INACTIVITY)
+    clearTabSwitchAlertsForParticipant(identity: string): void {
         const tabSwitchTypes = ['TAB_SWITCH', 'MULTIPLE_SWITCHES', 'OFF_PLATFORM'];
-
-        const clearByKey = (key: string) => {
-            const alerts = this.recentAlerts.get(key);
-            if (alerts) {
-                const kept = alerts.filter(a => !tabSwitchTypes.includes(a.alertType));
-                if (kept.length > 0) {
-                    this.recentAlerts.set(key, kept);
-                } else {
-                    this.recentAlerts.delete(key);
-                }
-            }
-        };
-
-        clearByKey(participantId);
-
-        // Aussi par identity (double stockage)
-        for (const [identity, pid] of this.identityToParticipantId) {
-            if (pid === participantId) {
-                clearByKey(identity);
+        const alerts = this.recentAlerts.get(identity);
+        if (alerts) {
+            const kept = alerts.filter(a => !tabSwitchTypes.includes(a.alertType));
+            if (kept.length > 0) {
+                this.recentAlerts.set(identity, kept);
+            } else {
+                this.recentAlerts.delete(identity);
             }
         }
     }

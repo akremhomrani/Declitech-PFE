@@ -1,5 +1,4 @@
 export interface Alert {
-  participantId: string;
   sessionId: string;
   studentLoginIdentity?: string;
   alertType: 'TAB_SWITCH' | 'MULTIPLE_SWITCHES' | 'OFF_PLATFORM' | 'INACTIVITY' | 'LOW_ENGAGEMENT' | 'DISTRACTION' | 'FOCUS_LOSS' | 'ALERT_RESOLVED' | 'MOUSE_INACTIVITY';

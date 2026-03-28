@@ -29,9 +29,6 @@ public class EmotionReport {
     private String sessionId_legacy; // Keep for backward compatibility
 
     @Column(nullable = false)
-    private String participantId;
-
-    @Column(nullable = false)
     private LocalDateTime generatedAt;
 
     @Column(name = "student_login_identity")

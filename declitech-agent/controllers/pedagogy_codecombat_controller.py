@@ -190,7 +190,7 @@ async def pedagogy_status():
     return {
         "service":     "pedagogy",
         "aiReady":     available,
-        "model":       pedagogy_codecombat_service.QWEN_MODEL,
+        "model":       pedagogy_codecombat_service.GEMINI_MODEL,
         "message":     "Ready" if available else "AI unavailable"
     }
 

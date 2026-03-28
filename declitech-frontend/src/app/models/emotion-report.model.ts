@@ -1,7 +1,6 @@
 export interface EmotionReport {
   id?: number;
   sessionId: string;
-  participantId: string;
   generatedAt: string;
   studentLoginIdentity: string;
   status?: string;
@@ -28,7 +27,6 @@ export interface EmotionTimeline {
   dominant?: string;
   probs?: EmotionProbs;
   sessionId?: string;
-  participantId?: string;
   studentLoginIdentity?: string;
 }
 
@@ -45,7 +43,6 @@ export interface EmotionProbs {
 export interface StudentSession {
   studentLoginIdentity: string;
   sessionId: string;
-  participantId: string;
   status: 'IN_PROGRESS' | 'COMPLETED' | 'OFFLINE';
   lastUpdate: string;
   dominantEmotion?: string;

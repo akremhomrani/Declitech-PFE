@@ -64,7 +64,6 @@ class EmotionReportServiceTest {
         sampleDTO = new EmotionReportDTO();
         sampleDTO.setSessionId("SESSION-ABC");
         sampleDTO.setSessionCode("SESSION-ABC");
-        sampleDTO.setParticipantId("PARTICIPANT-001");
         sampleDTO.setStudentLoginIdentity("eya@declitech.com");
         sampleDTO.setGeneratedAt(LocalDateTime.now());
         sampleDTO.setSummaryMean(summaryMean);

@@ -110,7 +110,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   subscribeToAlerts() {
     this.alertSubscription = this.alertService.alerts$.subscribe({
       next: (alert: Alert) => {
-        console.log('[Dashboard] Alerte reçue :', alert.alertType, '| participant:', alert.participantId);
+        console.log('[Dashboard] Alerte reçue :', alert.alertType, '| participant:', alert.studentLoginIdentity);
         // Créer une nouvelle référence de tableau pour déclencher la détection de changement Angular
         this.students = [...this.students];
         this.calculateStatistics();
@@ -145,17 +145,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   getStudentStatusClass(student: EmotionReport): string {
-    const pid = student.participantId;
     const identity = student.studentLoginIdentity;
 
-    if (this.alertService.hasRecentAlert(pid, undefined, identity)) {
-      const hasTabSwitch = this.alertService.hasRecentAlert(pid, 'TAB_SWITCH', identity) ||
-        this.alertService.hasRecentAlert(pid, 'MULTIPLE_SWITCHES', identity);
+    if (this.alertService.hasRecentAlert(identity)) {
+      const hasTabSwitch = this.alertService.hasRecentAlert(identity, 'TAB_SWITCH') ||
+        this.alertService.hasRecentAlert(identity, 'MULTIPLE_SWITCHES');
       if (hasTabSwitch) {
         return 'border-red-500 border-4 shadow-lg shadow-red-500/20';
       }
 
-      const hasMouseInactivity = this.alertService.hasRecentAlert(pid, 'MOUSE_INACTIVITY', identity);
+      const hasMouseInactivity = this.alertService.hasRecentAlert(identity, 'MOUSE_INACTIVITY');
       if (hasMouseInactivity) {
         return 'border-orange-500 border-4 shadow-lg shadow-orange-500/20';
       }
@@ -185,7 +184,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   getAlertCount(student: EmotionReport): number {
-    let count = this.alertService.getAlertCount(student.participantId);
+    let count = this.alertService.getAlertCount(student.studentLoginIdentity);
     if (count === 0) {
       const alerts = this.alertService.getRecentAlertsForIdentity(student.studentLoginIdentity);
       count = alerts.length;
@@ -194,36 +193,34 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   hasActiveAlert(student: EmotionReport): boolean {
-    return this.alertService.hasRecentAlert(student.participantId, undefined, student.studentLoginIdentity);
+    return this.alertService.hasRecentAlert(student.studentLoginIdentity);
   }
 
   getAlertBadgeType(student: EmotionReport): string {
-    const pid = student.participantId;
     const identity = student.studentLoginIdentity;
-    if (this.alertService.hasRecentAlert(pid, 'TAB_SWITCH', identity) ||
-      this.alertService.hasRecentAlert(pid, 'MULTIPLE_SWITCHES', identity)) {
+    if (this.alertService.hasRecentAlert(identity, 'TAB_SWITCH') ||
+      this.alertService.hasRecentAlert(identity, 'MULTIPLE_SWITCHES')) {
       return 'SECURITY';
     }
-    if (this.alertService.hasRecentAlert(pid, 'MOUSE_INACTIVITY', identity)) {
+    if (this.alertService.hasRecentAlert(identity, 'MOUSE_INACTIVITY')) {
       return 'BLOCKED';
     }
-    if (this.alertService.hasRecentAlert(pid, undefined, identity)) {
+    if (this.alertService.hasRecentAlert(identity)) {
       return 'DISTRACTED';
     }
     return 'FOCUSED';
   }
 
   getAlertMessage(student: EmotionReport): string {
-    const pid = student.participantId;
     const identity = student.studentLoginIdentity;
-    if (this.alertService.hasRecentAlert(pid, 'TAB_SWITCH', identity) ||
-      this.alertService.hasRecentAlert(pid, 'MULTIPLE_SWITCHES', identity)) {
+    if (this.alertService.hasRecentAlert(identity, 'TAB_SWITCH') ||
+      this.alertService.hasRecentAlert(identity, 'MULTIPLE_SWITCHES')) {
       return 'Tab Switched';
     }
-    if (this.alertService.hasRecentAlert(pid, 'MOUSE_INACTIVITY', identity)) {
+    if (this.alertService.hasRecentAlert(identity, 'MOUSE_INACTIVITY')) {
       return 'No Movement';
     }
-    if (this.alertService.hasRecentAlert(pid, undefined, identity)) {
+    if (this.alertService.hasRecentAlert(identity)) {
       return 'Distracted';
     }
     return 'On Task';

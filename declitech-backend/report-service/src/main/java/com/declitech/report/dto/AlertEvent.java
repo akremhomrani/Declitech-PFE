@@ -13,7 +13,6 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AlertEvent {
-    private String participantId;
     private String sessionId;
     private String studentLoginIdentity;
     private AlertType alertType;

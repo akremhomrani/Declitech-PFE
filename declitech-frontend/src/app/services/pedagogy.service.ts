@@ -36,7 +36,7 @@ export class PedagogyService {
         ).subscribe({
             next: (list) => {
                 list.forEach(p => {
-                    this.progressMap.set(p.studentLoginIdentity || p.participantId || 'unknown', p);
+                    this.progressMap.set(p.studentLoginIdentity || 'unknown', p);
                     this.progressSubject.next(p);
                 });
             },
