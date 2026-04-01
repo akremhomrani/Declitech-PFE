@@ -69,10 +69,19 @@ class Settings:
         self.FACE_MIN_SIZE = tuple(map(int, os.getenv("FACE_MIN_SIZE", "50,50").split(",")))
         self.FACE_MARGIN_PERCENT = float(os.getenv("FACE_MARGIN_PERCENT", "0.15"))
         self.MODEL_INPUT_SIZE = tuple(map(int, os.getenv("MODEL_INPUT_SIZE", "48,48").split(",")))
-        self.GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-        self.USE_OLLAMA_VISION = os.getenv("USE_OLLAMA_VISION", "true").lower() in ("1", "true", "yes")
-        self.OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
-        self.OLLAMA_VISION_MODEL = os.getenv("OLLAMA_VISION_MODEL", "llama3.2-vision")
+        self.GEMINI_API_KEYS = [k.strip() for k in os.getenv("GEMINI_API_KEY", "").split(",") if k.strip()]
+        # Maintain backward compatibility for scripts checking the singular key presence
+        self.GEMINI_API_KEY = self.GEMINI_API_KEYS[0] if self.GEMINI_API_KEYS else ""
+        self.GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+        self._current_key_idx = 0
+
+    def get_next_gemini_key(self) -> str:
+        """Returns the next API key in the list (round-robin) to handle 429 rate limits natively"""
+        if not self.GEMINI_API_KEYS:
+            return ""
+        key = self.GEMINI_API_KEYS[self._current_key_idx]
+        self._current_key_idx = (self._current_key_idx + 1) % len(self.GEMINI_API_KEYS)
+        return key
 
 
 settings = Settings()

@@ -1,9 +1,8 @@
 import json
 import os
 import logging
-import time
 from typing import Optional
-import requests
+import redis
 
 from config import settings
 from models.schemas import ScreenAnalysisRequest, ScreenAnalysisResponse
@@ -19,18 +18,19 @@ except ImportError:
 
 class ScreenAnalysisService:
     def __init__(self):
-        self.output_file = os.path.join(settings.BASE_DIR, "screen_analysis_output.jsonl")
-        self.use_ollama_vision = getattr(settings, "USE_OLLAMA_VISION", True)
-        self.ollama_base_url = getattr(settings, "OLLAMA_BASE_URL", "http://localhost:11434")
-        self.ollama_vision_model = getattr(settings, "OLLAMA_VISION_MODEL", "llama3.2-vision")
-        self._ollama_model_ready_cache_until = 0.0
-        self._ollama_model_ready = False
+        self.output_file = os.path.join(settings.BASE_DIR, "screen_analysis_output.json")
         
         if HAS_GENAI and getattr(settings, 'GEMINI_API_KEY', None):
             genai.configure(api_key=settings.GEMINI_API_KEY)
             self.model = genai.GenerativeModel('gemini-2.5-flash')
         else:
             self.model = None
+            
+        try:
+            self.redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+        except Exception as e:
+            logger.error(f"Failed to connect to Redis: {e}")
+            self.redis_client = None
 
     def _build_analysis_prompt(self, dom_context: str) -> str:
         return f"""
@@ -62,49 +62,6 @@ class ScreenAnalysisService:
             text = text.replace("```json", "").replace("```", "").strip()
         return json.loads(text)
 
-    def _is_ollama_model_ready(self) -> bool:
-        now = time.time()
-        if now < self._ollama_model_ready_cache_until:
-            return self._ollama_model_ready
-
-        try:
-            tags_url = f"{self.ollama_base_url}/api/tags"
-            r = requests.get(tags_url, timeout=settings.API_TIMEOUT)
-            r.raise_for_status()
-            models = r.json().get("models", [])
-            names = {m.get("name", "") for m in models}
-            self._ollama_model_ready = self.ollama_vision_model in names
-        except Exception:
-            self._ollama_model_ready = False
-
-        # Refresh every 30 seconds to avoid hammering /api/tags
-        self._ollama_model_ready_cache_until = now + 30
-        return self._ollama_model_ready
-
-    def _ask_ollama_vision(self, prompt: str, screenshot_base64: str) -> dict:
-        url = f"{self.ollama_base_url}/api/generate"
-        payload = {
-            "model": self.ollama_vision_model,
-            "prompt": prompt,
-            "stream": False,
-            "format": "json",
-            "images": [screenshot_base64],
-            "options": {"temperature": 0.2}
-        }
-
-        response = requests.post(url, json=payload, timeout=settings.API_TIMEOUT)
-        if response.status_code == 404:
-            # Common case: model not pulled yet. Return clear status upstream.
-            try:
-                detail = response.json().get("error", "model not found")
-            except Exception:
-                detail = "model not found"
-            raise RuntimeError(f"OLLAMA_MODEL_NOT_READY: {detail}")
-
-        response.raise_for_status()
-        data = response.json()
-        return self._parse_json_text(data.get("response", ""))
-
     def analyze_screen(self, request: ScreenAnalysisRequest) -> ScreenAnalysisResponse:
         # Prepare the base response
         response = ScreenAnalysisResponse(
@@ -119,71 +76,78 @@ class ScreenAnalysisService:
         dom_context = json.dumps(request.dom_data) if request.dom_data else "No DOM data available"
         prompt = self._build_analysis_prompt(dom_context)
 
-        # Prefer local Ollama vision to avoid external API quotas.
-        if self.use_ollama_vision:
-            if not self._is_ollama_model_ready():
-                response.status = "MODEL_NOT_READY_OLLAMA"
-                response.observations = f"Ollama model '{self.ollama_vision_model}' is not ready yet. Fallback to DOM data."
-                self._fallback_analysis(request.dom_data, response)
-                self._log_to_file(request, response)
-                return response
+        if self.model:
+            # Smart caching: Hash the DOM state to avoid calling Gemini if nothing changed!
+            # We ignore the image to save API calls when the UI state is identical
+            state_str = json.dumps(request.dom_data, sort_keys=True) if request.dom_data else "No DOM data"
+            import hashlib
+            current_hash = hashlib.md5(state_str.encode()).hexdigest()
+            
+            if hasattr(self, 'last_state_hash') and self.last_state_hash == current_hash and hasattr(self, 'last_response'):
+                # State hasn't changed, reuse the previous LLM response to save quota!
+                logger.info("DOM state identical to last request. Returning cached LLM response to save API quota.")
+                import copy
+                cached_response = copy.deepcopy(self.last_response)
+                # Update status on the copied response to show it was cached
+                cached_response.status = "SUCCESS_CACHED"
+                self._log_to_redis(request, cached_response)
+                return cached_response
 
-            try:
-                result_json = self._ask_ollama_vision(prompt, request.screenshot_base64)
-                response.status = "SUCCESS_OLLAMA"
-                response.exercise_name = result_json.get("exercise_name", "Unknown")
-                response.progress_level = result_json.get("progress_level", "NOT_STARTED")
-                response.on_track = result_json.get("on_track", True)
-                response.observations = result_json.get("observations", "No observations")
-                self._log_to_file(request, response)
-                return response
-            except Exception as e:
-                err = str(e)
-                if err.startswith("OLLAMA_MODEL_NOT_READY:"):
-                    response.status = "MODEL_NOT_READY_OLLAMA"
-                else:
-                    response.status = f"ERROR_OLLAMA: {err}"
-                response.observations = "Error calling local Ollama. Fallback to DOM data."
-                self._fallback_analysis(request.dom_data, response)
-                self._log_to_file(request, response)
-                return response
-        
-        if not self.use_ollama_vision and self.model:
-            try:
-                # We need to construct the image part for Gemini API
-                image_parts = [
-                    {
-                        "mime_type": "image/jpeg",
-                        "data": request.screenshot_base64
-                    }
-                ]
-                
-                result = self.model.generate_content(
-                    contents=[prompt, image_parts[0]],
-                    generation_config=GenerationConfig(
-                        temperature=0.2,
-                        response_mime_type="application/json"
+            import google.api_core.exceptions
+            for attempt in range(len(settings.GEMINI_API_KEYS) or 1):
+                try:
+                    # Dynamically set the API key for this attempt
+                    current_key = settings.get_next_gemini_key()
+                    if current_key:
+                        genai.configure(api_key=current_key)
+                        
+                    # We need to construct the image part for Gemini API
+                    image_parts = [
+                        {
+                            "mime_type": "image/jpeg",
+                            "data": request.screenshot_base64
+                        }
+                    ]
+                    
+                    result = self.model.generate_content(
+                        contents=[prompt, image_parts[0]],
+                        generation_config=GenerationConfig(
+                            temperature=0.2,
+                            response_mime_type="application/json"
+                        )
                     )
-                )
-                
-                result_json = self._parse_json_text(result.text)
-                
-                response.exercise_name = result_json.get("exercise_name", "Unknown")
-                response.progress_level = result_json.get("progress_level", "NOT_STARTED")
-                response.on_track = result_json.get("on_track", True)
-                response.observations = result_json.get("observations", "No observations")
-                
-            except Exception as e:
-                response.status = f"ERROR_LLM: {str(e)}"
-                response.observations = "Error calling Vision LLM. Fallback to DOM data."
-                self._fallback_analysis(request.dom_data, response)
+                    
+                    result_json = self._parse_json_text(result.text)
+                    
+                    response.exercise_name = result_json.get("exercise_name", "Unknown")
+                    response.progress_level = result_json.get("progress_level", "NOT_STARTED")
+                    response.on_track = result_json.get("on_track", True)
+                    response.observations = result_json.get("observations", "No observations")
+                    
+                    # Cache the successful result
+                    self.last_state_hash = current_hash
+                    self.last_response = response
+                    break # Success! Break out of the retry loop
+
+                except google.api_core.exceptions.ResourceExhausted as e:
+                    logger.warning(f"Key rate limited (429). Attempt {attempt + 1}/{len(settings.GEMINI_API_KEYS)}")
+                    if attempt == len(settings.GEMINI_API_KEYS) - 1:
+                        response.status = f"ERROR_LLM_QUOTA: {str(e)}"
+                        response.observations = "API Quota Exceeded on all keys. Fallback to DOM rules."
+                        self._fallback_analysis(request.dom_data, response)
+
+                except Exception as e:
+                    response.status = f"ERROR_LLM: {str(e)}"
+                    response.observations = "Error calling Vision LLM. Fallback to DOM data."
+                    self._fallback_analysis(request.dom_data, response)
+                    break # Non-quota error, don't retry
         else:
             # Fallback heuristic using DOM data if no API key or no module
             response.status = "SUCCESS_NO_LLM"
             self._fallback_analysis(request.dom_data, response)
             
-        # Write detailed analysis results to JSONL file
-        self._log_to_file(request, response)
+        # Write detailed analysis results to Redis
+        self._log_to_redis(request, response)
         
         return response
 
@@ -224,7 +188,10 @@ class ScreenAnalysisService:
                 response.progress_level = "NEAR_COMPLETE"
                 response.observations = "Model is trained, waiting for student to test it."
 
-    def _log_to_file(self, request: ScreenAnalysisRequest, response: ScreenAnalysisResponse):
+    def _log_to_redis(self, request: ScreenAnalysisRequest, response: ScreenAnalysisResponse):
+        if not self.redis_client:
+            return
+
         log_entry = {
             "timestamp": request.timestamp,
             "session_id": request.session_id,
@@ -235,7 +202,9 @@ class ScreenAnalysisService:
         }
         
         try:
-            with open(self.output_file, 'a', encoding='utf-8') as f:
-                f.write(json.dumps(log_entry, ensure_ascii=False) + '\n')
-        except Exception:
-            pass
+            key = f"track:{request.session_id}:{request.student_login_identity or 'unknown'}"
+            self.redis_client.rpush(key, json.dumps(log_entry))
+            # Set an expiration of 1 day to clean up old sessions automatically
+            self.redis_client.expire(key, 86400)
+        except Exception as e:
+            logger.error(f"Failed to write to Redis: {e}")

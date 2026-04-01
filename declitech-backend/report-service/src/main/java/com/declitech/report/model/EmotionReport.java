@@ -55,8 +55,7 @@ public class EmotionReport {
     // Number of samples
     private Integer numberOfSamples;
 
-    @OneToMany(mappedBy = "report", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<EmotionTimeline> timeline;
+
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")

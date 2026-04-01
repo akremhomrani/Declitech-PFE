@@ -27,6 +27,7 @@ const AGENT_SCREEN_URL = "http://127.0.0.1:8765/analyze-screen";
 const SCREEN_CAPTURE_INTERVAL = 30000; // 30 seconds
 let screenCaptureInterval = null;
 let lastVittascienceData = null;
+let sessionValidationInterval = null;
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "SESSION_STARTED") {
@@ -40,6 +41,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         mouseInactivityAlertSent = false;
         startMonitoring();
         startMouseInactivityTracking();
+        startSessionValidationCheck();
         sendResponse({ success: true });
     } else if (message.type === "SESSION_STOPPED") {
         activeSessionCode = null;
@@ -51,6 +53,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         mouseInactivityAlertSent = false;
         stopScreenCapture();
         stopMouseInactivityTracking();
+        stopSessionValidationCheck();
         sendResponse({ success: true });
     } else if (message.type === "MOUSE_MOVED") {
         lastMouseMoveTime = Date.now();
@@ -62,6 +65,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
     return true;
 });
+
+function startSessionValidationCheck() {
+    if (sessionValidationInterval) return;
+    sessionValidationInterval = setInterval(async () => {
+        if (!activeSessionCode) return;
+        try {
+            const res = await fetch(`http://127.0.0.1:8765/validate/${activeSessionCode}`);
+            const validation = await res.json();
+            if (!validation.valid) {
+                const reason = validation.reason || "";
+                if (reason === "inactive" || reason === "expired") {
+                    await fetch("http://127.0.0.1:8765/stop", { method: "POST" });
+                    
+                    // Automatically stop session in background
+                    activeSessionCode = null;
+                    stopScreenCapture();
+                    stopMouseInactivityTracking();
+                    stopSessionValidationCheck();
+                }
+            }
+        } catch (e) {
+            // Ignore network errors
+        }
+    }, 5000);
+}
+
+function stopSessionValidationCheck() {
+    if (sessionValidationInterval) {
+        clearInterval(sessionValidationInterval);
+        sessionValidationInterval = null;
+    }
+}
 
 function startMonitoring() {
     setInterval(checkActiveTab, CHECK_INTERVAL);

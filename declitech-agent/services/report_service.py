@@ -41,8 +41,8 @@ class ReportService:
 
         if valid == 0 or (no_face_count / max(1, total_captures)) >= 0.6:
             return {
-                "state": "DONNEES_INSUFFISANTES",
-                "final_sentence": "Données insuffisantes : visage souvent non détecté pendant la séance."
+                "state": "Insufficient data: face frequently not detected during the session.",
+                "finalSentence": "Insufficient data: face frequently not detected during the session."
             }
 
         counts = Counter(dominants)
@@ -66,48 +66,48 @@ class ReportService:
 
         if angry_f >= 0.5 or angry_m >= 0.25 or (angry_f + sad_f) >= 0.6:
             return {
-                "state": "FRUSTRE_NON_SATISFAIT",
-                "final_sentence": "L'enfant semble frustré / non satisfait pendant la séance.",
+                "state": "The student appears frustrated or dissatisfied during the session.",
+                "finalSentence": "The student appears frustrated or dissatisfied during the session.",
                 "freq": freq,
                 "mean_probs": mean
             }
 
         if fear_f >= 0.5 or fear_m >= 0.25:
             return {
-                "state": "STRESSE_INQUIET",
-                "final_sentence": "L'enfant semble stressé / inquiet pendant la séance.",
+                "state": "The student appears stressed or anxious during the session.",
+                "finalSentence": "The student appears stressed or anxious during the session.",
                 "freq": freq,
                 "mean_probs": mean
             }
 
         if (sad_f + fear_f) >= 0.6 or (sad_m + fear_m) >= 0.45:
             return {
-                "state": "CONFUS_EN_DIFFICULTE",
-                "final_sentence": "L'enfant semble en difficulté / confus pendant la séance.",
+                "state": "The student appears to be struggling or confused during the session.",
+                "finalSentence": "The student appears to be struggling or confused during the session.",
                 "freq": freq,
                 "mean_probs": mean
             }
 
         if happy_f >= 0.5 or happy_m >= 0.25 or (happy_f > sad_f and happy_f > angry_f):
             return {
-                "state": "SATISFAIT_ENGAGE",
-                "final_sentence": "L'enfant semble satisfait et engagé pendant la séance.",
+                "state": "The student appears satisfied and deeply engaged during the session.",
+                "finalSentence": "The student appears satisfied and deeply engaged during the session.",
                 "freq": freq,
                 "mean_probs": mean
             }
 
         if neutral_f >= 0.5 or neutral_m >= 0.40:
             return {
-                "state": "NEUTRE_CALME",
-                "final_sentence": "L'enfant semble neutre / calme pendant la séance.",
+                "state": "The student appears neutral and calm during the session.",
+                "finalSentence": "The student appears neutral and calm during the session.",
                 "freq": freq,
                 "mean_probs": mean
             }
 
         dominant_global = max(mean, key=mean.get)
         return {
-            "state": "ETAT_MIXTE",
-            "final_sentence": f"État mixte pendant la séance. Tendance principale : {dominant_global}.",
+            "state": f"Mixed emotional state during the session. Primary tendency: {dominant_global}.",
+            "finalSentence": f"Mixed emotional state during the session. Primary tendency: {dominant_global}.",
             "freq": freq,
             "mean_probs": mean
         }

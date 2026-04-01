@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/reports")
@@ -31,7 +32,7 @@ public class EmotionReportController {
             ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", e.getMessage()));
+                .body(Map.of("error", String.valueOf(e.getMessage())));
         }
     }
 
@@ -46,7 +47,7 @@ public class EmotionReportController {
             ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", e.getMessage()));
+                .body(Map.of("error", String.valueOf(e.getMessage())));
         }
     }
 
@@ -127,5 +128,13 @@ public class EmotionReportController {
             "service", "report-service",
             "timestamp", LocalDateTime.now().toString()
         ));
+    }
+
+    @GetMapping("/emotions/live/{sessionCode}/{studentLoginIdentity}")
+    public ResponseEntity<List<String>> getLiveTimeline(
+            @PathVariable String sessionCode,
+            @PathVariable String studentLoginIdentity) {
+        List<String> timeline = reportService.getLiveTimelineFromRedis(sessionCode, studentLoginIdentity);
+        return ResponseEntity.ok(timeline);
     }
 }

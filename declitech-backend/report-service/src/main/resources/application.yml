@@ -46,7 +46,7 @@ spring:
 
 gateway:
   secret: declitech-gateway-secret-2024
-  require-header: true
+  require-header: false
 
 eureka:
   client:

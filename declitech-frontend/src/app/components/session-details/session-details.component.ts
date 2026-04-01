@@ -1,4 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import jsPDF from 'jspdf';
+// @ts-ignore
+import html2canvas from 'html2canvas';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -8,6 +11,8 @@ import { EmotionService } from '../../services/emotion.service';
 import { SessionService } from '../../services/session.service';
 import { EmotionReport } from '../../models/emotion-report.model';
 import { SessionHistory, StudentReport } from '../../models/session';
+import { TrackReportService } from '../../services/track-report.service';
+import { TrackReport } from '../../models/track-report.model';
 
 @Component({
   selector: 'app-session-details',
@@ -42,10 +47,19 @@ export class SessionDetailsComponent implements OnInit {
   totalResults: number = 124;
   resultsPerPage: number = 5;
 
+  trackReports: TrackReport[] = [];
+  untransformedReports: EmotionReport[] = [];
+  selectedStudent: StudentReport | null = null;
+  selectedTrackReport: TrackReport | null = null;
+  selectedEmotionReport: EmotionReport | null = null;
+  isReportModalOpen: boolean = false;
+  isExportingPdf: boolean = false;
+
   constructor(
     private route: ActivatedRoute,
     private emotionService: EmotionService,
-    private sessionService: SessionService
+    private sessionService: SessionService,
+    private trackReportService: TrackReportService
   ) {}
 
   ngOnInit(): void {
@@ -76,6 +90,7 @@ export class SessionDetailsComponent implements OnInit {
     
     this.emotionService.getReportsBySessionCode(this.sessionCode).subscribe({
       next: (reports: EmotionReport[]) => {
+        this.untransformedReports = reports;
         this.allStudents = this.transformReportsToStudents(reports);
         this.totalResults = this.allStudents.length;
         this.updateDisplayedStudents();
@@ -84,6 +99,15 @@ export class SessionDetailsComponent implements OnInit {
       },
       error: () => {
         this.isLoading = false;
+      }
+    });
+
+    this.trackReportService.getTrackReportsBySessionCode(this.sessionCode).subscribe({
+      next: (reports: TrackReport[]) => {
+        this.trackReports = reports;
+      },
+      error: (err) => {
+        console.error('Failed to load track reports', err);
       }
     });
   }
@@ -218,7 +242,121 @@ export class SessionDetailsComponent implements OnInit {
   }
 
   viewFullReport(studentId: string): void {
-    this.updateDisplayedStudents();
+    this.selectedStudent = this.allStudents.find(s => s.id === studentId) || null;
+    if (this.selectedStudent) {
+      // Find matching track report
+      this.selectedTrackReport = this.trackReports.find(t => t.studentIdentity === this.selectedStudent?.name) || null;
+      // Find matching original emotion report for precise stats
+      this.selectedEmotionReport = this.untransformedReports.find(r => r.studentLoginIdentity === this.selectedStudent?.name) || null;
+      this.isReportModalOpen = true;
+    }
+  }
+
+  closeReportModal(): void {
+    this.isReportModalOpen = false;
+    this.selectedStudent = null;
+    this.selectedTrackReport = null;
+    this.selectedEmotionReport = null;
+    this.isExportingPdf = false;
+  }
+
+  getInitials(name: string): string {
+    if (!name) return 'ST';
+    
+    // Split by spaces or dots (e.g., 'ya.benattig' -> ['ya', 'benattig'])
+    const parts = name.split(/[\s.]+/).filter(p => p.length > 0);
+    
+    if (parts.length === 0) return 'ST';
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    
+    // Take first letter of first two parts
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
+  async exportModalToPDF(): Promise<void> {
+    const modalElement = document.getElementById('full-report-content');
+    if (!modalElement || !this.selectedStudent) return;
+
+    try {
+      this.isExportingPdf = true;
+
+      // Wait for Angular change detection to flush
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Clone the entire modal so we can expand it without affecting UI
+      const clone = modalElement.cloneNode(true) as HTMLElement;
+
+      // Show print header, hide sticky interactive header
+      const clonePrintHeaders = clone.querySelectorAll('.print-header');
+      clonePrintHeaders.forEach(el => {
+        (el as HTMLElement).style.display = 'flex';
+        el.classList.remove('hidden');
+      });
+      const cloneSticky = clone.querySelectorAll('[data-html2canvas-ignore]');
+      cloneSticky.forEach(el => (el as HTMLElement).style.display = 'none');
+
+      // Remove interactive-only elements (export button, close button)
+      const ignoredEls = clone.querySelectorAll('[data-html2canvas-ignore]');
+      ignoredEls.forEach(el => el.parentNode?.removeChild(el));
+
+      // Style the clone for full-height off-screen rendering
+      clone.style.position = 'fixed';
+      clone.style.top = '0';
+      clone.style.left = '-9999px';
+      clone.style.width = modalElement.scrollWidth + 'px';
+      clone.style.height = modalElement.scrollHeight + 'px';
+      clone.style.maxHeight = 'none';
+      clone.style.overflow = 'visible';
+      clone.style.borderRadius = '0';
+      clone.style.zIndex = '-1';
+      clone.style.backgroundColor = '#ffffff';
+      document.body.appendChild(clone);
+
+      // Small delay to ensure clone is rendered
+      await new Promise(resolve => setTimeout(resolve, 150));
+
+      const canvas = await html2canvas(clone, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        width: clone.scrollWidth,
+        height: clone.scrollHeight,
+        windowWidth: clone.scrollWidth,
+        windowHeight: clone.scrollHeight
+      });
+
+      // Remove clone from DOM
+      document.body.removeChild(clone);
+
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgData = canvas.toDataURL('image/png');
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position -= pageHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const dateStr = new Date().toISOString().split('T')[0];
+      pdf.save(`Declitech_Report_${this.selectedStudent.name.replace(/\s+/g, '_')}_${dateStr}.pdf`);
+
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+    } finally {
+      this.isExportingPdf = false;
+    }
   }
 
   exportReport(): void {

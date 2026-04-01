@@ -2,17 +2,16 @@ package com.declitech.report.service;
 
 import com.declitech.report.dto.EmotionReportDTO;
 import com.declitech.report.model.EmotionReport;
-import com.declitech.report.model.EmotionTimeline;
 import com.declitech.report.repository.EmotionReportRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,6 +23,7 @@ public class EmotionReportService {
 
     private final EmotionReportRepository reportRepository;
     private final ObjectMapper objectMapper;
+    private final StringRedisTemplate redisTemplate;
 
     @Transactional
     public EmotionReport importReportFromJson(String jsonFilePath) throws Exception {
@@ -69,38 +69,7 @@ public class EmotionReportService {
             report.setFinalSentence(dto.getFinalState().getFinalSentence());
         }
         
-        if (dto.getTimeline() != null && !dto.getTimeline().isEmpty()) {
-            List<EmotionTimeline> timelineEntries = new ArrayList<>();
-            
-            for (EmotionReportDTO.TimelineEntry entry : dto.getTimeline()) {
-                EmotionTimeline timeline = new EmotionTimeline();
-                timeline.setReport(report);
-                timeline.setTimestamp(parseTimestamp(entry.getTs()));
-                timeline.setStatus(entry.getStatus());
-                timeline.setDominantEmotion(entry.getDominant());
-                
-                if (entry.getProbs() != null) {
-                    Map<String, Double> probs = entry.getProbs();
-                    timeline.setAngry(probs.getOrDefault("angry", 0.0));
-                    timeline.setDisgust(probs.getOrDefault("disgust", 0.0));
-                    timeline.setFear(probs.getOrDefault("fear", 0.0));
-                    timeline.setHappy(probs.getOrDefault("happy", 0.0));
-                    timeline.setSad(probs.getOrDefault("sad", 0.0));
-                    timeline.setSurprise(probs.getOrDefault("surprise", 0.0));
-                    timeline.setNeutral(probs.getOrDefault("neutral", 0.0));
-                }
-                
-                timeline.setErrorMessage(entry.getError());
-                timelineEntries.add(timeline);
-            }
-            
-            if (report.getTimeline() != null) {
-                report.getTimeline().clear();
-                report.getTimeline().addAll(timelineEntries);
-            } else {
-                report.setTimeline(timelineEntries);
-            }
-        }
+        
         
         return reportRepository.save(report);
     }
@@ -192,11 +161,13 @@ public class EmotionReportService {
         );
     }
 
-    private LocalDateTime parseTimestamp(String timestamp) {
-        try {
-            return LocalDateTime.parse(timestamp, DateTimeFormatter.ISO_DATE_TIME);
-        } catch (Exception e) {
-            return LocalDateTime.now();
+    public List<String> getLiveTimelineFromRedis(String sessionCode, String studentLoginIdentity) {
+        String redisKey = "emotion_timeline:" + sessionCode + ":" + studentLoginIdentity;
+        // Fetch all elements from the list (0 to -1)
+        List<String> timeline = redisTemplate.opsForList().range(redisKey, 0, -1);
+        if (timeline == null) {
+            return List.of();
         }
+        return timeline;
     }
 }

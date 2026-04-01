@@ -140,7 +140,7 @@ async function refreshStatus() {
     if (isRunning) {
       btnJoin.style.display = "none";
       sessionActive.style.display = "flex";
-      currentSessionCode = s.session_id ? s.session_id.replace("SESSION-", "") : null;
+      currentSessionCode = s.session_id ? s.session_id.replace("SESSION-", "").replace("LOCAL-", "") : null;
 
       if (!sessionCheckInterval) {
         startSessionValidityCheck();

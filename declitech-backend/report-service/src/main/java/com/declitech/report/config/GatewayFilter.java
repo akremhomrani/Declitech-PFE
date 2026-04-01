@@ -41,6 +41,12 @@ public class GatewayFilter implements Filter {
             return;
         }
 
+        // Allow track report POST from the Python agent (no gateway credentials available)
+        if (requestURI.startsWith("/api/reports/track")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         // If gateway header is not required, allow all requests
         if (!requireGatewayHeader) {
             chain.doFilter(request, response);

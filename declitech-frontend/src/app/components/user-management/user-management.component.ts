@@ -40,7 +40,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   blockingUser = false;
   isAdmin = false;
 
-  constructor(private userService: UserService, private authService: AuthService) {}
+  constructor(private userService: UserService, private authService: AuthService) { }
 
   ngOnInit() {
     this.isAdmin = this.authService.getRole() === 'ADMIN';
@@ -76,7 +76,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
             this.hasNext = this.currentPage < this.totalPages;
             this.hasPrevious = this.currentPage > 1;
           },
-          error: (error: any) => {}
+          error: (error: any) => { }
         });
     } else {
       this.userService.getAllUsers(page, this.pageSize)
@@ -90,7 +90,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
             this.hasNext = this.currentPage < this.totalPages;
             this.hasPrevious = this.currentPage > 1;
           },
-          error: (error: any) => {}
+          error: (error: any) => { }
         });
     }
   }
@@ -137,13 +137,13 @@ export class UserManagementComponent implements OnInit, OnDestroy {
 
   formatPhoneNumber(phone: string): string {
     if (!phone) return 'N/A';
-    
+
     const digits = phone.replace(/\D/g, '');
-    
+
     if (digits.length !== 8 || digits.startsWith('1') || digits.startsWith('0')) {
       return 'Invalid';
     }
-    
+
     const formatted = `${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5, 8)}`;
     return `+216 ${formatted}`;
   }

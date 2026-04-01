@@ -65,9 +65,9 @@ export class SessionHistoryComponent implements OnInit, OnDestroy {
         filters.search = this.searchTerm;
       }
       if (this.filterStatus === 'active') {
-        filters.isActive = true;
+        filters.status = 'ACTIVE';
       } else if (this.filterStatus === 'expired') {
-        filters.isActive = false;
+        filters.status = 'ENDED';
       }
       if (this.isInstructor && this.currentUsername) {
         filters.instructorUsername = this.currentUsername;

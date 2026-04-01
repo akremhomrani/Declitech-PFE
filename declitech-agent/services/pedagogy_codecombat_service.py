@@ -21,11 +21,6 @@ MAX_RETRIES_429 = int(os.getenv("MAX_RETRIES_429", "3"))
 RETRY_BASE_SECONDS = float(os.getenv("RETRY_BASE_SECONDS", "1.0"))
 PHASE_CACHE_TTL_SECONDS = int(os.getenv("PHASE_CACHE_TTL_SECONDS", "20"))
 
-# Ollama Fallback
-USE_OLLAMA = os.getenv("USE_OLLAMA", "true").lower() == "true"
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2-vision")
-
 
 def _compute_retry_delay(attempt: int, retry_after_header: Optional[str]) -> float:
     if retry_after_header:
@@ -36,39 +31,6 @@ def _compute_retry_delay(attempt: int, retry_after_header: Optional[str]) -> flo
     # Simple exponential backoff: base * 2^attempt
     return RETRY_BASE_SECONDS * (2 ** attempt)
 
-async def _ask_ollama(prompt: str, temperature: float = 0.2) -> str:
-    """Fallback to local Ollama when Gemini fails"""
-    if not USE_OLLAMA:
-        return ""
-    
-    try:
-        url = f"{OLLAMA_BASE_URL}/api/generate"
-        payload = {
-            "model": OLLAMA_MODEL,
-            "prompt": prompt,
-            "stream": False,
-            "temperature": temperature
-        }
-        
-        async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
-            try:
-                r = await client.post(url, json=payload)
-                r.raise_for_status()
-                data = r.json()
-                response = data.get("response", "").strip()
-                if response:
-                    logger.info(f"Ollama ({OLLAMA_MODEL}) response: {len(response)} characters")
-                    return response
-                return ""
-            except httpx.ConnectError:
-                logger.warning(f"Ollama not available at {OLLAMA_BASE_URL}")
-                return ""
-    except Exception as e:
-        logger.error(f"Ollama error: {e}")
-        return ""
-    
-    return ""
-
 def _build_gemini_url(model: str, version: str) -> str:
     """Build Gemini API endpoint URL"""
     return f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent"
@@ -76,8 +38,8 @@ def _build_gemini_url(model: str, version: str) -> str:
 async def _ask_gemini(prompt: str, temperature: float = 0.2) -> str:
     """Call Gemini 2.5 Flash API (Google)"""
     if not GEMINI_API_KEY:
-        logger.warning("Gemini API unavailable: GEMINI_API_KEY missing. Trying Ollama...")
-        return await _ask_ollama(prompt, temperature) if USE_OLLAMA else ""
+        logger.warning("Gemini API unavailable: GEMINI_API_KEY missing.")
+        return ""
 
     try:
         payload = {
@@ -116,26 +78,19 @@ async def _ask_gemini(prompt: str, temperature: float = 0.2) -> str:
                             )
                             await asyncio.sleep(delay)
                             continue
-                        elif status == 429:
-                            logger.warning(f"Gemini rate-limited (429), retries exhausted. Trying Ollama...")
-                            ollama_result = await _ask_ollama(prompt, temperature)
-                            if ollama_result:
-                                return ollama_result
                         raise
 
             if last_error:
                 logger.error(f"Gemini error: {last_error}")
                 return ""
     except Exception as e:
-        logger.error(f"Gemini error: {e}. Trying Ollama...")
-        if USE_OLLAMA:
-            return await _ask_ollama(prompt, temperature)
+        logger.error(f"Gemini error: {e}")
         return ""
         
     return ""
 
 async def is_ai_available() -> bool:
-    return bool(GEMINI_API_KEY) or USE_OLLAMA
+    return bool(GEMINI_API_KEY)
 
 def _normalize_blocks(code: str) -> list[str]:
     """Extract individual blocks from code. Handles both function calls and plain commands."""

@@ -5,14 +5,15 @@
     <app-sidebar></app-sidebar>
 
     <main class="flex-1 flex flex-col overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8 bg-background-light">
-      
+
       <!-- Header Section -->
       <div class="mb-6 sm:mb-8">
         <div class="flex items-center gap-3 mb-2">
           <a routerLink="/session/history" class="text-text-muted hover:text-primary transition-colors">
             <span class="material-symbols-outlined">arrow_back</span>
           </a>
-          <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900">Session Insights & Analytics</h2>
+          <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900">Session Insights &
+            Analytics</h2>
         </div>
         <p class="text-slate-500 max-w-2xl leading-relaxed text-sm sm:text-base pl-11">
           Detailed analysis of student engagement, emotions, and behavioral metrics for this session.
@@ -22,7 +23,8 @@
       <!-- Loading State -->
       <div *ngIf="isLoading" class="flex items-center justify-center py-16">
         <div class="text-center">
-          <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+          <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent">
+          </div>
           <p class="mt-4 text-slate-600 font-medium">Loading session reports...</p>
         </div>
       </div>
@@ -35,7 +37,8 @@
       </div>
 
       <!-- Stats Grid -->
-      <div *ngIf="!isLoading && students.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-10">
+      <div *ngIf="!isLoading && students.length > 0"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-10">
         <div class="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm border-l-4 border-l-primary">
           <div class="flex justify-between items-start mb-2">
             <p class="text-text-muted text-[10px] font-bold uppercase tracking-widest">Class Avg. Focus</p>
@@ -88,30 +91,29 @@
       </div>
 
       <!-- Filters Bar -->
-      <div *ngIf="!isLoading && students.length > 0" class="bg-white border border-slate-200 rounded-2xl p-4 mb-6 sm:mb-8 flex flex-col lg:flex-row gap-4 items-center shadow-sm">
+      <div *ngIf="!isLoading && students.length > 0"
+        class="bg-white border border-slate-200 rounded-2xl p-4 mb-6 sm:mb-8 flex flex-col lg:flex-row gap-4 items-center shadow-sm">
         <div class="relative w-full lg:w-1/3">
-          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">person_search</span>
-          <input 
-            [(ngModel)]="searchTerm"
-            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary/30 outline-none text-text-main placeholder:text-slate-400" 
-            placeholder="Search student by name..." 
-            type="text"/>
+          <span
+            class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">person_search</span>
+          <input [(ngModel)]="searchTerm"
+            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary/30 outline-none text-text-main placeholder:text-slate-400"
+            placeholder="Search student by name..." type="text" />
         </div>
-        
+
         <div class="flex flex-1 w-full gap-4">
           <div class="relative flex-1">
-            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">date_range</span>
-            <input 
-              [(ngModel)]="dateRange"
-              class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none text-text-main" 
-              placeholder="Select Date Range" 
-              type="text"/>
+            <span
+              class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">date_range</span>
+            <input [(ngModel)]="dateRange"
+              class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none text-text-main"
+              placeholder="Select Date Range" type="text" />
           </div>
-          
+
           <div class="relative flex-1">
-            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">notification_important</span>
-            <select 
-              [(ngModel)]="alertType"
+            <span
+              class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">notification_important</span>
+            <select [(ngModel)]="alertType"
               class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none text-text-main appearance-none">
               <option value="">Alert Type: All</option>
               <option value="focus">Focus</option>
@@ -120,9 +122,8 @@
             </select>
           </div>
         </div>
-        
-        <button 
-          (click)="applyFilters()"
+
+        <button (click)="applyFilters()"
           class="w-full lg:w-auto px-6 py-2.5 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-all flex items-center justify-center gap-2">
           <span class="material-symbols-outlined text-lg">filter_alt</span>
           Apply Filters
@@ -130,24 +131,35 @@
       </div>
 
       <!-- Students Table -->
-      <div *ngIf="!isLoading && students.length > 0" class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex-1 flex flex-col mb-6">
+      <div *ngIf="!isLoading && students.length > 0"
+        class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex-1 flex flex-col mb-6">
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="px-4 sm:px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-text-muted">Student Name</th>
-                <th class="px-4 sm:px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-text-muted">Last Session Date</th>
-                <th class="px-4 sm:px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-text-muted">Avg. Focus Score</th>
-                <th class="px-4 sm:px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-text-muted">Top Emotion</th>
-                <th class="px-4 sm:px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-text-muted text-center">Total Alerts</th>
-                <th class="px-4 sm:px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-text-muted text-right">Actions</th>
+                <th class="px-4 sm:px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-text-muted">Student
+                  Name</th>
+                <th class="px-4 sm:px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-text-muted">Last
+                  Session Date</th>
+                <th class="px-4 sm:px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-text-muted">Avg. Focus
+                  Score</th>
+                <th class="px-4 sm:px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-text-muted">Top
+                  Emotion</th>
+                <th
+                  class="px-4 sm:px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-text-muted text-center">
+                  Total Alerts</th>
+                <th
+                  class="px-4 sm:px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-text-muted text-right">
+                  Actions</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
               <tr *ngFor="let student of students" class="hover:bg-slate-50/50 transition-colors">
                 <td class="px-4 sm:px-6 py-4">
                   <div class="flex items-center gap-3">
-                    <div class="size-9 rounded-xl bg-center bg-cover border border-slate-200" [style.background-image]="'url(' + student.avatarUrl + ')'"></div>
+                    <div class="size-10 rounded-[14px] bg-primary text-white flex items-center justify-center font-black text-[15px] shadow-sm ring-4 ring-primary/10">
+                      {{ getInitials(student.name) }}
+                    </div>
                     <div>
                       <p class="text-sm font-bold text-text-main">{{ student.name }}</p>
                       <p class="text-[10px] text-text-muted">ID: {{ student.id }}</p>
@@ -157,16 +169,20 @@
                 <td class="px-4 sm:px-6 py-4 text-sm text-text-muted font-medium">{{ student.lastSessionDate }}</td>
                 <td class="px-4 sm:px-6 py-4">
                   <div class="flex items-center gap-2">
-                    <span class="text-sm font-bold" [class.text-primary]="student.avgFocusScore >= 85" [class.text-amber-500]="student.avgFocusScore >= 70 && student.avgFocusScore < 85" [class.text-red-500]="student.avgFocusScore < 70">
+                    <span class="text-sm font-bold" [class.text-primary]="student.avgFocusScore >= 85"
+                      [class.text-amber-500]="student.avgFocusScore >= 70 && student.avgFocusScore < 85"
+                      [class.text-red-500]="student.avgFocusScore < 70">
                       {{ student.avgFocusScore }}%
                     </span>
                     <div class="w-16 bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                      <div class="h-full rounded-full" [ngClass]="getFocusBarColor(student.avgFocusScore)" [style.width.%]="student.avgFocusScore"></div>
+                      <div class="h-full rounded-full" [ngClass]="getFocusBarColor(student.avgFocusScore)"
+                        [style.width.%]="student.avgFocusScore"></div>
                     </div>
                   </div>
                 </td>
                 <td class="px-4 sm:px-6 py-4">
-                  <span class="px-2.5 py-1 text-[10px] font-bold rounded-lg uppercase border" [ngClass]="getEmotionClass(student.emotionColor)">
+                  <span class="px-2.5 py-1 text-[10px] font-bold rounded-lg uppercase border"
+                    [ngClass]="getEmotionClass(student.emotionColor)">
                     {{ student.topEmotion }}
                   </span>
                 </td>
@@ -174,8 +190,7 @@
                   <span class="text-sm font-bold text-text-main">{{ student.totalAlerts }}</span>
                 </td>
                 <td class="px-4 sm:px-6 py-4 text-right">
-                  <button 
-                    (click)="viewFullReport(student.id)"
+                  <button (click)="viewFullReport(student.id)"
                     class="px-3 sm:px-4 py-1.5 bg-slate-100 text-primary text-[11px] font-black rounded-lg hover:bg-primary hover:text-white transition-all uppercase tracking-wider border border-transparent hover:border-primary-dark">
                     View Full Report
                   </button>
@@ -184,33 +199,26 @@
             </tbody>
           </table>
         </div>
-        
+
         <!-- Pagination -->
-        <div class="mt-auto border-t border-slate-100 px-4 sm:px-6 py-4 flex items-center justify-between bg-slate-50/50">
+        <div
+          class="mt-auto border-t border-slate-100 px-4 sm:px-6 py-4 flex items-center justify-between bg-slate-50/50">
           <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest">
-            Showing {{ (currentPage - 1) * resultsPerPage + 1 }}-{{ Math.min(currentPage * resultsPerPage, totalResults) }} of {{ totalResults }} Results
+            Showing {{ (currentPage - 1) * resultsPerPage + 1 }}-{{ Math.min(currentPage * resultsPerPage, totalResults)
+            }} of {{ totalResults }} Results
           </p>
           <div class="flex gap-2">
-            <button 
-              (click)="changePage(currentPage - 1)"
-              [disabled]="currentPage === 1"
+            <button (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1"
               class="size-8 rounded-lg border border-slate-200 flex items-center justify-center text-text-muted hover:bg-white hover:text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed">
               <span class="material-symbols-outlined text-sm">chevron_left</span>
             </button>
-            <button 
-              *ngFor="let page of pages"
-              (click)="changePage(page)"
-              [class.bg-primary]="currentPage === page"
-              [class.text-white]="currentPage === page"
-              [class.shadow-sm]="currentPage === page"
-              [class.border-slate-200]="currentPage !== page"
-              [class.text-text-muted]="currentPage !== page"
+            <button *ngFor="let page of pages" (click)="changePage(page)" [class.bg-primary]="currentPage === page"
+              [class.text-white]="currentPage === page" [class.shadow-sm]="currentPage === page"
+              [class.border-slate-200]="currentPage !== page" [class.text-text-muted]="currentPage !== page"
               class="size-8 rounded-lg flex items-center justify-center text-xs font-bold hover:bg-white hover:text-primary transition-all border">
               {{ page }}
             </button>
-            <button 
-              (click)="changePage(currentPage + 1)"
-              [disabled]="currentPage === totalPages"
+            <button (click)="changePage(currentPage + 1)" [disabled]="currentPage === totalPages"
               class="size-8 rounded-lg border border-slate-200 flex items-center justify-center text-text-muted hover:bg-white hover:text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed">
               <span class="material-symbols-outlined text-sm">chevron_right</span>
             </button>
@@ -219,14 +227,278 @@
       </div>
 
       <!-- Export Button -->
-      <button 
-        *ngIf="!isLoading && students.length > 0"
-        (click)="exportReport()"
+      <button *ngIf="!isLoading && students.length > 0" (click)="exportReport()"
         class="w-full sm:w-auto self-end px-6 py-3 rounded-2xl bg-slate-100 border border-slate-200 text-text-muted text-sm font-bold flex items-center justify-center gap-3 hover:bg-primary hover:text-white transition-all group">
         <span class="material-symbols-outlined text-xl">download</span>
         Export Report
       </button>
 
     </main>
+
+    <!-- Full Report Modal Overlay -->
+    <div *ngIf="isReportModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" (click)="closeReportModal()">
+      </div>
+
+      <div id="full-report-content"
+        class="relative bg-white rounded-3xl shadow-xl border border-slate-200 w-full max-w-4xl max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col z-10 animate-fade-in-up">
+
+        <!-- Modal Header -->
+        <div
+          class="sticky top-0 bg-white/80 backdrop-blur-md z-20 border-b border-slate-100 px-6 py-5 flex items-center justify-between"
+          data-html2canvas-ignore>
+          <div class="flex items-center gap-4">
+            <div class="size-12 rounded-[16px] bg-primary text-white flex items-center justify-center font-black text-xl shadow-sm ring-4 ring-primary/10">
+              {{ getInitials(selectedStudent?.name || '') }}
+            </div>
+            <div>
+              <h3 class="text-xl font-black text-slate-900">{{ selectedStudent?.name }}</h3>
+              <div class="flex items-center gap-2 mt-1">
+
+                <p class="text-[11px] font-bold text-text-muted uppercase tracking-wider">Session: {{ sessionCode }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <button (click)="exportModalToPDF()" [disabled]="isExportingPdf"
+              class="px-4 py-2 border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-wait text-xs font-bold rounded-xl transition-colors flex items-center gap-2">
+              <span class="material-symbols-outlined text-sm" *ngIf="!isExportingPdf">picture_as_pdf</span>
+              <div *ngIf="isExportingPdf"
+                class="size-4 border-2 border-slate-300 border-t-primary rounded-full animate-spin"></div>
+              <span *ngIf="!isExportingPdf">Export PDF</span>
+              <span *ngIf="isExportingPdf">Exporting...</span>
+            </button>
+
+            <button (click)="closeReportModal()"
+              class="size-10 rounded-full flex items-center justify-center bg-slate-50 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Rendered Header (Visible only in PDF) -->
+        <div class="hidden print-header bg-white border-b border-slate-100 px-8 py-6 items-center justify-between">
+          <div class="flex items-center gap-4">
+            <div class="size-16 rounded-[20px] bg-primary text-white flex items-center justify-center font-black text-3xl shadow-sm ring-[6px] ring-primary/10">
+              {{ getInitials(selectedStudent?.name || '') }}
+            </div>
+            <div>
+              <h3 class="text-2xl font-black text-slate-900">{{ selectedStudent?.name }}</h3>
+              <div class="flex items-center gap-2 mt-1">
+                <p class="text-[12px] font-bold text-text-muted uppercase tracking-wider">Student ID: {{
+                  selectedStudent?.id }}</p>
+                <div class="w-1 h-1 rounded-full bg-slate-300"></div>
+                <p class="text-[12px] font-bold text-text-muted uppercase tracking-wider">Session: {{ sessionCode }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <style>
+          /* Hide interactive header and show static header precisely during html2canvas conversion */
+          #full-report-content .print-header {
+            display: none !important;
+          }
+
+          .html2canvas-container #full-report-content .print-header {
+            display: flex !important;
+          }
+
+          .html2canvas-container #full-report-content .sticky {
+            display: none !important;
+          }
+        </style>
+
+        <!-- Modal Content -->
+        <div class="p-6 sm:p-8 flex flex-col gap-8">
+
+          <!-- Top Row Metrics -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4">
+              <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">Focus Score</p>
+              <div class="flex items-baseline gap-2">
+                <p class="text-2xl font-black text-slate-800">{{ selectedStudent?.avgFocusScore }}%</p>
+              </div>
+            </div>
+            <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4">
+              <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">Dominant Status</p>
+              <div class="flex flex-col items-start gap-1">
+                <span class="px-2.5 py-1 text-[10px] font-bold rounded-lg uppercase border bg-white"
+                  [ngClass]="getEmotionClass(selectedStudent?.emotionColor || 'slate')">
+                  {{ selectedStudent?.topEmotion }}
+                </span>
+              </div>
+            </div>
+            <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4">
+              <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">Critical Alerts</p>
+              <div class="flex items-baseline gap-2">
+                <p class="text-2xl font-black text-slate-800"
+                  [class.text-amber-500]="(selectedStudent?.totalAlerts || 0) > 0">{{ selectedStudent?.totalAlerts }}
+                </p>
+              </div>
+            </div>
+            <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4">
+              <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">Duration</p>
+              <div class="flex items-baseline gap-2">
+                <p class="text-2xl font-black text-slate-800">{{ selectedEmotionReport?.numberOfSamples || 0 }}</p>
+                <span class="text-[10px] font-bold text-text-muted">samples</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Conclusion Section (TrackReport) -->
+          <div class="bg-primary/5 border border-primary/20 rounded-2xl p-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-4 opacity-5">
+              <span class="material-symbols-outlined text-9xl text-primary">psychology</span>
+            </div>
+            <div class="relative z-10">
+              <div class="flex items-center gap-2 mb-4">
+                <span class="material-symbols-outlined text-primary">auto_awesome</span>
+                <h4 class="text-sm font-bold tracking-widest uppercase text-primary-dark">AI Behavioral Analysis</h4>
+              </div>
+
+              <div *ngIf="selectedTrackReport" class="flex flex-col gap-3">
+                <div
+                  class="flex items-center gap-2 text-xs font-semibold text-slate-500 bg-white/50 w-fit px-3 py-1.5 rounded-lg border border-primary/10">
+                  <span class="material-symbols-outlined text-sm">school</span>
+                  Exercise: <span class="text-slate-700">{{ selectedTrackReport.exerciseName }}</span>
+                </div>
+                <p class="text-slate-800 text-[15px] leading-relaxed font-medium">
+                  {{ selectedTrackReport.conclusion }}
+                </p>
+                <p class="text-[10px] text-slate-400 mt-2 italic font-medium">Generated at: {{
+                  formatDate(selectedTrackReport.createdAt) }}</p>
+              </div>
+
+              <div *ngIf="!selectedTrackReport"
+                class="flex items-center gap-3 text-amber-600 bg-amber-50 border border-amber-100 p-4 rounded-xl">
+                <span class="material-symbols-outlined">info</span>
+                <p class="text-sm font-semibold">No AI track report has been generated for this student yet. The session
+                  might still be active.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Agent Emotion Conclusion Section -->
+          <div *ngIf="selectedEmotionReport?.finalState" class="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 relative overflow-hidden mb-8 shadow-sm">
+            <div class="absolute top-0 right-0 p-4 opacity-5">
+              <span class="material-symbols-outlined text-9xl text-indigo-500">face_retouching_natural</span>
+            </div>
+            <div class="relative z-10">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="material-symbols-outlined text-indigo-500">summarize</span>
+                <h4 class="text-sm font-bold tracking-widest uppercase text-indigo-900">Emotions Synthesis</h4>
+              </div>
+              <p class="text-slate-800 text-[16px] leading-relaxed font-semibold">
+                {{ selectedEmotionReport?.finalState }}
+              </p>
+              <div class="mt-4 flex items-center gap-2">
+                <span class="text-[11px] text-indigo-700 font-bold uppercase tracking-widest bg-white px-3 py-1.5 rounded-full shadow-sm border border-indigo-200">
+                  Dominant Emotion: {{ selectedEmotionReport?.dominantEmotion }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detailed Emotion Metrics (EmotionReport) -->
+          <div>
+            <div class="flex items-center gap-2 mb-4">
+              <span class="material-symbols-outlined text-slate-400">monitoring</span>
+              <h4 class="text-sm font-bold tracking-widest uppercase text-slate-500">Emotional Distribution</h4>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Positive Metrics -->
+              <div class="border border-slate-100 rounded-2xl p-5 bg-white shadow-sm flex flex-col gap-4">
+                <div class="flex items-center gap-2 text-emerald-500 font-bold text-sm mb-1">
+                  <span class="material-symbols-outlined size-5">sentiment_very_satisfied</span> Engagement
+                </div>
+
+                <div class="space-y-3">
+                  <div>
+                    <div class="flex justify-between text-xs font-bold mb-1">
+                      <span class="text-slate-600">Focused (Happy)</span>
+                      <span class="text-emerald-600">{{ Math.round((selectedEmotionReport?.happyMean || 0) * 100)
+                        }}%</span>
+                    </div>
+                    <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div class="h-full bg-emerald-400 rounded-full"
+                        [style.width.%]="(selectedEmotionReport?.happyMean || 0) * 100"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-xs font-bold mb-1">
+                      <span class="text-slate-600">Steady (Neutral)</span>
+                      <span class="text-teal-600">{{ Math.round((selectedEmotionReport?.neutralMean || 0) * 100)
+                        }}%</span>
+                    </div>
+                    <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div class="h-full bg-teal-400 rounded-full"
+                        [style.width.%]="(selectedEmotionReport?.neutralMean || 0) * 100"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-xs font-bold mb-1">
+                      <span class="text-slate-600">Engaged (Surprise)</span>
+                      <span class="text-sky-600">{{ Math.round((selectedEmotionReport?.surpriseMean || 0) * 100)
+                        }}%</span>
+                    </div>
+                    <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div class="h-full bg-sky-400 rounded-full"
+                        [style.width.%]="(selectedEmotionReport?.surpriseMean || 0) * 100"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Negative Metrics -->
+              <div class="border border-slate-100 rounded-2xl p-5 bg-white shadow-sm flex flex-col gap-4">
+                <div class="flex items-center gap-2 text-amber-500 font-bold text-sm mb-1">
+                  <span class="material-symbols-outlined size-5">warning</span> Distractions / Frustration
+                </div>
+
+                <div class="space-y-3">
+                  <div>
+                    <div class="flex justify-between text-xs font-bold mb-1">
+                      <span class="text-slate-600">Stressed (Angry)</span>
+                      <span class="text-red-500">{{ Math.round((selectedEmotionReport?.angryMean || 0) * 100) }}%</span>
+                    </div>
+                    <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div class="h-full bg-red-400 rounded-full"
+                        [style.width.%]="(selectedEmotionReport?.angryMean || 0) * 100"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-xs font-bold mb-1">
+                      <span class="text-slate-600">Disengaged (Sad)</span>
+                      <span class="text-slate-500">{{ Math.round((selectedEmotionReport?.sadMean || 0) * 100) }}%</span>
+                    </div>
+                    <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div class="h-full bg-slate-400 rounded-full"
+                        [style.width.%]="(selectedEmotionReport?.sadMean || 0) * 100"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-xs font-bold mb-1">
+                      <span class="text-slate-600">Anxious (Fear)</span>
+                      <span class="text-amber-500">{{ Math.round((selectedEmotionReport?.fearMean || 0) * 100)
+                        }}%</span>
+                    </div>
+                    <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div class="h-full bg-amber-400 rounded-full"
+                        [style.width.%]="(selectedEmotionReport?.fearMean || 0) * 100"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p
+              class="text-center mt-5 text-[10px] uppercase tracking-widest font-bold text-slate-400 border-t border-slate-100 pt-4">
+              End of Report</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

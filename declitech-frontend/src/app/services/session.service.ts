@@ -140,9 +140,7 @@ export class SessionService {
     if (filters.title) params = params.set('title', filters.title);
     if (filters.sessionCode) params = params.set('sessionCode', filters.sessionCode);
     if (filters.instructorUsername) params = params.set('instructorUsername', filters.instructorUsername);
-    if (filters.isActive !== null && filters.isActive !== undefined) {
-      params = params.set('isActive', filters.isActive.toString());
-    }
+    if (filters.status) params = params.set('status', filters.status);
 
     return this.http.get<PagedSessionResponse>(`${this.apiUrl}/history/paginated`, { params });
   }
