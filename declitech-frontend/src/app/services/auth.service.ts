@@ -52,10 +52,10 @@ export class AuthService {
   }
 
   private clearUserData(): void {
-    localStorage.removeItem(this.firstNameKey);
-    localStorage.removeItem(this.lastNameKey);
-    localStorage.removeItem(this.usernameKey);
-    localStorage.removeItem(this.roleKey);
+    sessionStorage.removeItem(this.firstNameKey);
+    sessionStorage.removeItem(this.lastNameKey);
+    sessionStorage.removeItem(this.usernameKey);
+    sessionStorage.removeItem(this.roleKey);
     this.currentUserSubject.next(null);
   }
 
@@ -96,33 +96,33 @@ export class AuthService {
   }
 
   getFirstName(): string | null {
-    return localStorage.getItem(this.firstNameKey);
+    return sessionStorage.getItem(this.firstNameKey);
   }
 
   getLastName(): string | null {
-    return localStorage.getItem(this.lastNameKey);
+    return sessionStorage.getItem(this.lastNameKey);
   }
 
   getUsername(): string | null {
-    return localStorage.getItem(this.usernameKey);
+    return sessionStorage.getItem(this.usernameKey);
   }
 
   getRole(): string | null {
-    return localStorage.getItem(this.roleKey);
+    return sessionStorage.getItem(this.roleKey);
   }
 
   private storeUserInfo(loginResponse: LoginResponse): void {
     if (loginResponse.firstName) {
-      localStorage.setItem(this.firstNameKey, loginResponse.firstName);
+      sessionStorage.setItem(this.firstNameKey, loginResponse.firstName);
     }
     if (loginResponse.lastName) {
-      localStorage.setItem(this.lastNameKey, loginResponse.lastName);
+      sessionStorage.setItem(this.lastNameKey, loginResponse.lastName);
     }
     if (loginResponse.username) {
-      localStorage.setItem(this.usernameKey, loginResponse.username);
+      sessionStorage.setItem(this.usernameKey, loginResponse.username);
     }
     if (loginResponse.role) {
-      localStorage.setItem(this.roleKey, loginResponse.role);
+      sessionStorage.setItem(this.roleKey, loginResponse.role);
     }
   }
 

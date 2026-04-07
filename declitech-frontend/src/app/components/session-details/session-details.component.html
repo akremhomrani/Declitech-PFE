@@ -157,7 +157,8 @@
               <tr *ngFor="let student of students" class="hover:bg-slate-50/50 transition-colors">
                 <td class="px-4 sm:px-6 py-4">
                   <div class="flex items-center gap-3">
-                    <div class="size-10 rounded-[14px] bg-primary text-white flex items-center justify-center font-black text-[15px] shadow-sm ring-4 ring-primary/10">
+                    <div
+                      class="size-10 rounded-[14px] bg-primary text-white flex items-center justify-center font-black text-[15px] shadow-sm ring-4 ring-primary/10">
                       {{ getInitials(student.name) }}
                     </div>
                     <div>
@@ -237,266 +238,317 @@
 
     <!-- Full Report Modal Overlay -->
     <div *ngIf="isReportModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" (click)="closeReportModal()">
-      </div>
+      <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" (click)="closeReportModal()"></div>
 
       <div id="full-report-content"
-        class="relative bg-white rounded-3xl shadow-xl border border-slate-200 w-full max-w-4xl max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col z-10 animate-fade-in-up">
+        class="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto custom-scrollbar flex flex-col z-10">
 
-        <!-- Modal Header -->
-        <div
-          class="sticky top-0 bg-white/80 backdrop-blur-md z-20 border-b border-slate-100 px-6 py-5 flex items-center justify-between"
-          data-html2canvas-ignore>
-          <div class="flex items-center gap-4">
-            <div class="size-12 rounded-[16px] bg-primary text-white flex items-center justify-center font-black text-xl shadow-sm ring-4 ring-primary/10">
+        <!-- Hero Header with actions -->
+        <div class="px-6 sm:px-8 pt-6 pb-6 border-b border-slate-100">
+          <div class="flex items-start gap-4">
+            <div
+              class="size-14 rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-white flex items-center justify-center font-black text-xl shadow-lg shadow-primary/20 flex-shrink-0">
               {{ getInitials(selectedStudent?.name || '') }}
             </div>
-            <div>
-              <h3 class="text-xl font-black text-slate-900">{{ selectedStudent?.name }}</h3>
-              <div class="flex items-center gap-2 mt-1">
-
-                <p class="text-[11px] font-bold text-text-muted uppercase tracking-wider">Session: {{ sessionCode }}</p>
-              </div>
-            </div>
-          </div>
-          <div class="flex items-center gap-3">
-            <button (click)="exportModalToPDF()" [disabled]="isExportingPdf"
-              class="px-4 py-2 border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-wait text-xs font-bold rounded-xl transition-colors flex items-center gap-2">
-              <span class="material-symbols-outlined text-sm" *ngIf="!isExportingPdf">picture_as_pdf</span>
-              <div *ngIf="isExportingPdf"
-                class="size-4 border-2 border-slate-300 border-t-primary rounded-full animate-spin"></div>
-              <span *ngIf="!isExportingPdf">Export PDF</span>
-              <span *ngIf="isExportingPdf">Exporting...</span>
-            </button>
-
-            <button (click)="closeReportModal()"
-              class="size-10 rounded-full flex items-center justify-center bg-slate-50 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
-              <span class="material-symbols-outlined">close</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Rendered Header (Visible only in PDF) -->
-        <div class="hidden print-header bg-white border-b border-slate-100 px-8 py-6 items-center justify-between">
-          <div class="flex items-center gap-4">
-            <div class="size-16 rounded-[20px] bg-primary text-white flex items-center justify-center font-black text-3xl shadow-sm ring-[6px] ring-primary/10">
-              {{ getInitials(selectedStudent?.name || '') }}
-            </div>
-            <div>
-              <h3 class="text-2xl font-black text-slate-900">{{ selectedStudent?.name }}</h3>
-              <div class="flex items-center gap-2 mt-1">
-                <p class="text-[12px] font-bold text-text-muted uppercase tracking-wider">Student ID: {{
-                  selectedStudent?.id }}</p>
-                <div class="w-1 h-1 rounded-full bg-slate-300"></div>
-                <p class="text-[12px] font-bold text-text-muted uppercase tracking-wider">Session: {{ sessionCode }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <style>
-          /* Hide interactive header and show static header precisely during html2canvas conversion */
-          #full-report-content .print-header {
-            display: none !important;
-          }
-
-          .html2canvas-container #full-report-content .print-header {
-            display: flex !important;
-          }
-
-          .html2canvas-container #full-report-content .sticky {
-            display: none !important;
-          }
-        </style>
-
-        <!-- Modal Content -->
-        <div class="p-6 sm:p-8 flex flex-col gap-8">
-
-          <!-- Top Row Metrics -->
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4">
-              <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">Focus Score</p>
-              <div class="flex items-baseline gap-2">
-                <p class="text-2xl font-black text-slate-800">{{ selectedStudent?.avgFocusScore }}%</p>
-              </div>
-            </div>
-            <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4">
-              <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">Dominant Status</p>
-              <div class="flex flex-col items-start gap-1">
-                <span class="px-2.5 py-1 text-[10px] font-bold rounded-lg uppercase border bg-white"
+            <div class="flex-1 min-w-0">
+              <h3 class="text-xl font-black text-slate-900 truncate">{{ selectedStudent?.name }}</h3>
+              <div class="flex flex-wrap items-center gap-x-2 gap-y-1.5 mt-2">
+                <span
+                  class="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
+                  <span class="material-symbols-outlined text-xs">key</span>{{ sessionCode }}
+                </span>
+                <span
+                  class="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
+                  <span class="material-symbols-outlined text-xs">calendar_today</span>{{
+                  selectedStudent?.lastSessionDate }}
+                </span>
+                <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg"
                   [ngClass]="getEmotionClass(selectedStudent?.emotionColor || 'slate')">
                   {{ selectedStudent?.topEmotion }}
                 </span>
-              </div>
-            </div>
-            <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4">
-              <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">Critical Alerts</p>
-              <div class="flex items-baseline gap-2">
-                <p class="text-2xl font-black text-slate-800"
-                  [class.text-amber-500]="(selectedStudent?.totalAlerts || 0) > 0">{{ selectedStudent?.totalAlerts }}
-                </p>
-              </div>
-            </div>
-            <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4">
-              <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">Duration</p>
-              <div class="flex items-baseline gap-2">
-                <p class="text-2xl font-black text-slate-800">{{ selectedEmotionReport?.numberOfSamples || 0 }}</p>
-                <span class="text-[10px] font-bold text-text-muted">samples</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- AI Conclusion Section (TrackReport) -->
-          <div class="bg-primary/5 border border-primary/20 rounded-2xl p-6 relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-4 opacity-5">
-              <span class="material-symbols-outlined text-9xl text-primary">psychology</span>
-            </div>
-            <div class="relative z-10">
-              <div class="flex items-center gap-2 mb-4">
-                <span class="material-symbols-outlined text-primary">auto_awesome</span>
-                <h4 class="text-sm font-bold tracking-widest uppercase text-primary-dark">AI Behavioral Analysis</h4>
-              </div>
-
-              <div *ngIf="selectedTrackReport" class="flex flex-col gap-3">
-                <div
-                  class="flex items-center gap-2 text-xs font-semibold text-slate-500 bg-white/50 w-fit px-3 py-1.5 rounded-lg border border-primary/10">
-                  <span class="material-symbols-outlined text-sm">school</span>
-                  Exercise: <span class="text-slate-700">{{ selectedTrackReport.exerciseName }}</span>
-                </div>
-                <p class="text-slate-800 text-[15px] leading-relaxed font-medium">
-                  {{ selectedTrackReport.conclusion }}
-                </p>
-                <p class="text-[10px] text-slate-400 mt-2 italic font-medium">Generated at: {{
-                  formatDate(selectedTrackReport.createdAt) }}</p>
-              </div>
-
-              <div *ngIf="!selectedTrackReport"
-                class="flex items-center gap-3 text-amber-600 bg-amber-50 border border-amber-100 p-4 rounded-xl">
-                <span class="material-symbols-outlined">info</span>
-                <p class="text-sm font-semibold">No AI track report has been generated for this student yet. The session
-                  might still be active.</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Agent Emotion Conclusion Section -->
-          <div *ngIf="selectedEmotionReport?.finalState" class="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 relative overflow-hidden mb-8 shadow-sm">
-            <div class="absolute top-0 right-0 p-4 opacity-5">
-              <span class="material-symbols-outlined text-9xl text-indigo-500">face_retouching_natural</span>
-            </div>
-            <div class="relative z-10">
-              <div class="flex items-center gap-2 mb-3">
-                <span class="material-symbols-outlined text-indigo-500">summarize</span>
-                <h4 class="text-sm font-bold tracking-widest uppercase text-indigo-900">Emotions Synthesis</h4>
-              </div>
-              <p class="text-slate-800 text-[16px] leading-relaxed font-semibold">
-                {{ selectedEmotionReport?.finalState }}
-              </p>
-              <div class="mt-4 flex items-center gap-2">
-                <span class="text-[11px] text-indigo-700 font-bold uppercase tracking-widest bg-white px-3 py-1.5 rounded-full shadow-sm border border-indigo-200">
-                  Dominant Emotion: {{ selectedEmotionReport?.dominantEmotion }}
+                <span
+                  class="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
+                  <span class="material-symbols-outlined text-xs">analytics</span>
+                  Focus {{ selectedStudent?.avgFocusScore }}%
+                </span>
+                <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg"
+                  [class.bg-red-100]="getTabSwitchAlerts().length > 0"
+                  [class.text-red-600]="getTabSwitchAlerts().length > 0"
+                  [class.bg-emerald-100]="getTabSwitchAlerts().length === 0"
+                  [class.text-emerald-600]="getTabSwitchAlerts().length === 0">
+                  <span class="material-symbols-outlined text-xs">tab_unselected</span>
+                  {{ isLoadingAlerts ? '—' : getTabSwitchAlerts().length }} switch{{ getTabSwitchAlerts().length !== 1 ?
+                  'es' : '' }}
                 </span>
               </div>
             </div>
+            <!-- Action buttons -->
+            <div class="flex items-center gap-2 flex-shrink-0" data-html2canvas-ignore>
+              <button (click)="exportModalToPDF()" [disabled]="isExportingPdf"
+                class="px-3 py-2 bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-wait text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm" *ngIf="!isExportingPdf">picture_as_pdf</span>
+                <div *ngIf="isExportingPdf"
+                  class="size-4 border-2 border-slate-300 border-t-primary rounded-full animate-spin"></div>
+                <span *ngIf="!isExportingPdf">Export PDF</span>
+                <span *ngIf="isExportingPdf">...</span>
+              </button>
+              <button (click)="closeReportModal()"
+                class="size-9 rounded-xl flex items-center justify-center bg-slate-100 text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors">
+                <span class="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 sm:p-8 flex flex-col gap-6">
+
+          <!-- AI Behavioral Analysis -->
+          <div class="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-white overflow-hidden">
+            <div class="flex items-center gap-2 px-5 py-3.5 border-b border-primary/10 bg-primary/5">
+              <span class="material-symbols-outlined text-primary text-lg">auto_awesome</span>
+              <h4 class="text-xs font-black tracking-widest uppercase text-primary">AI Behavioral Analysis</h4>
+            </div>
+            <div class="px-5 py-4">
+              <div *ngIf="selectedTrackReport" class="flex flex-col gap-2.5">
+                <div
+                  class="flex items-center gap-2 w-fit px-3 py-1.5 bg-white rounded-lg border border-primary/10 text-xs font-semibold text-slate-500">
+                  <span class="material-symbols-outlined text-sm">school</span>
+                  Exercise: <span class="text-slate-700 font-bold">{{ selectedTrackReport.exerciseName }}</span>
+                </div>
+                <p class="text-slate-700 text-sm leading-relaxed">{{ selectedTrackReport.conclusion }}</p>
+                <p class="text-[10px] text-slate-400 italic">Generated {{ formatDate(selectedTrackReport.createdAt) }}
+                </p>
+              </div>
+              <div *ngIf="!selectedTrackReport" class="flex items-start gap-3 text-slate-500">
+                <span class="material-symbols-outlined text-slate-300 mt-0.5">info</span>
+                <p class="text-sm">No screen activity report yet. The AI report is generated when the session ends on a
+                  supported platform (CodeCombat, Vittascience).</p>
+              </div>
+            </div>
           </div>
 
-          <!-- Detailed Emotion Metrics (EmotionReport) -->
+          <!-- Emotions Synthesis -->
+          <div *ngIf="selectedEmotionReport?.finalState"
+            class="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white overflow-hidden">
+            <div class="flex items-center gap-2 px-5 py-3.5 border-b border-indigo-100 bg-indigo-50/80">
+              <span class="material-symbols-outlined text-indigo-500 text-lg">face_retouching_natural</span>
+              <h4 class="text-xs font-black tracking-widest uppercase text-indigo-700">Emotions Synthesis</h4>
+              <span
+                class="ml-auto px-2.5 py-1 bg-white text-indigo-700 text-[10px] font-black rounded-full border border-indigo-200 capitalize">
+                {{ selectedEmotionReport?.dominantEmotion }}
+              </span>
+            </div>
+            <div class="px-5 py-4">
+              <p class="text-slate-700 text-sm leading-relaxed">{{ selectedEmotionReport?.finalState }}</p>
+            </div>
+          </div>
+
+          <!-- Emotional Distribution -->
           <div>
             <div class="flex items-center gap-2 mb-4">
-              <span class="material-symbols-outlined text-slate-400">monitoring</span>
-              <h4 class="text-sm font-bold tracking-widest uppercase text-slate-500">Emotional Distribution</h4>
+              <span class="material-symbols-outlined text-slate-400 text-lg">monitoring</span>
+              <h4 class="text-xs font-black tracking-widest uppercase text-slate-500">Emotional Distribution</h4>
             </div>
-
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <!-- Positive Metrics -->
-              <div class="border border-slate-100 rounded-2xl p-5 bg-white shadow-sm flex flex-col gap-4">
-                <div class="flex items-center gap-2 text-emerald-500 font-bold text-sm mb-1">
-                  <span class="material-symbols-outlined size-5">sentiment_very_satisfied</span> Engagement
+              <div class="border border-emerald-100 rounded-2xl p-5 bg-white">
+                <div class="flex items-center gap-2 text-emerald-600 font-bold text-sm mb-4">
+                  <span class="size-7 rounded-lg bg-emerald-50 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-base">sentiment_very_satisfied</span>
+                  </span>
+                  Engagement
                 </div>
-
-                <div class="space-y-3">
-                  <div>
+                <div class="space-y-3.5">
+                  <div *ngFor="let e of [
+                    {label:'Focused (Happy)', val: (selectedEmotionReport?.happyMean||0)*100, color:'bg-emerald-400', text:'text-emerald-600'},
+                    {label:'Steady (Neutral)', val: (selectedEmotionReport?.neutralMean||0)*100, color:'bg-teal-400', text:'text-teal-600'},
+                    {label:'Engaged (Surprise)', val: (selectedEmotionReport?.surpriseMean||0)*100, color:'bg-sky-400', text:'text-sky-600'}
+                  ]">
                     <div class="flex justify-between text-xs font-bold mb-1">
-                      <span class="text-slate-600">Focused (Happy)</span>
-                      <span class="text-emerald-600">{{ Math.round((selectedEmotionReport?.happyMean || 0) * 100)
-                        }}%</span>
+                      <span class="text-slate-600">{{ e.label }}</span>
+                      <span [ngClass]="e.text">{{ Math.round(e.val) }}%</span>
                     </div>
-                    <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div class="h-full bg-emerald-400 rounded-full"
-                        [style.width.%]="(selectedEmotionReport?.happyMean || 0) * 100"></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div class="flex justify-between text-xs font-bold mb-1">
-                      <span class="text-slate-600">Steady (Neutral)</span>
-                      <span class="text-teal-600">{{ Math.round((selectedEmotionReport?.neutralMean || 0) * 100)
-                        }}%</span>
-                    </div>
-                    <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div class="h-full bg-teal-400 rounded-full"
-                        [style.width.%]="(selectedEmotionReport?.neutralMean || 0) * 100"></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div class="flex justify-between text-xs font-bold mb-1">
-                      <span class="text-slate-600">Engaged (Surprise)</span>
-                      <span class="text-sky-600">{{ Math.round((selectedEmotionReport?.surpriseMean || 0) * 100)
-                        }}%</span>
-                    </div>
-                    <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div class="h-full bg-sky-400 rounded-full"
-                        [style.width.%]="(selectedEmotionReport?.surpriseMean || 0) * 100"></div>
+                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div class="h-full rounded-full transition-all" [ngClass]="e.color" [style.width.%]="e.val"></div>
                     </div>
                   </div>
                 </div>
               </div>
-
-              <!-- Negative Metrics -->
-              <div class="border border-slate-100 rounded-2xl p-5 bg-white shadow-sm flex flex-col gap-4">
-                <div class="flex items-center gap-2 text-amber-500 font-bold text-sm mb-1">
-                  <span class="material-symbols-outlined size-5">warning</span> Distractions / Frustration
+              <div class="border border-amber-100 rounded-2xl p-5 bg-white">
+                <div class="flex items-center gap-2 text-amber-600 font-bold text-sm mb-4">
+                  <span class="size-7 rounded-lg bg-amber-50 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-base">warning</span>
+                  </span>
+                  Distractions / Frustration
                 </div>
-
-                <div class="space-y-3">
-                  <div>
+                <div class="space-y-3.5">
+                  <div *ngFor="let e of [
+                    {label:'Stressed (Angry)', val: (selectedEmotionReport?.angryMean||0)*100, color:'bg-red-400', text:'text-red-500'},
+                    {label:'Disengaged (Sad)', val: (selectedEmotionReport?.sadMean||0)*100, color:'bg-slate-400', text:'text-slate-500'},
+                    {label:'Anxious (Fear)', val: (selectedEmotionReport?.fearMean||0)*100, color:'bg-amber-400', text:'text-amber-500'}
+                  ]">
                     <div class="flex justify-between text-xs font-bold mb-1">
-                      <span class="text-slate-600">Stressed (Angry)</span>
-                      <span class="text-red-500">{{ Math.round((selectedEmotionReport?.angryMean || 0) * 100) }}%</span>
+                      <span class="text-slate-600">{{ e.label }}</span>
+                      <span [ngClass]="e.text">{{ Math.round(e.val) }}%</span>
                     </div>
-                    <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div class="h-full bg-red-400 rounded-full"
-                        [style.width.%]="(selectedEmotionReport?.angryMean || 0) * 100"></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div class="flex justify-between text-xs font-bold mb-1">
-                      <span class="text-slate-600">Disengaged (Sad)</span>
-                      <span class="text-slate-500">{{ Math.round((selectedEmotionReport?.sadMean || 0) * 100) }}%</span>
-                    </div>
-                    <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div class="h-full bg-slate-400 rounded-full"
-                        [style.width.%]="(selectedEmotionReport?.sadMean || 0) * 100"></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div class="flex justify-between text-xs font-bold mb-1">
-                      <span class="text-slate-600">Anxious (Fear)</span>
-                      <span class="text-amber-500">{{ Math.round((selectedEmotionReport?.fearMean || 0) * 100)
-                        }}%</span>
-                    </div>
-                    <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div class="h-full bg-amber-400 rounded-full"
-                        [style.width.%]="(selectedEmotionReport?.fearMean || 0) * 100"></div>
+                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div class="h-full rounded-full transition-all" [ngClass]="e.color" [style.width.%]="e.val"></div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-
-            <p
-              class="text-center mt-5 text-[10px] uppercase tracking-widest font-bold text-slate-400 border-t border-slate-100 pt-4">
-              End of Report</p>
           </div>
+
+          <!-- Behavioral Alerts -->
+          <div class="rounded-2xl border overflow-hidden" [class.border-red-200]="getTabSwitchAlerts().length > 0"
+            [class.border-emerald-200]="getTabSwitchAlerts().length === 0">
+
+            <div class="flex items-center justify-between px-5 py-3.5"
+              [class.bg-red-50]="getTabSwitchAlerts().length > 0"
+              [class.bg-emerald-50]="getTabSwitchAlerts().length === 0">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg" [class.text-red-500]="getTabSwitchAlerts().length > 0"
+                  [class.text-emerald-500]="getTabSwitchAlerts().length === 0">
+                  {{ getTabSwitchAlerts().length > 0 ? 'tab_unselected' : 'verified' }}
+                </span>
+                <h4 class="text-xs font-black tracking-widest uppercase"
+                  [class.text-red-700]="getTabSwitchAlerts().length > 0"
+                  [class.text-emerald-700]="getTabSwitchAlerts().length === 0">
+                  Behavioral Alerts
+                </h4>
+              </div>
+              <div *ngIf="isLoadingAlerts" class="flex items-center gap-2">
+                <div class="size-3.5 border-2 border-slate-300 border-t-primary rounded-full animate-spin"></div>
+                <span class="text-xs text-slate-400">Loading...</span>
+              </div>
+              <span *ngIf="!isLoadingAlerts && getTabSwitchAlerts().length > 0"
+                class="px-3 py-1 bg-red-100 text-red-700 text-[11px] font-black rounded-full">
+                {{ getTabSwitchAlerts().length }} switch{{ getTabSwitchAlerts().length > 1 ? 'es' : '' }} detected
+              </span>
+              <span *ngIf="!isLoadingAlerts && getTabSwitchAlerts().length === 0"
+                class="px-3 py-1 bg-emerald-100 text-emerald-700 text-[11px] font-black rounded-full">
+                No violations
+              </span>
+            </div>
+
+            <!-- No alerts -->
+            <div *ngIf="!isLoadingAlerts && getTabSwitchAlerts().length === 0"
+              class="flex items-center gap-3 px-5 py-6 bg-white">
+              <div class="size-10 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-emerald-500">check_circle</span>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-slate-700">Student stayed on task</p>
+                <p class="text-xs text-slate-400 mt-0.5">No tab switches or off-platform activity recorded during this
+                  session.</p>
+              </div>
+            </div>
+
+            <!-- Has alerts -->
+            <div *ngIf="!isLoadingAlerts && getTabSwitchAlerts().length > 0" class="bg-white">
+
+              <!-- Stats row -->
+              <div class="grid grid-cols-3 divide-x divide-slate-100 border-b border-slate-100">
+                <div class="py-4 text-center">
+                  <p class="text-2xl font-black text-red-500">{{ getTabSwitchAlerts().length }}</p>
+                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Tab Switches</p>
+                </div>
+                <div class="py-4 text-center">
+                  <p class="text-2xl font-black text-slate-700">{{ getUniqueVisitedSites().length }}</p>
+                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Unique Sites</p>
+                </div>
+                <div class="py-4 text-center">
+                  <p class="text-2xl font-black text-amber-500">{{ getAlertCountByType('MOUSE_INACTIVITY') }}</p>
+                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Inactivity</p>
+                </div>
+              </div>
+
+              <!-- Sites visited -->
+              <div class="p-5">
+                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Sites Visited</p>
+                <div class="flex flex-col gap-2">
+                  <div *ngFor="let site of getUniqueVisitedSites(); let i = index"
+                    class="flex items-center gap-3 p-3 rounded-xl border transition-colors"
+                    [class.border-slate-100]="i > 0" [class.bg-slate-50]="i > 0">
+                    <div class="size-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      [class.bg-slate-200]="i > 0">
+                      <span class="material-symbols-outlined text-sm" [class.text-slate-500]="i > 0">language</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <a [href]="site.url" target="_blank" rel="noopener noreferrer"
+                        class="text-sm font-bold truncate block hover:text-primary transition-colors"
+                        [class.text-slate-700]="i > 0">
+                        {{ site.name }}
+                      </a>
+                      <p class="text-[10px] text-slate-400 mt-0.5">First seen {{ formatAlertTime(site.firstSeen) }}</p>
+                    </div>
+                    <span class="px-2.5 py-1 text-[11px] font-black rounded-full flex-shrink-0"
+                      [class.bg-red-100]="i === 0" [class.text-red-600]="i === 0" [class.bg-slate-200]="i > 0"
+                      [class.text-slate-600]="i > 0">
+                      ×{{ site.count }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Instructor Note -->
+          <div class="rounded-2xl border overflow-hidden"
+            [class.border-amber-200]="selectedEmotionReport?.instructorNote"
+            [class.border-slate-200]="!selectedEmotionReport?.instructorNote">
+            <div class="flex items-center gap-2 px-5 py-3.5 border-b"
+              [class.bg-amber-50]="selectedEmotionReport?.instructorNote"
+              [class.border-amber-100]="selectedEmotionReport?.instructorNote"
+              [class.bg-slate-50]="!selectedEmotionReport?.instructorNote"
+              [class.border-slate-200]="!selectedEmotionReport?.instructorNote">
+              <span class="material-symbols-outlined text-lg"
+                [class.text-amber-500]="selectedEmotionReport?.instructorNote"
+                [class.text-slate-400]="!selectedEmotionReport?.instructorNote">edit_note</span>
+              <h4 class="text-xs font-black tracking-widest uppercase"
+                [class.text-amber-700]="selectedEmotionReport?.instructorNote"
+                [class.text-slate-600]="!selectedEmotionReport?.instructorNote">Instructor Note</h4>
+              <div class="ml-auto">
+                <span *ngIf="noteSaved"
+                  class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                  <span class="material-symbols-outlined text-xs">check_circle</span> Saved
+                </span>
+                <span *ngIf="selectedEmotionReport?.instructorNote && !noteSaved"
+                  class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 bg-amber-100 px-2.5 py-1 rounded-full">
+                  <span class="material-symbols-outlined text-xs">lock</span> Private
+                </span>
+              </div>
+            </div>
+            <div class="p-5 bg-white flex flex-col gap-4">
+              <!-- Saved note display -->
+              <div *ngIf="selectedEmotionReport?.instructorNote"
+                class="flex gap-3 p-4 bg-amber-50 rounded-xl border border-amber-100">
+                <span class="material-symbols-outlined text-amber-400 flex-shrink-0 mt-0.5">sticky_note_2</span>
+                <p class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{{
+                  selectedEmotionReport?.instructorNote }}</p>
+              </div>
+              <!-- Edit textarea -->
+              <textarea [(ngModel)]="noteText" rows="3"
+                [placeholder]="selectedEmotionReport?.instructorNote ? 'Edit your note...' : 'Add a private note — observations, action items, or follow-up for this student...'"
+                class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm text-slate-700 placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all">
+              </textarea>
+              <div class="flex items-center justify-between">
+                <p class="text-[11px] text-slate-400 flex items-center gap-1">
+                  <span class="material-symbols-outlined text-xs">lock</span> Visible only to you
+                </p>
+                <button (click)="saveNote()" [disabled]="isSavingNote || !selectedEmotionReport?.id || !noteText.trim()"
+                  class="px-5 py-2 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2">
+                  <div *ngIf="isSavingNote"
+                    class="size-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+                  <span class="material-symbols-outlined text-sm" *ngIf="!isSavingNote">save</span>
+                  {{ isSavingNote ? 'Saving...' : (selectedEmotionReport?.instructorNote ? 'Update Note' : 'Save Note')
+                  }}
+                </button>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

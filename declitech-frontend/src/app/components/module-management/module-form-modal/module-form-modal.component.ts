@@ -18,7 +18,7 @@ export class ModuleFormModalComponent implements OnInit, OnChanges {
   @Output() closeModal = new EventEmitter<void>();
   @Output() moduleSaved = new EventEmitter<void>();
 
-  module: any = {
+  module: CreateModuleRequest = {
     title: '',
     description: '',
     sites: []
@@ -53,7 +53,7 @@ export class ModuleFormModalComponent implements OnInit, OnChanges {
           };
           this.isLoading = false;
         },
-        error: (error: any) => {
+        error: () => {
           this.errorMessage = 'Failed to load module details';
           this.isLoading = false;
         }
@@ -78,7 +78,7 @@ export class ModuleFormModalComponent implements OnInit, OnChanges {
         this.moduleSaved.emit();
         this.close();
       },
-      error: (error: any) => {
+      error: (error: { error?: { message?: string } }) => {
         this.errorMessage = error.error?.message || 'Failed to save module';
         this.isLoading = false;
       }

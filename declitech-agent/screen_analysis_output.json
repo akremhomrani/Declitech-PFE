@@ -1,184 +1,86 @@
 [
   {
-    "timestamp": "2026-03-31T11:26:26.394Z",
-    "session_id": "BC5DS6",
-    "student_identity": "tesst",
-    "page_url": "https://app.decli.tech/classroom/home.php",
+    "timestamp": "2026-04-04T00:12:19.318Z",
+    "session_id": "QCPRMJ",
+    "student_identity": "test",
+    "page_url": "https://learn.decli.tech/student-dashboard",
     "dom_data_received": true,
     "analysis_result": {
       "status": "SUCCESS",
-      "exercise_name": "Declitech LMS",
-      "progress_level": "NOT_STARTED",
-      "on_track": false,
-      "observations": "The student is currently on the login page for 'Declitech LMS' and is not engaged in a Vittascience Machine Learning exercise. Therefore, no progress has been made on an ML exercise."
-    }
-  },
-  {
-    "timestamp": "2026-03-31T11:26:50.568Z",
-    "session_id": "BC5DS6",
-    "student_identity": "tesst",
-    "page_url": "https://app.decli.tech/classroom/home.php?panel=classroom-dashboard-activity-panel&nav=dashboard-activities-teacher&option=WK324&interface=newActivities",
-    "dom_data_received": true,
-    "analysis_result": {
-      "status": "SUCCESS",
-      "exercise_name": "Lumière colors",
-      "progress_level": "NOT_STARTED",
-      "on_track": true,
-      "observations": "The student is viewing the activity page for 'Lumière colors', which is due on June 29, 2026. The content area of the activity is currently empty, indicating that the activity has not yet started or the content (likely a video, based on the DOM data) has not loaded. This is not an AI/ML exercise, and no student-made mistakes are apparent."
-    }
-  },
-  {
-    "timestamp": "2026-03-31T11:27:20.570Z",
-    "session_id": "BC5DS6",
-    "student_identity": "tesst",
-    "page_url": "https://app.decli.tech/classroom/home.php?panel=classroom-dashboard-activity-panel&nav=dashboard-activities-teacher&option=WK324&interface=newActivities",
-    "dom_data_received": true,
-    "analysis_result": {
-      "status": "SUCCESS",
-      "exercise_name": "Lumière colors",
+      "exercise_name": "colors detections",
       "progress_level": "IN_PROGRESS",
-      "on_track": true,
-      "observations": "The student is working on the 'Lumière colors' exercise. They have successfully created two categories, 'rouge' and 'blue', and added 10 images to each, ensuring balanced training data. The model training process has been initiated and is currently at 25% completion. The student is on track."
-    }
-  },
-  {
-    "timestamp": "2026-03-31T11:27:50.568Z",
-    "session_id": "BC5DS6",
-    "student_identity": "tesst",
-    "page_url": "https://app.decli.tech/classroom/home.php?panel=classroom-dashboard-activity-panel&nav=dashboard-activities-teacher&option=WK324&interface=newActivities",
-    "dom_data_received": true,
-    "analysis_result": {
-      "status": "SUCCESS",
-      "exercise_name": "Lumière colors",
-      "progress_level": "NEAR_COMPLETE",
-      "on_track": true,
-      "observations": "The student has successfully set up two categories, 'rouge' and 'blue', and provided 10 balanced images for each. The model has been trained and is making predictions. However, the model incorrectly classifies an orange/yellow color (HEX: FF9900) as 98% blue. This indicates that while the setup is correct, the model might need more diverse training data or additional categories to accurately classify a wider range of colors."
-    }
-  },
-  {
-    "timestamp": "2026-03-31T11:28:20.568Z",
-    "session_id": "BC5DS6",
-    "student_identity": "tesst",
-    "page_url": "https://app.decli.tech/classroom/home.php?panel=classroom-dashboard-activity-panel&nav=dashboard-activities-teacher&option=WK324&interface=newActivities",
-    "dom_data_received": true,
-    "analysis_result": {
-      "status": "SUCCESS",
-      "exercise_name": "Lumière colors",
-      "progress_level": "NEAR_COMPLETE",
       "on_track": false,
-      "observations": "The student has successfully named two categories, \"rouge\" and \"blue\", and added 10 images to each, ensuring balanced training data. The model has been trained and is currently making predictions in the preview. However, there's a significant error in the model's output: it incorrectly identifies the color HEX: FF9900 (an orange/yellow hue) as 98% blue. This indicates that the model is not performing correctly and the student needs to review their training data or model configuration."
+      "observations": "The student is working on a color detection exercise, specifically focusing on the 'rouge' category. They have uploaded 10 images for this category, but the progress is still in the IN_PROGRESS stage as the model has not been trained yet. The student is not on track because they have only named one category ('rouge') and have not added any other categories, which is necessary for a balanced and comprehensive training dataset. Additionally, the preview section shows no camera input, indicating that testing the model's performance is not yet possible."
     }
   },
   {
-    "timestamp": "2026-03-31T11:52:13.585Z",
-    "session_id": "Z7ZDAL",
-    "student_identity": "tesst",
-    "page_url": "https://app.decli.tech/classroom/home.php?panel=classroom-dashboard-activity-panel&nav=dashboard-activities-teacher&option=WK325&interface=newActivities",
+    "timestamp": "2026-04-04T00:12:46.058Z",
+    "session_id": "G6FM0I",
+    "student_identity": "test",
+    "page_url": "https://learn.decli.tech/student-dashboard",
+    "dom_data_received": true,
+    "analysis_result": {
+      "status": "SUCCESS",
+      "exercise_name": "colors detections",
+      "progress_level": "IN_PROGRESS",
+      "on_track": false,
+      "observations": "The student is working on a color detection exercise, specifically focusing on the 'rouge' category. They have uploaded images for this category, but the progress is at the IN_PROGRESS level because the model has not been trained yet. The student is not on track as there is only one category named, and it's unclear if other necessary categories have been added or if the data is balanced across categories. It's important to ensure multiple categories are included for a comprehensive model training."
+    }
+  },
+  {
+    "timestamp": "2026-04-04T00:13:11.060Z",
+    "session_id": "G6FM0I",
+    "student_identity": "test",
+    "page_url": "https://learn.decli.tech/student-dashboard",
+    "dom_data_received": true,
+    "analysis_result": {
+      "status": "SUCCESS",
+      "exercise_name": "colors detections",
+      "progress_level": "IN_PROGRESS",
+      "on_track": false,
+      "observations": "The student is working on a color detection exercise, specifically focusing on the 'rouge' category. They have uploaded 10 images for this category, but the progress is still in the IN_PROGRESS stage as the model has not been trained yet. The student is not on track because they have only named one category ('rouge') and have not added any other categories, which is necessary for a balanced and comprehensive training dataset. Additionally, the 'Entraîner le modèle' button is available, indicating that the student has not yet initiated the training process."
+    }
+  },
+  {
+    "timestamp": "2026-04-06T12:30:15.910Z",
+    "session_id": "UPAXFI",
+    "student_identity": "test",
+    "page_url": "https://learn.decli.tech/student-dashboard",
     "dom_data_received": false,
     "analysis_result": {
       "status": "SUCCESS",
-      "exercise_name": "detection nourriture",
+      "exercise_name": "colors detections",
+      "progress_level": "COMPLETE",
+      "on_track": true,
+      "observations": "The student is working on an exercise named 'colors detections'. The progress level is COMPLETE as indicated by the checkmark and the text '1 sur 1 activités soumises', suggesting that the activity has been submitted and likely completed. There are no visible mistakes such as unnamed categories or unbalanced data in the provided screenshot."
+    }
+  },
+  {
+    "timestamp": "2026-04-06T12:30:40.882Z",
+    "session_id": "UPAXFI",
+    "student_identity": "test",
+    "page_url": "https://learn.decli.tech/student-dashboard",
+    "dom_data_received": true,
+    "analysis_result": {
+      "status": "SUCCESS",
+      "exercise_name": "colors detections",
       "progress_level": "NOT_STARTED",
       "on_track": false,
-      "observations": "The student has opened the 'detection nourriture' exercise. However, no categories have been added yet in the 'DONNÉES' section, which is the first step to building a machine learning model. The student needs to click 'Ajouter une catégorie' to define the different types of data for the model."
+      "observations": "The student is currently viewing the 'colors detections' exercise on the Vittascience platform. However, there are no categories or data present, indicating that the exercise has not been started. The student has not made any mistakes yet as the exercise is still at the initial stage, but they need to begin by defining categories and adding data to proceed."
     }
   },
   {
-    "timestamp": "2026-03-31T11:52:38.592Z",
-    "session_id": "Z7ZDAL",
-    "student_identity": "tesst",
-    "page_url": "https://app.decli.tech/classroom/home.php?panel=classroom-dashboard-activity-panel&nav=dashboard-activities-teacher&option=WK325&interface=newActivities",
+    "timestamp": "2026-04-06T12:31:10.891Z",
+    "session_id": "UPAXFI",
+    "student_identity": "test",
+    "page_url": "https://learn.decli.tech/student-dashboard",
     "dom_data_received": false,
     "analysis_result": {
       "status": "SUCCESS",
-      "exercise_name": "detection nourriture",
+      "exercise_name": "colors detections",
       "progress_level": "NOT_STARTED",
       "on_track": false,
-      "observations": "The student has opened the 'detection nourriture' exercise but has not yet started. The 'DONNÉES' section indicates that no categories have been created. The student needs to add categories and then provide training data to begin the activity."
-    }
-  },
-  {
-    "timestamp": "2026-03-31T11:53:08.592Z",
-    "session_id": "Z7ZDAL",
-    "student_identity": "tesst",
-    "page_url": "https://app.decli.tech/classroom/home.php?panel=classroom-dashboard-activity-panel&nav=dashboard-activities-teacher&option=WK325&interface=newActivities",
-    "dom_data_received": false,
-    "analysis_result": {
-      "status": "SUCCESS",
-      "exercise_name": "detection nourriture",
-      "progress_level": "NOT_STARTED",
-      "on_track": false,
-      "observations": "The student has opened the activity 'detection nourriture' but has not yet started. There are no categories defined in the 'DONNÉES' section, and no data has been added. The student needs to add at least one category to begin the exercise."
-    }
-  },
-  {
-    "timestamp": "2026-03-31T12:01:34.165Z",
-    "session_id": "QB11CS",
-    "student_identity": "tesst",
-    "page_url": "https://app.decli.tech/classroom/home.php?panel=classroom-dashboard-activity-panel&nav=dashboard-activities-teacher&option=WK325&interface=newActivities",
-    "dom_data_received": false,
-    "analysis_result": {
-      "status": "SUCCESS",
-      "exercise_name": "detection nourriture",
-      "progress_level": "STARTING",
-      "on_track": false,
-      "observations": "The student has started the 'detection nourriture' exercise and created a category named 'pizza'. However, they have not yet added any training data to this category. To effectively train a detection model, they will need to add images for 'pizza' and create additional categories for other food items to ensure a balanced and comprehensive dataset."
-    }
-  },
-  {
-    "timestamp": "2026-03-31T12:02:04.160Z",
-    "session_id": "QB11CS",
-    "student_identity": "tesst",
-    "page_url": "https://app.decli.tech/classroom/home.php?panel=classroom-dashboard-activity-panel&nav=dashboard-activities-teacher&option=WK325&interface=newActivities",
-    "dom_data_received": false,
-    "analysis_result": {
-      "status": "SUCCESS",
-      "exercise_name": "detection nourriture",
-      "progress_level": "STARTING",
-      "on_track": false,
-      "observations": "The student has started the 'detection nourriture' exercise by creating a category named 'pizza'. However, they have not yet added any images or data to this category. To proceed, they need to add training data for 'pizza' and likely create additional categories for other types of food to build a comprehensive detection model."
-    }
-  },
-  {
-    "timestamp": "2026-03-31T12:12:58.987Z",
-    "session_id": "0U0AT4",
-    "student_identity": "ya.benattig",
-    "page_url": "https://app.decli.tech/classroom/home.php?panel=classroom-dashboard-activity-panel&nav=dashboard-activities-teacher&option=WK325&interface=newActivities",
-    "dom_data_received": true,
-    "analysis_result": {
-      "status": "SUCCESS",
-      "exercise_name": "detection nourriture",
-      "progress_level": "STARTING",
-      "on_track": false,
-      "observations": "The student is working on a \"detection nourriture\" (food detection) activity. They have created one category named \"pizza\" but have not yet added any training data for it. To be on track, they need to add images for the \"pizza\" category and create at least one more category with its corresponding data to train a classification model effectively."
-    }
-  },
-  {
-    "timestamp": "2026-03-31T12:13:23.981Z",
-    "session_id": "0U0AT4",
-    "student_identity": "ya.benattig",
-    "page_url": "https://app.decli.tech/classroom/home.php?panel=classroom-dashboard-activity-panel&nav=dashboard-activities-teacher&option=WK325&interface=newActivities",
-    "dom_data_received": true,
-    "analysis_result": {
-      "status": "SUCCESS",
-      "exercise_name": "detection nourriture",
-      "progress_level": "STARTING",
-      "on_track": false,
-      "observations": "The student has started the \"detection nourriture\" activity by naming one category \"pizza\". However, they have not yet added any training data to this category. To proceed, they need to add data for \"pizza\" and create at least one more category with its corresponding data to train a classification model effectively."
-    }
-  },
-  {
-    "timestamp": "2026-03-31T12:13:53.990Z",
-    "session_id": "0U0AT4",
-    "student_identity": "ya.benattig",
-    "page_url": "https://app.decli.tech/classroom/home.php?panel=classroom-dashboard-activity-panel&nav=dashboard-activities-teacher&option=WK325&interface=newActivities",
-    "dom_data_received": true,
-    "analysis_result": {
-      "status": "SUCCESS",
-      "exercise_name": "detection nourriture",
-      "progress_level": "STARTING",
-      "on_track": true,
-      "observations": "The student is working on the 'detection nourriture' exercise. They are currently in the process of adding training data, specifically searching for 'food' within the 'Utiliser des données d'entraînement' modal. This is a correct step in setting up the machine learning model."
+      "observations": "The student is currently viewing the 'colors detections' exercise on the Vittascience platform. However, there is no indication that any progress has been made within this exercise. The categories for images, postures, hands, and sounds are visible but there's no evidence of data being added or any model training. The student has not started the exercise yet, as there are no signs of activity or training data preparation. This suggests they are not yet on track to complete the exercise."
     }
   }
 ]

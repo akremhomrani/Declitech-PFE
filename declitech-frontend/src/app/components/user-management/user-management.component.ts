@@ -211,7 +211,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     this.blockingUser = true;
 
     if (this.userToBlock.active) {
-      this.userService.blockUser(this.userToBlock.id).subscribe({
+      this.userService.deleteUser(this.userToBlock.id).subscribe({
         next: () => {
           this.blockingUser = false;
           this.showBlockModal = false;

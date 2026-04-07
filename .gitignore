@@ -40,9 +40,18 @@ build/
 target/
 out/
 
-# Archives (keep declitech-extension.rar if needed)
-# *.rar
-# *.zip
+# Archives
+*.zip
+*.rar
+
+# Markdown files
+*.md
+
+# JSON files
+*.json
+
+# Claude directory
+.claude/
 
 # Temporary files
 *.tmp

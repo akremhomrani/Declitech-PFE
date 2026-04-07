@@ -1,5 +1,6 @@
 package com.declitech.report.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,8 +26,10 @@ public class EmotionReportDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class SummaryMean {
+        @JsonAlias("mean_probs")
         private Map<String, Double> meanProbs;
         private String dominant;
+        @JsonAlias("n_samples")
         private Integer nSamples;
     }
 
@@ -37,6 +40,7 @@ public class EmotionReportDTO {
         private String state;
         private String finalSentence;
         private Map<String, Double> freq;
+        @JsonAlias("mean_probs")
         private Map<String, Double> meanProbs;
     }
 

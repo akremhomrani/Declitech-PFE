@@ -151,10 +151,8 @@ function detectCodeCombat() {
             }
         }
         
-        // DEBUG: Log if we couldn't find code
         if (!studentCode && !completed) {
-            // Only log during active coding, not on overview
-            console.warn('[DecliTech] Could not extract student code from CodeCombat. DOM selectors may need updating.');
+            // DOM selectors may need updating if CodeCombat changes their structure
         }
 
         return {

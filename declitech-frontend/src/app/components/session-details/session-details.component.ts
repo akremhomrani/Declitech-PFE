@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import jsPDF from 'jspdf';
-// @ts-ignore
 import html2canvas from 'html2canvas';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -9,7 +8,7 @@ import { NavbarComponent } from '../../shared/navbar/navbar.component';
 import { SidebarComponent } from '../../shared/sidebar/sidebar.component';
 import { EmotionService } from '../../services/emotion.service';
 import { SessionService } from '../../services/session.service';
-import { EmotionReport } from '../../models/emotion-report.model';
+import { EmotionReport, SessionAlert } from '../../models/emotion-report.model';
 import { SessionHistory, StudentReport } from '../../models/session';
 import { TrackReportService } from '../../services/track-report.service';
 import { TrackReport } from '../../models/track-report.model';
@@ -27,7 +26,7 @@ export class SessionDetailsComponent implements OnInit {
   sessionCode: string = '';
   sessionTitle: string = '';
   isLoading: boolean = false;
-  
+
   classAvgFocus: number = 0;
   focusTrend: number = 0;
   mostCommonEmotion: string = 'Loading...';
@@ -35,11 +34,11 @@ export class SessionDetailsComponent implements OnInit {
   criticalAlerts: number = 0;
   alertTrend: number = 0;
   participationScore: string = 'N/A';
-  
+
   searchTerm: string = '';
   dateRange: string = '';
   alertType: string = '';
-  
+
   students: StudentReport[] = [];
   allStudents: StudentReport[] = [];
 
@@ -52,15 +51,20 @@ export class SessionDetailsComponent implements OnInit {
   selectedStudent: StudentReport | null = null;
   selectedTrackReport: TrackReport | null = null;
   selectedEmotionReport: EmotionReport | null = null;
+  selectedStudentAlerts: SessionAlert[] = [];
+  isLoadingAlerts: boolean = false;
   isReportModalOpen: boolean = false;
   isExportingPdf: boolean = false;
+  noteText: string = '';
+  isSavingNote: boolean = false;
+  noteSaved: boolean = false;
 
   constructor(
     private route: ActivatedRoute,
     private emotionService: EmotionService,
     private sessionService: SessionService,
     private trackReportService: TrackReportService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.sessionId = Number(this.route.snapshot.paramMap.get('id'));
@@ -71,7 +75,7 @@ export class SessionDetailsComponent implements OnInit {
 
   loadSessionDetails(): void {
     if (!this.sessionId) return;
-    
+
     this.isLoading = true;
     this.sessionService.getSessionById(this.sessionId).subscribe({
       next: (session: SessionHistory) => {
@@ -87,7 +91,7 @@ export class SessionDetailsComponent implements OnInit {
 
   loadSessionReports(): void {
     if (!this.sessionCode) return;
-    
+
     this.emotionService.getReportsBySessionCode(this.sessionCode).subscribe({
       next: (reports: EmotionReport[]) => {
         this.untransformedReports = reports;
@@ -96,6 +100,7 @@ export class SessionDetailsComponent implements OnInit {
         this.updateDisplayedStudents();
         this.calculateStatistics(reports);
         this.isLoading = false;
+        this.loadAlertCounts();
       },
       error: () => {
         this.isLoading = false;
@@ -117,7 +122,7 @@ export class SessionDetailsComponent implements OnInit {
       const focusScore = this.calculateFocusScore(report);
       const emotion = this.mapEmotionToLabel(report.dominantEmotion || 'neutral');
       const emotionColor = this.getEmotionColor(report.dominantEmotion || 'neutral');
-      
+
       return {
         id: `#${report.id || index + 1000}`,
         name: report.studentLoginIdentity || 'Student',
@@ -137,9 +142,10 @@ export class SessionDetailsComponent implements OnInit {
     const sad = (report.sadMean || 0) * 100;
     const angry = (report.angryMean || 0) * 100;
     const fear = (report.fearMean || 0) * 100;
-    
+
     const focusScore = (happy * 1.2 + neutral * 0.8) - (sad * 0.5 + angry * 0.7 + fear * 0.6);
-    return Math.max(0, Math.min(100, focusScore));
+    const boundedScore = Math.max(0, Math.min(100, focusScore));
+    return Number(boundedScore.toFixed(2));
   }
 
   mapEmotionToLabel(emotion: string): string {
@@ -176,6 +182,24 @@ export class SessionDetailsComponent implements OnInit {
     return alerts;
   }
 
+  loadAlertCounts(): void {
+    this.allStudents.forEach(student => {
+      const identity = student.name;
+      if (!identity || !this.sessionCode) return;
+      this.emotionService.getAlertsBySessionAndStudent(this.sessionCode, identity).subscribe({
+        next: (alerts) => {
+          const tabAlerts = alerts.filter(a =>
+            a.alertType === 'TAB_SWITCH' || a.alertType === 'MULTIPLE_SWITCHES' || a.alertType === 'OFF_PLATFORM'
+          );
+          const idx = this.allStudents.findIndex(s => s.name === identity);
+          if (idx >= 0) this.allStudents[idx] = { ...this.allStudents[idx], totalAlerts: tabAlerts.length };
+          this.updateDisplayedStudents();
+        },
+        error: () => {}
+      });
+    });
+  }
+
   formatDate(dateString: string): string {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -192,7 +216,7 @@ export class SessionDetailsComponent implements OnInit {
     }
 
     const avgFocus = this.allStudents.reduce((sum, s) => sum + s.avgFocusScore, 0) / this.allStudents.length;
-    this.classAvgFocus = Math.round(avgFocus * 10) / 10;
+    this.classAvgFocus = Number(avgFocus.toFixed(2));
 
     const emotionCounts: { [key: string]: number } = {};
     reports.forEach(report => {
@@ -244,11 +268,34 @@ export class SessionDetailsComponent implements OnInit {
   viewFullReport(studentId: string): void {
     this.selectedStudent = this.allStudents.find(s => s.id === studentId) || null;
     if (this.selectedStudent) {
-      // Find matching track report
-      this.selectedTrackReport = this.trackReports.find(t => t.studentIdentity === this.selectedStudent?.name) || null;
-      // Find matching original emotion report for precise stats
+      const sName = (this.selectedStudent?.name || '').trim().toLowerCase();
+      this.selectedTrackReport = this.trackReports.find(t => (t.studentIdentity || '').trim().toLowerCase() === sName) || null;
       this.selectedEmotionReport = this.untransformedReports.find(r => r.studentLoginIdentity === this.selectedStudent?.name) || null;
+      this.selectedStudentAlerts = [];
+      this.noteText = this.selectedEmotionReport?.instructorNote || '';
+      this.noteSaved = false;
       this.isReportModalOpen = true;
+
+      // Load persisted alerts for this student
+      // this.sessionCode is always the clean code (e.g. "VU5ZGO")
+      // sessionId_legacy has "SESSION-VU5ZGO" prefix from Python agent — never use it here
+      const sessionId = this.sessionCode || this.selectedEmotionReport?.sessionCode || '';
+      const identity = this.selectedEmotionReport?.studentLoginIdentity
+        || this.selectedStudent?.name
+        || '';
+      if (sessionId && identity) {
+        this.isLoadingAlerts = true;
+        this.emotionService.getAlertsBySessionAndStudent(sessionId, identity).subscribe({
+          next: alerts => {
+            this.selectedStudentAlerts = alerts;
+            this.isLoadingAlerts = false;
+          },
+          error: () => {
+            this.selectedStudentAlerts = [];
+            this.isLoadingAlerts = false;
+          }
+        });
+      }
     }
   }
 
@@ -257,18 +304,118 @@ export class SessionDetailsComponent implements OnInit {
     this.selectedStudent = null;
     this.selectedTrackReport = null;
     this.selectedEmotionReport = null;
+    this.selectedStudentAlerts = [];
+    this.isLoadingAlerts = false;
     this.isExportingPdf = false;
+    this.noteText = '';
+    this.noteSaved = false;
+    this.isSavingNote = false;
+  }
+
+  saveNote(): void {
+    if (!this.selectedEmotionReport?.id || this.isSavingNote) return;
+    console.log('[Note] saving for reportId=', this.selectedEmotionReport.id, 'note=', this.noteText);
+    this.isSavingNote = true;
+    this.noteSaved = false;
+    this.emotionService.updateInstructorNote(this.selectedEmotionReport.id, this.noteText).subscribe({
+      next: (res) => {
+        console.log('[Note] saved OK', res);
+        if (this.selectedEmotionReport) this.selectedEmotionReport.instructorNote = this.noteText;
+        this.isSavingNote = false;
+        this.noteSaved = true;
+        setTimeout(() => { this.noteSaved = false; }, 3000);
+      },
+      error: (err) => {
+        console.error('[Note] error', err);
+        this.isSavingNote = false;
+      }
+    });
+  }
+
+  /** Only tab-switch type alerts (excludes ALERT_RESOLVED, MOUSE_INACTIVITY) */
+  getTabSwitchAlerts(): SessionAlert[] {
+    return this.selectedStudentAlerts.filter(a =>
+      a.alertType === 'TAB_SWITCH' || a.alertType === 'MULTIPLE_SWITCHES' || a.alertType === 'OFF_PLATFORM'
+    );
+  }
+
+  /** Unique visited sites with count and first-seen time */
+  getUniqueVisitedSites(): { name: string; url: string; count: number; firstSeen: string }[] {
+    const map = new Map<string, { name: string; url: string; count: number; firstSeen: string }>();
+    this.getTabSwitchAlerts().forEach(a => {
+      if (!a.tabUrl) return;
+      const key = a.tabUrl;
+      if (map.has(key)) {
+        map.get(key)!.count++;
+      } else {
+        let name = a.tabTitle || a.tabUrl;
+        try { name = new URL(a.tabUrl).hostname.replace(/^www\./, ''); } catch (_) {}
+        map.set(key, { name, url: a.tabUrl, count: 1, firstSeen: a.timestamp });
+      }
+    });
+    return Array.from(map.values());
+  }
+
+  readonly alertSummaryTypes = ['TAB_SWITCH', 'MULTIPLE_SWITCHES', 'OFF_PLATFORM', 'MOUSE_INACTIVITY', 'INACTIVITY'];
+
+  getAlertCountByType(alertType: string): number {
+    return this.selectedStudentAlerts.filter(a => a.alertType === alertType).length;
+  }
+
+  getAlertTypeLabel(alertType: string): string {
+    const labels: Record<string, string> = {
+      TAB_SWITCH: 'Tab Switch',
+      MULTIPLE_SWITCHES: 'Multiple Switches',
+      OFF_PLATFORM: 'Off Platform',
+      INACTIVITY: 'Inactivity',
+      MOUSE_INACTIVITY: 'No Mouse Movement',
+      FOCUS_LOSS: 'Focus Loss',
+      DISTRACTION: 'Distraction',
+      LOW_ENGAGEMENT: 'Low Engagement',
+      ALERT_RESOLVED: 'Returned to Platform'
+    };
+    return labels[alertType] || alertType;
+  }
+
+  getAlertIcon(alertType: string): string {
+    const icons: Record<string, string> = {
+      TAB_SWITCH: 'tab',
+      MULTIPLE_SWITCHES: 'tab_unselected',
+      OFF_PLATFORM: 'public_off',
+      INACTIVITY: 'timer_off',
+      MOUSE_INACTIVITY: 'mouse',
+      FOCUS_LOSS: 'visibility_off',
+      DISTRACTION: 'warning',
+      LOW_ENGAGEMENT: 'trending_down',
+      ALERT_RESOLVED: 'check_circle'
+    };
+    return icons[alertType] || 'notification_important';
+  }
+
+  getAlertSeverityClass(severity: string): string {
+    const classes: Record<string, string> = {
+      CRITICAL: 'bg-red-100 text-red-700 border-red-200',
+      HIGH: 'bg-orange-100 text-orange-700 border-orange-200',
+      MEDIUM: 'bg-amber-100 text-amber-700 border-amber-200',
+      LOW: 'bg-slate-100 text-slate-600 border-slate-200'
+    };
+    return classes[severity] || classes['LOW'];
+  }
+
+  formatAlertTime(timestamp: string): string {
+    if (!timestamp) return '';
+    return new Date(timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   }
 
   getInitials(name: string): string {
     if (!name) return 'ST';
-    
+
     // Split by spaces or dots (e.g., 'ya.benattig' -> ['ya', 'benattig'])
     const parts = name.split(/[\s.]+/).filter(p => p.length > 0);
-    
+
     if (parts.length === 0) return 'ST';
     if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-    
+
     // Take first letter of first two parts
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }

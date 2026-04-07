@@ -8,6 +8,7 @@ import os
 import asyncio
 
 from services import pedagogy_codecombat_service
+from config import settings
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/pedagogy", tags=["pedagogy"])
@@ -190,7 +191,7 @@ async def pedagogy_status():
     return {
         "service":     "pedagogy",
         "aiReady":     available,
-        "model":       pedagogy_codecombat_service.GEMINI_MODEL,
+        "model":       settings.OPENROUTER_MODEL,
         "message":     "Ready" if available else "AI unavailable"
     }
 

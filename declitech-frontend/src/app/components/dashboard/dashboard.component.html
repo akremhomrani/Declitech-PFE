@@ -50,18 +50,8 @@
         </div>
       </div>
 
-      <!-- ===== ONGLETS ===== -->
-      <div class="flex gap-2 mb-6">
-        <button (click)="activeTab = 'monitoring'" [class.active-tab]="activeTab === 'monitoring'" class="tab-btn">
-          📊 Suivi en temps réel
-        </button>
-        <button (click)="activeTab = 'pedagogy'" [class.active-tab]="activeTab === 'pedagogy'" class="tab-btn">
-          🎓 Suivi Pédagogique
-        </button>
-      </div>
-
       <!-- ===== TAB : MONITORING ===== -->
-      <div *ngIf="activeTab === 'monitoring'">
+      <div>
         <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 sm:mb-8 gap-4">
           <div>
             <h2 class="text-xl sm:text-2xl font-black tracking-tight text-text-main flex items-center gap-3">
@@ -138,11 +128,6 @@
             </div>
           </div>
         </div> <!-- fin student-grid -->
-      </div> <!-- fin *ngIf="activeTab === 'monitoring'" -->
-
-      <!-- ===== TAB : PÉDAGOGIE ===== -->
-      <div *ngIf="activeTab === 'pedagogy'">
-        <app-pedagogy-panel [sessionId]="activeSessionCode"></app-pedagogy-panel>
       </div>
 
       <footer

@@ -64,11 +64,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.layoutService.toggleSidebar();
   }
 
-  goToProfile(): void {
-    this.closeDropdown();
-    this.router.navigate(['/profile']);
-  }
-
   logout(): void {
     this.closeDropdown();
     this.authService.logout();

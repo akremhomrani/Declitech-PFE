@@ -132,8 +132,6 @@
       chrome.runtime.sendMessage({
         type: "PEDAGOGY_UPDATE",
         data: data
-      }, (response) => {
-        console.log(`[DecliTech Extension] PEDAGOGY_UPDATE sent for: ${data.levelName}`);
       });
     } catch (e) {
       // Silent error
@@ -163,8 +161,6 @@
         sessionCode: code,
         participantId: `PARTICIPANT-${code}`,
         studentLoginIdentity: identity || ""
-      }, (response) => {
-        console.log(`[DecliTech Extension] SESSION_STARTED - Code: ${code}, Identity: ${identity}`);
       });
     } catch (e) {
       // Extension might not be available
@@ -180,8 +176,6 @@
     try {
       chrome.runtime.sendMessage({
         type: "SESSION_STOPPED"
-      }, () => {
-        console.log(`[DecliTech Extension] SESSION_STOPPED`);
       });
     } catch (e) {
       // Extension might not be available
@@ -257,5 +251,4 @@
     sendPedagogyUpdate();
   }, 1000);
 
-  console.log("[DecliTech Extension] Decli.Tech activity detector initialized");
 })();

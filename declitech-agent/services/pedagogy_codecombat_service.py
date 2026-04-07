@@ -1,5 +1,5 @@
 """
-CodeCombat Pedagogy — AI Service (Gemini 2.5 Flash)
+CodeCombat Pedagogy — AI Service (Qwen2.5 VL 72B via OpenRouter)
 Evaluates student work and generates learning analytics feedback.
 """
 import httpx
@@ -10,12 +10,10 @@ import asyncio
 import time
 from typing import Optional
 
+from config import settings
+
 logger = logging.getLogger(__name__)
 
-# Gemini Configuration (Google)
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-GEMINI_API_VERSION = os.getenv("GEMINI_API_VERSION", "v1beta")
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "60"))
 MAX_RETRIES_429 = int(os.getenv("MAX_RETRIES_429", "3"))
 RETRY_BASE_SECONDS = float(os.getenv("RETRY_BASE_SECONDS", "1.0"))
@@ -28,69 +26,55 @@ def _compute_retry_delay(attempt: int, retry_after_header: Optional[str]) -> flo
             return max(0.0, float(retry_after_header))
         except ValueError:
             pass
-    # Simple exponential backoff: base * 2^attempt
     return RETRY_BASE_SECONDS * (2 ** attempt)
 
-def _build_gemini_url(model: str, version: str) -> str:
-    """Build Gemini API endpoint URL"""
-    return f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent"
 
-async def _ask_gemini(prompt: str, temperature: float = 0.2) -> str:
-    """Call Gemini 2.5 Flash API (Google)"""
-    if not GEMINI_API_KEY:
-        logger.warning("Gemini API unavailable: GEMINI_API_KEY missing.")
+async def _ask_llm(prompt: str, temperature: float = 0.2) -> str:
+    """Call Qwen2.5 VL 72B via OpenRouter (OpenAI-compatible)"""
+    if not settings.OPENROUTER_API_KEY:
+        logger.warning("OpenRouter API unavailable: OPENROUTER_API_KEY missing.")
         return ""
+
+    payload = {
+        "model": settings.OPENROUTER_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": temperature,
+        "max_tokens": 500
+    }
+    headers = {
+        "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+        "Content-Type": "application/json"
+    }
 
     try:
-        payload = {
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": temperature, "maxOutputTokens": 500}
-        }
-        
-        # Try v1beta first, fallback to v1
-        versions = [GEMINI_API_VERSION] if GEMINI_API_VERSION == "v1" else [GEMINI_API_VERSION, "v1"]
-
         async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
-            last_error = None
-            for version in versions:
-                url = _build_gemini_url(GEMINI_MODEL, version)
-                for attempt in range(MAX_RETRIES_429 + 1):
-                    try:
-                        r = await client.post(url, params={"key": GEMINI_API_KEY}, json=payload)
-                        r.raise_for_status()
-                        data = r.json()
-                        try:
-                            return data["candidates"][0]["content"]["parts"][0]["text"].strip()
-                        except (KeyError, IndexError):
-                            logger.error(f"Unexpected Gemini response format: {data}")
-                            return ""
-                    except httpx.HTTPStatusError as e:
-                        last_error = e
-                        status = e.response.status_code
-                        if status in (400, 404):
-                            logger.warning(f"Gemini {version} unavailable ({status}), trying {versions[-1]}...")
-                            break
-                        if status == 429 and attempt < MAX_RETRIES_429:
-                            retry_after = e.response.headers.get("Retry-After")
-                            delay = _compute_retry_delay(attempt, retry_after)
-                            logger.warning(
-                                f"Gemini rate-limited (429). Retry {attempt + 1}/{MAX_RETRIES_429} in {delay:.1f}s..."
-                            )
-                            await asyncio.sleep(delay)
-                            continue
-                        raise
-
-            if last_error:
-                logger.error(f"Gemini error: {last_error}")
-                return ""
+            for attempt in range(MAX_RETRIES_429 + 1):
+                try:
+                    r = await client.post(
+                        f"{settings.OPENROUTER_BASE_URL}/chat/completions",
+                        headers=headers,
+                        json=payload
+                    )
+                    r.raise_for_status()
+                    data = r.json()
+                    return data["choices"][0]["message"]["content"].strip()
+                except httpx.HTTPStatusError as e:
+                    if e.response.status_code == 429 and attempt < MAX_RETRIES_429:
+                        retry_after = e.response.headers.get("Retry-After")
+                        delay = _compute_retry_delay(attempt, retry_after)
+                        logger.warning(f"OpenRouter rate-limited. Retry {attempt + 1}/{MAX_RETRIES_429} in {delay:.1f}s...")
+                        await asyncio.sleep(delay)
+                        continue
+                    raise
     except Exception as e:
-        logger.error(f"Gemini error: {e}")
+        logger.error(f"OpenRouter error: {e}")
         return ""
-        
+
     return ""
 
+
 async def is_ai_available() -> bool:
-    return bool(GEMINI_API_KEY)
+    return bool(settings.OPENROUTER_API_KEY)
 
 def _normalize_blocks(code: str) -> list[str]:
     """Extract individual blocks from code. Handles both function calls and plain commands."""
@@ -130,7 +114,7 @@ async def generate_expected_solution(
         f"  hero.attackNearestEnemy()\n\n"
         f"IMPORTANT: Keep it SHORT and EXACT. No comments, no explanations, just the code lines."
     )
-    return await _ask_gemini(prompt, temperature=0.1)
+    return await _ask_llm(prompt, temperature=0.1)
 
 async def evaluate_student_work(
     activity_title: str,
@@ -190,7 +174,7 @@ async def evaluate_student_work(
         f"  \"timeAnalysis\": \"Student filled {blocks_count} blocks in {time_spent_seconds}s — good pace.\"\n"
         f"}}"
     )
-    res = await _ask_gemini(prompt, temperature=0.05)
+    res = await _ask_llm(prompt, temperature=0.05)
     
     try:
         start = res.find('{')
@@ -312,7 +296,7 @@ async def generate_phase_phrase(phase: str, level_name: str, blocks_count: int =
         f"You are a pedagogy assistant. Generate ONE short sentence (max 15 words) in English to inform "
         f"the teacher that the student {phase_desc}.\nBe positive. No quotation marks."
     )
-    raw = await _ask_gemini(prompt, temperature=0.4)
+    raw = await _ask_llm(prompt, temperature=0.4)
     if not raw:
         fallback = _PHASE_FALLBACKS.get(phase, "Student is working on the level.")
         _phase_phrase_cache[cache_key] = (time.monotonic(), fallback)

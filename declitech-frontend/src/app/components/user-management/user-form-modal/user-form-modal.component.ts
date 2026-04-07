@@ -4,6 +4,18 @@ import { FormsModule } from '@angular/forms';
 import { UserService } from '../../../services/user.service';
 import { CreateUserRequest, UpdateUserRequest } from '../../../models/user';
 
+interface UserFormData {
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
+  phoneNumber: string;
+  sexe: string;
+  role: string;
+  active: boolean;
+  password: string;
+}
+
 @Component({
   selector: 'app-user-form-modal',
   standalone: true,
@@ -18,7 +30,7 @@ export class UserFormModalComponent implements OnInit, OnChanges {
   @Output() closeModal = new EventEmitter<void>();
   @Output() userSaved = new EventEmitter<void>();
 
-  user: any = {
+  user: UserFormData = {
     firstName: '',
     lastName: '',
     username: '',
@@ -53,10 +65,20 @@ export class UserFormModalComponent implements OnInit, OnChanges {
     this.userService.getUserById(this.userId!)
       .subscribe({
         next: (user) => {
-          this.user = user;
+          this.user = {
+            firstName: user.firstName,
+            lastName: user.lastName,
+            username: user.username,
+            email: user.email,
+            phoneNumber: user.phoneNumber,
+            sexe: user.sexe,
+            role: user.role,
+            active: user.active,
+            password: ''
+          };
           this.isLoading = false;
         },
-        error: (error: any) => {
+        error: () => {
           this.errorMessage = 'Failed to load user details';
           this.isLoading = false;
         }
@@ -81,7 +103,7 @@ export class UserFormModalComponent implements OnInit, OnChanges {
         this.userSaved.emit();
         this.close();
       },
-      error: (error: any) => {
+      error: (error: { error?: { message?: string } }) => {
         this.errorMessage = error.error?.message || 'Failed to save user';
         this.isLoading = false;
       }

@@ -17,7 +17,7 @@
         "https://www.codecombat.com/*",
         "https://code.org/*",
         "https://studio.code.org/*",
-        "https://app.decli.tech/*",
+        "https://learn.decli.tech/*",
         "http://localhost:4200/*"
       ],
       "js": [
@@ -28,8 +28,13 @@
       "run_at": "document_idle"
     },
     {
-      "matches": ["<all_urls>"],
-      "js": ["content_vittascience.js"],
+      "matches": [
+        "https://vittascience.com/*",
+        "https://*.vittascience.com/*"
+      ],
+      "js": [
+        "content_vittascience.js"
+      ],
       "all_frames": true,
       "run_at": "document_idle"
     }
@@ -41,11 +46,17 @@
     "tabs"
   ],
   "host_permissions": [
+    "https://app.decli.tech/*",
+    "https://learn.decli.tech/*",
+    "https://api-iam.decli.tech/*",
+    "https://codecombat.com/*",
+    "https://www.codecombat.com/*",
+    "https://code.org/*",
+    "https://studio.code.org/*",
+    "https://vittascience.com/*",
     "http://127.0.0.1:8765/*",
     "http://localhost:8765/*",
     "http://localhost:8081/*",
-    "http://localhost:8083/*",
-    "https://*/*",
-    "http://*/*"
+    "http://localhost:8083/*"
   ]
 }

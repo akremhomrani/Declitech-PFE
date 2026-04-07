@@ -1,6 +1,6 @@
 function saveIdentity(value) {
   const identity = (value || "").trim();
-  chrome.storage.local.set({
+  chrome.storage.session.set({
     decli_identity: identity,
     decli_identity_ts: new Date().toISOString(),
     decli_identity_url: location.href
@@ -87,7 +87,6 @@ function attach() {
 }
 
 attach();
-setInterval(attach, 500);
 
 const obs = new MutationObserver(attach);
 obs.observe(document.documentElement, { childList: true, subtree: true });

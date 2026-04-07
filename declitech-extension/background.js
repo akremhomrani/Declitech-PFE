@@ -1,7 +1,13 @@
-const KAFKA_ALERT_URL = "http://localhost:8083/api/alerts/publish";
+const ALERT_URL = "http://localhost:8081/api/alerts/publish";
 const ALLOWED_SITES = [
     "https://app.decli.tech/",
-    "https://codecombat.com/"
+    "https://learn.decli.tech/",
+    "https://codecombat.com/",
+    "https://www.codecombat.com/",
+    "https://code.org/",
+    "https://studio.code.org/",
+    "https://vittascience.com/",
+    "http://localhost:4200/"
 ];
 const CHECK_INTERVAL = 2000;
 
@@ -28,6 +34,8 @@ const SCREEN_CAPTURE_INTERVAL = 30000; // 30 seconds
 let screenCaptureInterval = null;
 let lastVittascienceData = null;
 let sessionValidationInterval = null;
+let monitoringInterval = null;
+let pedagogyScanInterval = null;
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "SESSION_STARTED") {
@@ -51,6 +59,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         lastUrl = null;
         isCurrentlyOnWrongSite = false;
         mouseInactivityAlertSent = false;
+        stopMonitoring();
         stopScreenCapture();
         stopMouseInactivityTracking();
         stopSessionValidationCheck();
@@ -72,7 +81,9 @@ function startSessionValidationCheck() {
         if (!activeSessionCode) return;
         try {
             const res = await fetch(`http://127.0.0.1:8765/validate/${activeSessionCode}`);
-            const validation = await res.json();
+            if (!res.ok) return;
+            const validation = await res.json().catch(() => null);
+            if (!validation) return;
             if (!validation.valid) {
                 const reason = validation.reason || "";
                 if (reason === "inactive" || reason === "expired") {
@@ -99,8 +110,16 @@ function stopSessionValidationCheck() {
 }
 
 function startMonitoring() {
-    setInterval(checkActiveTab, CHECK_INTERVAL);
+    if (monitoringInterval) clearInterval(monitoringInterval);
+    monitoringInterval = setInterval(checkActiveTab, CHECK_INTERVAL);
     startScreenCapture();
+}
+
+function stopMonitoring() {
+    if (monitoringInterval) {
+        clearInterval(monitoringInterval);
+        monitoringInterval = null;
+    }
 }
 
 async function checkActiveTab() {
@@ -111,6 +130,7 @@ async function checkActiveTab() {
         if (!tab || !tab.url) return;
 
         const currentUrl = tab.url;
+        const tabTitle = tab.title || '';
 
         if (currentUrl !== lastUrl) {
             lastUrl = currentUrl;
@@ -119,7 +139,7 @@ async function checkActiveTab() {
 
             if (!urlIsAllowed && !isCurrentlyOnWrongSite) {
                 isCurrentlyOnWrongSite = true;
-                await sendTabSwitchAlert(currentUrl);
+                await sendTabSwitchAlert(currentUrl, tabTitle);
             }
             else if (urlIsAllowed && isCurrentlyOnWrongSite) {
                 isCurrentlyOnWrongSite = false;
@@ -136,7 +156,7 @@ function isUrlAllowed(url) {
     return ALLOWED_SITES.some(site => url.startsWith(site));
 }
 
-async function sendTabSwitchAlert(currentUrl) {
+async function sendTabSwitchAlert(currentUrl, tabTitle) {
     const now = Date.now();
 
     if (now - lastAlertTime < ALERT_COOLDOWN) {
@@ -149,23 +169,32 @@ async function sendTabSwitchAlert(currentUrl) {
     const alertType = tabSwitchCount >= 5 ? "MULTIPLE_SWITCHES" : "TAB_SWITCH";
     const severity = tabSwitchCount >= 5 ? "HIGH" : tabSwitchCount >= 3 ? "MEDIUM" : "LOW";
 
+    // Extract a clean site name from the URL (ex: "youtube.com", "google.com")
+    let siteName = tabTitle || currentUrl;
+    try {
+        const hostname = new URL(currentUrl).hostname.replace(/^www\./, '');
+        siteName = hostname;
+    } catch (_) {}
+
     const alert = {
         participantId: activeParticipantId,
         sessionId: activeSessionCode,
         studentLoginIdentity: studentLoginIdentity,
         alertType: alertType,
         severity: severity,
-        message: `Student navigated to: ${currentUrl}`,
+        message: `Student navigated to: ${siteName}`,
         timestamp: new Date().toISOString(),
         metadata: {
             switchCount: tabSwitchCount,
             currentUrl: currentUrl,
+            tabTitle: tabTitle,
+            siteName: siteName,
             allowedSites: ALLOWED_SITES
         }
     };
 
     try {
-        await fetch(KAFKA_ALERT_URL, {
+        await fetch(ALERT_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -194,7 +223,7 @@ async function sendAlertResolved(currentUrl) {
     };
 
     try {
-        await fetch(KAFKA_ALERT_URL, {
+        await fetch(ALERT_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -250,7 +279,7 @@ async function sendMouseInactivityAlert() {
     };
 
     try {
-        await fetch(KAFKA_ALERT_URL, {
+        await fetch(ALERT_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -285,7 +314,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 });
 
 // Scan périodique toutes les 30s (ONLY active tab)
-setInterval(scanPedagogyTabs, PEDAGOGY_SCAN_INTERVAL);
+pedagogyScanInterval = setInterval(scanPedagogyTabs, PEDAGOGY_SCAN_INTERVAL);
 
 async function scanPedagogyTabs() {
     // Only scan pedagogy sites if the ACTIVE tab is a pedagogy site

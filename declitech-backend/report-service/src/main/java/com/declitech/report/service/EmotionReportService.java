@@ -5,6 +5,7 @@ import com.declitech.report.model.EmotionReport;
 import com.declitech.report.repository.EmotionReportRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,11 +20,13 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EmotionReportService {
 
     private final EmotionReportRepository reportRepository;
     private final ObjectMapper objectMapper;
     private final StringRedisTemplate redisTemplate;
+    private final AlertService alertService;
 
     @Transactional
     public EmotionReport importReportFromJson(String jsonFilePath) throws Exception {
@@ -68,9 +71,18 @@ public class EmotionReportService {
             report.setFinalState(dto.getFinalState().getState());
             report.setFinalSentence(dto.getFinalState().getFinalSentence());
         }
-        
-        
-        
+        // Flush Redis alerts → PostgreSQL now that the report is being finalized
+        // Strip SESSION- / LOCAL- prefix added by Python agent (Redis keys use the raw code)
+        try {
+            String cleanCode = dto.getSessionCode() != null
+                    ? dto.getSessionCode()
+                    : stripAgentPrefix(dto.getSessionId());
+            alertService.flushAlertsToDb(cleanCode, dto.getStudentLoginIdentity());
+        } catch (Exception e) {
+            log.warn("Could not flush alerts for session={} student={}: {}",
+                    dto.getSessionId(), dto.getStudentLoginIdentity(), e.getMessage());
+        }
+
         return reportRepository.save(report);
     }
 
@@ -161,6 +173,13 @@ public class EmotionReportService {
         );
     }
 
+    public Optional<EmotionReport> updateInstructorNote(Long id, String note) {
+        return reportRepository.findById(id).map(report -> {
+            report.setInstructorNote(note);
+            return reportRepository.save(report);
+        });
+    }
+
     public List<String> getLiveTimelineFromRedis(String sessionCode, String studentLoginIdentity) {
         String redisKey = "emotion_timeline:" + sessionCode + ":" + studentLoginIdentity;
         // Fetch all elements from the list (0 to -1)
@@ -169,5 +188,13 @@ public class EmotionReportService {
             return List.of();
         }
         return timeline;
+    }
+
+    /** Strip SESSION- or LOCAL- prefix added by the Python agent. */
+    private String stripAgentPrefix(String sessionId) {
+        if (sessionId == null) return null;
+        if (sessionId.startsWith("SESSION-")) return sessionId.substring(8);
+        if (sessionId.startsWith("LOCAL-"))   return sessionId.substring(6);
+        return sessionId;
     }
 }

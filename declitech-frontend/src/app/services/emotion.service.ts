@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { EmotionReport } from '../models/emotion-report.model';
+import { EmotionReport, SessionAlert } from '../models/emotion-report.model';
 
 @Injectable({
   providedIn: 'root'
@@ -49,5 +49,19 @@ export class EmotionService {
       .set('startDate', startDate)
       .set('endDate', endDate);
     return this.http.get<EmotionReport[]>(`${this.apiUrl}/range`, { params });
+  }
+
+  updateInstructorNote(reportId: number, note: string): Observable<{ id: number; note: string }> {
+    return this.http.patch<{ id: number; note: string }>(
+      `${environment.apiUrl}/api/emotions/${reportId}/note`,
+      { note }
+    );
+  }
+
+  getAlertsBySessionAndStudent(sessionId: string, studentLoginIdentity: string): Observable<SessionAlert[]> {
+    const encoded = encodeURIComponent(studentLoginIdentity);
+    return this.http.get<SessionAlert[]>(
+      `${environment.apiUrl}/api/alerts/session/${sessionId}/student/${encoded}`
+    );
   }
 }

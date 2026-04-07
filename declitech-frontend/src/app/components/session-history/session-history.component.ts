@@ -8,6 +8,14 @@ import { SessionService } from '../../services/session.service';
 import { AuthService } from '../../services/auth.service';
 import { SessionHistory, PagedSessionResponse } from '../../models/session';
 
+interface SessionFilters {
+  search?: string;
+  title?: string;
+  sessionCode?: string;
+  status?: string;
+  instructorUsername?: string;
+}
+
 @Component({
   selector: 'app-session-history',
   standalone: true,
@@ -60,7 +68,7 @@ export class SessionHistoryComponent implements OnInit, OnDestroy {
     const hasFilters = this.searchTerm || this.filterStatus !== 'all' || this.isInstructor;
 
     if (hasFilters) {
-      const filters: any = {};
+      const filters: SessionFilters = {};
       if (this.searchTerm) {
         filters.search = this.searchTerm;
       }

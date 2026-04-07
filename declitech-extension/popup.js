@@ -155,7 +155,7 @@ async function refreshStatus() {
     setLive(false);
     btnJoin.style.display = "block";
     sessionActive.style.display = "none";
-    setMsg("Agent not reachable. Check: http://127.0.0.1:8765/status", true);
+    setMsg("Agent non joignable. Vérifie que le service est démarré.", true);
   }
 }
 

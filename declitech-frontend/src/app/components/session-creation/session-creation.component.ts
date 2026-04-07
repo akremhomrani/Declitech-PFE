@@ -27,29 +27,29 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
   connectedStudents = 0;
   elapsedTime = '0m 0s';
   isInstructor = false;
-  
+
   private subscription = new Subscription();
   private pollSubscription?: Subscription;
 
   isModalOpen = false;
   modalTitle = '';
-  modalDuration = 60;
+  modalDuration = 90;
   codeCopied = false;
-  
+
   modules: Module[] = [];
   moduleOptions: { id: number; label: string; site: string }[] = [];
   selectedModuleOption: string = '';
-  
+
   constructor(
     private sessionService: SessionService,
     private moduleService: ModuleService,
     private emotionService: EmotionService,
     private authService: AuthService
-  ) {}
-  
+  ) { }
+
   ngOnInit(): void {
     this.isInstructor = this.authService.getRole() === 'INSTRUCTOR';
-    
+
     if (!this.isInstructor) {
       return;
     }
@@ -71,14 +71,14 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
         }
       })
     );
-    
+
     this.subscription.add(
       this.sessionService.elapsedTime$.subscribe(time => {
         this.elapsedTime = time;
       })
     );
   }
-  
+
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
     this.stopPollingConnectedStudents();
@@ -97,7 +97,7 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
         next: (count) => {
           this.connectedStudents = count;
         },
-        error: () => {}
+        error: () => { }
       });
   }
 
@@ -114,7 +114,7 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
         next: (count) => {
           this.connectedStudents = count;
         },
-        error: () => {}
+        error: () => { }
       });
     }
   }
@@ -151,38 +151,38 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
       }
     });
   }
-  
+
   openModal(): void {
     this.isModalOpen = true;
   }
-  
+
   closeModal(): void {
     this.isModalOpen = false;
     this.modalTitle = '';
     this.modalDuration = 60;
     this.selectedModuleOption = '';
   }
-  
+
   generateSession(): void {
     if (!this.selectedModuleOption || this.modalDuration <= 0) {
       return;
     }
-    
+
     const moduleId = parseInt(this.selectedModuleOption);
     const selectedOption = this.moduleOptions.find(opt => opt.id === moduleId);
     const sessionTitle = selectedOption ? selectedOption.label : 'Session';
-    
+
     this.sessionService.createSession(sessionTitle, this.modalDuration, moduleId);
     this.closeModal();
   }
-  
+
   copyCode(): void {
     navigator.clipboard.writeText(this.sessionCode).then(() => {
       this.codeCopied = true;
       setTimeout(() => this.codeCopied = false, 2000);
     });
   }
-  
+
   getCodeArray(): string[] {
     return this.sessionCode.split('');
   }

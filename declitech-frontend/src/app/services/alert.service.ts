@@ -18,10 +18,12 @@ export class AlertService {
     constructor() { }
 
     connectToSession(sessionCode: string): void {
+        if (!/^[A-Z0-9]{6}$/.test(sessionCode)) {
+            return;
+        }
         this.disconnect();
 
-        const url = `${environment.alertsUrl}/api/alerts/stream?sessionId=${sessionCode}`;
-        console.log('[AlertService] Connexion SSE :', url);
+        const url = `${environment.apiUrl}/api/alerts/stream?sessionId=${sessionCode}`;
 
         this.eventSource = new EventSource(url);
 

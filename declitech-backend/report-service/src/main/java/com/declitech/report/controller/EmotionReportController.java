@@ -121,6 +121,16 @@ public class EmotionReportController {
         return ResponseEntity.ok(reports);
     }
 
+    @PatchMapping("/{id}/note")
+    public ResponseEntity<?> updateNote(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        String note = body.getOrDefault("note", "");
+        return reportService.updateInstructorNote(id, note)
+                .<ResponseEntity<?>>map(r -> ResponseEntity.ok(Map.of("id", r.getId(), "note", r.getInstructorNote() != null ? r.getInstructorNote() : "")))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/health")
     public ResponseEntity<Map<String, String>> health() {
         return ResponseEntity.ok(Map.of(

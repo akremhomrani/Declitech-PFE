@@ -1,6 +1,21 @@
+export interface SessionAlert {
+  id?: number;
+  sessionId: string;
+  studentLoginIdentity: string;
+  alertType: string;
+  severity: string;
+  message: string;
+  timestamp: string;
+  tabUrl?: string;
+  tabTitle?: string;
+  switchCount?: number;
+}
+
 export interface EmotionReport {
   id?: number;
   sessionId: string;
+  sessionCode?: string;
+  sessionId_legacy?: string;
   generatedAt: string;
   studentLoginIdentity: string;
   status?: string;
@@ -15,6 +30,7 @@ export interface EmotionReport {
   neutralMean?: number;
   dominantEmotion?: string;
   numberOfSamples?: number;
+  instructorNote?: string;
   timeline?: EmotionTimeline[];
   createdAt?: string;
   updatedAt?: string;

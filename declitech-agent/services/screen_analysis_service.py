@@ -2,6 +2,7 @@ import json
 import os
 import logging
 from typing import Optional
+import requests
 import redis
 
 from config import settings
@@ -9,23 +10,12 @@ from models.schemas import ScreenAnalysisRequest, ScreenAnalysisResponse
 
 logger = logging.getLogger(__name__)
 
-try:
-    import google.generativeai as genai
-    from google.generativeai.types import GenerationConfig
-    HAS_GENAI = True
-except ImportError:
-    HAS_GENAI = False
 
 class ScreenAnalysisService:
     def __init__(self):
         self.output_file = os.path.join(settings.BASE_DIR, "screen_analysis_output.json")
-        
-        if HAS_GENAI and getattr(settings, 'GEMINI_API_KEY', None):
-            genai.configure(api_key=settings.GEMINI_API_KEY)
-            self.model = genai.GenerativeModel('gemini-2.5-flash')
-        else:
-            self.model = None
-            
+        self.api_available = bool(settings.OPENROUTER_API_KEY)
+
         try:
             self.redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
         except Exception as e:
@@ -76,78 +66,76 @@ class ScreenAnalysisService:
         dom_context = json.dumps(request.dom_data) if request.dom_data else "No DOM data available"
         prompt = self._build_analysis_prompt(dom_context)
 
-        if self.model:
-            # Smart caching: Hash the DOM state to avoid calling Gemini if nothing changed!
-            # We ignore the image to save API calls when the UI state is identical
+        if self.api_available:
+            # Smart caching: Hash the DOM state to avoid API calls when nothing changed
             state_str = json.dumps(request.dom_data, sort_keys=True) if request.dom_data else "No DOM data"
             import hashlib
             current_hash = hashlib.md5(state_str.encode()).hexdigest()
-            
+
             if hasattr(self, 'last_state_hash') and self.last_state_hash == current_hash and hasattr(self, 'last_response'):
-                # State hasn't changed, reuse the previous LLM response to save quota!
                 logger.info("DOM state identical to last request. Returning cached LLM response to save API quota.")
                 import copy
                 cached_response = copy.deepcopy(self.last_response)
-                # Update status on the copied response to show it was cached
                 cached_response.status = "SUCCESS_CACHED"
-                self._log_to_redis(request, cached_response)
+                self._log_to_file(request, cached_response)
                 return cached_response
 
-            import google.api_core.exceptions
-            for attempt in range(len(settings.GEMINI_API_KEYS) or 1):
-                try:
-                    # Dynamically set the API key for this attempt
-                    current_key = settings.get_next_gemini_key()
-                    if current_key:
-                        genai.configure(api_key=current_key)
-                        
-                    # We need to construct the image part for Gemini API
-                    image_parts = [
-                        {
-                            "mime_type": "image/jpeg",
-                            "data": request.screenshot_base64
-                        }
-                    ]
-                    
-                    result = self.model.generate_content(
-                        contents=[prompt, image_parts[0]],
-                        generation_config=GenerationConfig(
-                            temperature=0.2,
-                            response_mime_type="application/json"
-                        )
-                    )
-                    
-                    result_json = self._parse_json_text(result.text)
-                    
-                    response.exercise_name = result_json.get("exercise_name", "Unknown")
-                    response.progress_level = result_json.get("progress_level", "NOT_STARTED")
-                    response.on_track = result_json.get("on_track", True)
-                    response.observations = result_json.get("observations", "No observations")
-                    
-                    # Cache the successful result
-                    self.last_state_hash = current_hash
-                    self.last_response = response
-                    break # Success! Break out of the retry loop
+            try:
+                messages = [
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{request.screenshot_base64}"
+                                }
+                            },
+                            {
+                                "type": "text",
+                                "text": prompt
+                            }
+                        ]
+                    }
+                ]
 
-                except google.api_core.exceptions.ResourceExhausted as e:
-                    logger.warning(f"Key rate limited (429). Attempt {attempt + 1}/{len(settings.GEMINI_API_KEYS)}")
-                    if attempt == len(settings.GEMINI_API_KEYS) - 1:
-                        response.status = f"ERROR_LLM_QUOTA: {str(e)}"
-                        response.observations = "API Quota Exceeded on all keys. Fallback to DOM rules."
-                        self._fallback_analysis(request.dom_data, response)
+                resp = requests.post(
+                    f"{settings.OPENROUTER_BASE_URL}/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": settings.OPENROUTER_MODEL,
+                        "messages": messages,
+                        "temperature": 0.2,
+                        "max_tokens": 500
+                    },
+                    timeout=int(os.getenv("REQUEST_TIMEOUT", "60"))
+                )
+                resp.raise_for_status()
+                raw_text = resp.json()["choices"][0]["message"]["content"]
+                result_json = self._parse_json_text(raw_text)
 
-                except Exception as e:
-                    response.status = f"ERROR_LLM: {str(e)}"
-                    response.observations = "Error calling Vision LLM. Fallback to DOM data."
-                    self._fallback_analysis(request.dom_data, response)
-                    break # Non-quota error, don't retry
+                response.exercise_name = result_json.get("exercise_name", "Unknown")
+                response.progress_level = result_json.get("progress_level", "NOT_STARTED")
+                response.on_track = result_json.get("on_track", True)
+                response.observations = result_json.get("observations", "No observations")
+
+                self.last_state_hash = current_hash
+                self.last_response = response
+
+            except Exception as e:
+                response.status = f"ERROR_LLM: {str(e)}"
+                response.observations = "Error calling Vision LLM. Fallback to DOM data."
+                self._fallback_analysis(request.dom_data, response)
         else:
             # Fallback heuristic using DOM data if no API key or no module
             response.status = "SUCCESS_NO_LLM"
             self._fallback_analysis(request.dom_data, response)
             
-        # Write detailed analysis results to Redis
-        self._log_to_redis(request, response)
+        # Write detailed analysis results to JSON file
+        self._log_to_file(request, response)
         
         return response
 
@@ -188,10 +176,7 @@ class ScreenAnalysisService:
                 response.progress_level = "NEAR_COMPLETE"
                 response.observations = "Model is trained, waiting for student to test it."
 
-    def _log_to_redis(self, request: ScreenAnalysisRequest, response: ScreenAnalysisResponse):
-        if not self.redis_client:
-            return
-
+    def _log_to_file(self, request: ScreenAnalysisRequest, response: ScreenAnalysisResponse):
         log_entry = {
             "timestamp": request.timestamp,
             "session_id": request.session_id,
@@ -202,9 +187,17 @@ class ScreenAnalysisService:
         }
         
         try:
-            key = f"track:{request.session_id}:{request.student_login_identity or 'unknown'}"
-            self.redis_client.rpush(key, json.dumps(log_entry))
-            # Set an expiration of 1 day to clean up old sessions automatically
-            self.redis_client.expire(key, 86400)
+            data = []
+            if os.path.exists(self.output_file):
+                with open(self.output_file, 'r', encoding='utf-8') as f:
+                    try:
+                        data = json.load(f)
+                    except json.JSONDecodeError:
+                        pass
+            
+            data.append(log_entry)
+            
+            with open(self.output_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
         except Exception as e:
-            logger.error(f"Failed to write to Redis: {e}")
+            logger.error(f"Failed to write to JSON file: {e}")

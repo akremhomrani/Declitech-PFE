@@ -45,11 +45,6 @@ export class UserService {
     return this.http.delete<void>(`${baseUrl}/${id}`, this.authOptions);
   }
 
-  blockUser(id: number): Observable<void> {
-    const baseUrl = `${environment.apiUrl}/api/users`;
-    return this.http.delete<void>(`${baseUrl}/${id}`, this.authOptions);
-  }
-
   unblockUser(id: number): Observable<User> {
     const baseUrl = `${environment.apiUrl}/api/users`;
     return this.http.patch<User>(`${baseUrl}/${id}/reactivate`, {}, this.authOptions);

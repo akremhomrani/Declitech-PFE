@@ -55,6 +55,9 @@ public class EmotionReport {
     // Number of samples
     private Integer numberOfSamples;
 
+    @Column(name = "instructor_note", length = 1000)
+    private String instructorNote;
+
 
 
     @Enumerated(EnumType.STRING)

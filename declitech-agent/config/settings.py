@@ -69,19 +69,9 @@ class Settings:
         self.FACE_MIN_SIZE = tuple(map(int, os.getenv("FACE_MIN_SIZE", "50,50").split(",")))
         self.FACE_MARGIN_PERCENT = float(os.getenv("FACE_MARGIN_PERCENT", "0.15"))
         self.MODEL_INPUT_SIZE = tuple(map(int, os.getenv("MODEL_INPUT_SIZE", "48,48").split(",")))
-        self.GEMINI_API_KEYS = [k.strip() for k in os.getenv("GEMINI_API_KEY", "").split(",") if k.strip()]
-        # Maintain backward compatibility for scripts checking the singular key presence
-        self.GEMINI_API_KEY = self.GEMINI_API_KEYS[0] if self.GEMINI_API_KEYS else ""
-        self.GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-        self._current_key_idx = 0
-
-    def get_next_gemini_key(self) -> str:
-        """Returns the next API key in the list (round-robin) to handle 429 rate limits natively"""
-        if not self.GEMINI_API_KEYS:
-            return ""
-        key = self.GEMINI_API_KEYS[self._current_key_idx]
-        self._current_key_idx = (self._current_key_idx + 1) % len(self.GEMINI_API_KEYS)
-        return key
+        self.OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+        self.OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "qwen/qwen2.5-vl-72b-instruct")
+        self.OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 
 settings = Settings()

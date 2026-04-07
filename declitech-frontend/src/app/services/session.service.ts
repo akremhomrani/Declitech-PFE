@@ -11,8 +11,8 @@ export class SessionService {
   private sessionDataSubject = new BehaviorSubject<SessionData | null>(null);
   public sessionData$: Observable<SessionData | null> = this.sessionDataSubject.asObservable();
 
-  private timerInterval: any;
-  private sessionExpirationTimeout: any;
+  private timerInterval?: ReturnType<typeof setInterval>;
+  private sessionExpirationTimeout?: ReturnType<typeof setTimeout>;
   private elapsedTimeSubject = new BehaviorSubject<string>('0m 0s');
   public elapsedTime$: Observable<string> = this.elapsedTimeSubject.asObservable();
 

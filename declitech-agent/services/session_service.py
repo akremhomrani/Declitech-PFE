@@ -312,51 +312,37 @@ class SessionService:
             prompt += "\nWrite a concise conclusion (in 2-3 sentences max) detailing their major accomplishments and any core mistakes they exhibited. Do not use Markdown formatting like ** or ##."
             
             conclusion = "No conclusion active."
-            conclusion = "No conclusion active."
-            import google.api_core.exceptions
-            for attempt in range(len(settings.GEMINI_API_KEYS) or 1):
-                try:
-                    import google.generativeai as genai
-                    current_key = settings.get_next_gemini_key()
-                    if current_key:
-                        genai.configure(api_key=current_key)
-                        model = genai.GenerativeModel('gemini-2.5-flash')
-                        response = model.generate_content(prompt)
-                        conclusion = (response.text or "").strip()
-                        break
-                except google.api_core.exceptions.ResourceExhausted as e:
-                    logging.getLogger(__name__).warning(f"Conclusion rate limited on key. Attempt {attempt + 1}/{len(settings.GEMINI_API_KEYS)}")
-                    if attempt == len(settings.GEMINI_API_KEYS) - 1:
-                        # Fallback heuristic summary when rate limited after all Keys
-                        successes = sum(1 for t in timeline_texts if "SUCCESS" in t)
-                        errors = sum(1 for t in timeline_texts if "ERROR" in t or "mistake" in t.lower())
-                        total = len(timeline_texts)
-                        fallback = f"Student was tracked over {total} events on '{exercise_name}'. "
-                        if successes > 0 and errors == 0:
-                            fallback += "They made smooth progress without major visible errors."
-                        elif errors > 0:
-                            fallback += f"They encountered some difficulties ({errors} flagged issues) during the session."
-                        else:
-                            fallback += "They engaged with the exercise steadily."
-                        conclusion = f"[AI Rate Limit Exceeded] Fallback summary: {fallback}"
-                except Exception as e:
-                    logging.getLogger(__name__).error(f"Gemini error: {e}")
-                    
-                    # Fallback heuristic summary when rate limited
-                    successes = sum(1 for t in timeline_texts if "SUCCESS" in t)
-                    errors = sum(1 for t in timeline_texts if "ERROR" in t or "mistake" in t.lower())
-                    total = len(timeline_texts)
-                    
-                    fallback = f"Student was tracked over {total} events on '{exercise_name}'. "
-                    if successes > 0 and errors == 0:
-                        fallback += "They made smooth progress without major visible errors."
-                    elif errors > 0:
-                        fallback += f"They encountered some difficulties ({errors} flagged issues) during the session."
-                    else:
-                        fallback += "They engaged with the exercise steadily."
-                        
-                    conclusion = f"[AI Error] Fallback summary: {fallback}"
-                    break
+            try:
+                import requests as _requests
+                resp = _requests.post(
+                    f"{settings.OPENROUTER_BASE_URL}/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": settings.OPENROUTER_MODEL,
+                        "messages": [{"role": "user", "content": prompt}],
+                        "temperature": 0.2,
+                        "max_tokens": 300
+                    },
+                    timeout=60
+                )
+                resp.raise_for_status()
+                conclusion = (resp.json()["choices"][0]["message"]["content"] or "").strip()
+            except Exception as e:
+                logging.getLogger(__name__).error(f"OpenRouter error: {e}")
+                successes = sum(1 for t in timeline_texts if "SUCCESS" in t)
+                errors = sum(1 for t in timeline_texts if "ERROR" in t or "mistake" in t.lower())
+                total = len(timeline_texts)
+                fallback = f"Student was tracked over {total} events on '{exercise_name}'. "
+                if successes > 0 and errors == 0:
+                    fallback += "They made smooth progress without major visible errors."
+                elif errors > 0:
+                    fallback += f"They encountered some difficulties ({errors} flagged issues) during the session."
+                else:
+                    fallback += "They engaged with the exercise steadily."
+                conclusion = f"[AI Error] Fallback summary: {fallback}"
             track_report = {
                 "sessionId": self.session_id,
                 "sessionCode": self.session_code,
