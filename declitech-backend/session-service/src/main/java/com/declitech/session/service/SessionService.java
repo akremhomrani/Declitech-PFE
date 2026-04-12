@@ -1,12 +1,10 @@
 package com.declitech.session.service;
 
 import com.declitech.session.client.ReportServiceClient;
-import com.declitech.session.client.UserServiceClient;
 import com.declitech.session.dto.CreateSessionRequest;
 import com.declitech.session.dto.PagedSessionResponse;
 import com.declitech.session.dto.SessionDTO;
 import com.declitech.session.dto.SessionFilterRequest;
-import com.declitech.session.dto.UserDTO;
 import com.declitech.session.model.Session;
 import com.declitech.session.model.SessionStatus;
 import com.declitech.session.repository.SessionRepository;
@@ -35,20 +33,14 @@ public class SessionService {
 
     private final SessionRepository sessionRepository;
     private final SessionCodeGenerator codeGenerator;
-    private final UserServiceClient userServiceClient;
     private final ReportServiceClient reportServiceClient;
 
     @Value("${declitech.session.duration-hours:1.5}")
     private Double defaultDurationHours;
 
     @Transactional
-    public SessionDTO createSession(Long instructorId, CreateSessionRequest request) {
-        UserDTO instructor = userServiceClient.getUserById(instructorId);
-        
-        if (instructor == null) {
-            throw new RuntimeException("Instructor not found with ID: " + instructorId);
-        }
-
+    public SessionDTO createSession(String username, String firstName, String lastName,
+                                    CreateSessionRequest request) {
         String sessionCode = generateUniqueSessionCode();
 
         Double duration = request.getDurationHours() != null ? request.getDurationHours() : defaultDurationHours;
@@ -57,15 +49,15 @@ public class SessionService {
         Session session = Session.builder()
                 .sessionCode(sessionCode)
                 .title(request.getTitle())
-                .instructorId(instructor.getId())
-                .instructorUsername(instructor.getUsername())
-                .instructorEmail(instructor.getEmail())
+                .instructorUsername(username)
+                .instructorEmail(username + "@iam.declitech.local")
                 .moduleId(request.getModuleId())
                 .expiresAt(expiresAt)
                 .status(SessionStatus.ACTIVE)
                 .build();
 
         session = sessionRepository.save(session);
+        log.info("Session created: code={}, instructor={}", sessionCode, username);
 
         return convertToDTO(session);
     }
@@ -109,6 +101,22 @@ public class SessionService {
     @Transactional(readOnly = true)
     public List<SessionDTO> getActiveSessionsByInstructor(Long instructorId) {
         List<Session> sessions = sessionRepository.findActiveSessionsByInstructorId(instructorId, LocalDateTime.now());
+        return sessions.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<SessionDTO> getSessionsByUsername(String username) {
+        List<Session> sessions = sessionRepository.findByInstructorUsername(username);
+        return sessions.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<SessionDTO> getActiveSessionsByUsername(String username) {
+        List<Session> sessions = sessionRepository.findActiveSessionsByInstructorUsername(username, LocalDateTime.now());
         return sessions.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());

@@ -13,8 +13,10 @@ import java.util.Optional;
 @Repository
 public interface EmotionReportRepository extends JpaRepository<EmotionReport, Long> {
     
-    @Query("SELECT r FROM EmotionReport r WHERE r.sessionId_legacy = :sessionId")
+    @Query("SELECT r FROM EmotionReport r WHERE r.sessionIdLegacy = :sessionId")
     Optional<EmotionReport> findBySessionId(@Param("sessionId") String sessionId);
+
+    Optional<EmotionReport> findBySessionCodeAndStudentLoginIdentity(String sessionCode, String studentLoginIdentity);
     
     // Session code queries (new)
     List<EmotionReport> findBySessionCode(String sessionCode);
@@ -43,7 +45,7 @@ public interface EmotionReportRepository extends JpaRepository<EmotionReport, Lo
         LocalDateTime end
     );
     
-    @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END FROM EmotionReport r WHERE r.sessionId_legacy = :sessionId")
+    @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END FROM EmotionReport r WHERE r.sessionIdLegacy = :sessionId")
     boolean existsBySessionId(@Param("sessionId") String sessionId);
     
     boolean existsBySessionCode(String sessionCode);

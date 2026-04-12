@@ -198,7 +198,7 @@ spring:
     password: admin
 
 gateway:
-  secret: declitech-gateway-secret-2024
+  secret: ${GATEWAY_SECRET}
   require-header: true
 ```
 

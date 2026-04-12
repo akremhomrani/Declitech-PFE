@@ -1,20 +1,30 @@
+import logging
+
+import redis
 from fastapi import APIRouter, HTTPException
 
+from config import settings
 from models import StartRequest, StatusResponse, AgentControlResponse, ScreenAnalysisRequest, ScreenAnalysisResponse
 from services import SessionService, ScreenAnalysisService
 from utils import validate_session_code
 
 router = APIRouter(tags=["Agent Control"])
+logger = logging.getLogger(__name__)
 
 session_service = SessionService()
 screen_analysis_service = ScreenAnalysisService()
+
+try:
+    _redis = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=0, decode_responses=True)
+except Exception:
+    _redis = None
 
 
 @router.get("/")
 def root():
     return {
         "ok": True,
-        "name": "DecliTech Agent API",
+        "name": "DecliTrack Agent API",
         "version": "2.0",
         "endpoints": {
             "status": "/status",
@@ -74,6 +84,22 @@ def stop_session():
 def analyze_screen(request: ScreenAnalysisRequest):
     try:
         response = screen_analysis_service.analyze_screen(request)
+
+        # Save observation to Redis so _generate_and_send_track_report() can read it
+        if _redis and request.student_login_identity:
+            redis_key = f"track:{request.session_id}:{request.student_login_identity}"
+            entry = {
+                "timestamp": request.timestamp,
+                "page_url": request.page_url,
+                "analysis_result": response.dict(),
+            }
+            try:
+                import json
+                _redis.rpush(redis_key, json.dumps(entry))
+                _redis.expire(redis_key, 86400)
+            except Exception as e:
+                logger.warning("Failed to save track observation to Redis: %s", e)
+
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

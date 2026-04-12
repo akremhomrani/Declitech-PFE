@@ -27,7 +27,7 @@ export class SessionHistoryComponent implements OnInit, OnDestroy {
   sessions: SessionHistory[] = [];
   isLoading = true;
   searchTerm = '';
-  filterStatus: 'all' | 'active' | 'expired' = 'all';
+  filterStatus: 'all' | 'active' | 'expired' | 'cancelled' = 'all';
   isAdmin = false;
   isInstructor = false;
   currentUsername: string | null = null;
@@ -76,6 +76,8 @@ export class SessionHistoryComponent implements OnInit, OnDestroy {
         filters.status = 'ACTIVE';
       } else if (this.filterStatus === 'expired') {
         filters.status = 'ENDED';
+      } else if (this.filterStatus === 'cancelled') {
+        filters.status = 'CANCELLED';
       }
       if (this.isInstructor && this.currentUsername) {
         filters.instructorUsername = this.currentUsername;

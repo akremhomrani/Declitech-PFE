@@ -1,10 +1,8 @@
 package com.declitech.session.service;
 
 import com.declitech.session.client.ReportServiceClient;
-import com.declitech.session.client.UserServiceClient;
 import com.declitech.session.dto.CreateSessionRequest;
 import com.declitech.session.dto.SessionDTO;
-import com.declitech.session.dto.UserDTO;
 import com.declitech.session.model.Session;
 import com.declitech.session.model.SessionStatus;
 import com.declitech.session.repository.SessionRepository;
@@ -32,31 +30,23 @@ class SessionServiceTest {
 
     @Mock private SessionRepository sessionRepository;
     @Mock private SessionCodeGenerator codeGenerator;
-    @Mock private UserServiceClient userServiceClient;
     @Mock private ReportServiceClient reportServiceClient;
 
     @InjectMocks
     private SessionService sessionService;
 
-    private UserDTO instructor;
     private Session activeSession;
 
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(sessionService, "defaultDurationHours", 1.5);
 
-        instructor = new UserDTO();
-        instructor.setId(1L);
-        instructor.setUsername("prof.dupont");
-        instructor.setEmail("prof@declitech.com");
-
         activeSession = Session.builder()
                 .id(10L)
                 .sessionCode("ABC123")
                 .title("Test Java")
-                .instructorId(1L)
-                .instructorUsername("prof.dupont")
-                .instructorEmail("prof@declitech.com")
+                .instructorUsername("ahmed.ben_ali")
+                .instructorEmail("ahmed.ben_ali@iam.declitech.local")
                 .status(SessionStatus.ACTIVE)
                 .createdAt(LocalDateTime.now().minusMinutes(10))
                 .expiresAt(LocalDateTime.now().plusHours(1))
@@ -74,14 +64,13 @@ class SessionServiceTest {
         request.setTitle("Module Java");
         request.setDurationHours(2.0);
 
-        when(userServiceClient.getUserById(1L)).thenReturn(instructor);
         when(codeGenerator.generateCode()).thenReturn("XYZ999");
         when(sessionRepository.existsBySessionCode("XYZ999")).thenReturn(false);
         when(sessionRepository.save(any(Session.class))).thenReturn(activeSession);
         when(reportServiceClient.getParticipantCountBySessionCode(anyString())).thenReturn(0L);
         when(reportServiceClient.getReportCountBySessionCode(anyString())).thenReturn(0);
 
-        SessionDTO result = sessionService.createSession(1L, request);
+        SessionDTO result = sessionService.createSession("ahmed.ben_ali", "Ahmed", "Ben Ali", request);
 
         assertThat(result).isNotNull();
         assertThat(result.getSessionCode()).isEqualTo("ABC123");
@@ -91,25 +80,11 @@ class SessionServiceTest {
     }
 
     @Test
-    @DisplayName("createSession - instructeur introuvable → RuntimeException")
-    void createSession_InstructorNotFound_ShouldThrowRuntimeException() {
-        CreateSessionRequest request = new CreateSessionRequest();
-        request.setTitle("Module Test");
-
-        when(userServiceClient.getUserById(99L)).thenReturn(null);
-
-        assertThatThrownBy(() -> sessionService.createSession(99L, request))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Instructor not found");
-    }
-
-    @Test
     @DisplayName("createSession - code généré déjà existant → génère un nouveau code")
     void createSession_DuplicateCode_ShouldRetryAndGenerateNewCode() {
         CreateSessionRequest request = new CreateSessionRequest();
         request.setTitle("Module Collision");
 
-        when(userServiceClient.getUserById(1L)).thenReturn(instructor);
         when(codeGenerator.generateCode()).thenReturn("DUP111").thenReturn("UNI222");
         when(sessionRepository.existsBySessionCode("DUP111")).thenReturn(true);
         when(sessionRepository.existsBySessionCode("UNI222")).thenReturn(false);
@@ -117,7 +92,7 @@ class SessionServiceTest {
         when(reportServiceClient.getParticipantCountBySessionCode(anyString())).thenReturn(0L);
         when(reportServiceClient.getReportCountBySessionCode(anyString())).thenReturn(0);
 
-        SessionDTO result = sessionService.createSession(1L, request);
+        SessionDTO result = sessionService.createSession("ahmed.ben_ali", "Ahmed", "Ben Ali", request);
 
         assertThat(result).isNotNull();
         verify(codeGenerator, times(2)).generateCode();
@@ -211,5 +186,22 @@ class SessionServiceTest {
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getStatus()).isEqualTo("ACTIVE");
+    }
+
+    // =========================================================
+    //  getSessionsByUsername()
+    // =========================================================
+
+    @Test
+    @DisplayName("getSessionsByUsername - retourne les sessions de l'instructeur IAM")
+    void getSessionsByUsername_ShouldReturnInstructorSessions() {
+        when(sessionRepository.findByInstructorUsername("ahmed.ben_ali")).thenReturn(List.of(activeSession));
+        when(reportServiceClient.getParticipantCountBySessionCode(anyString())).thenReturn(0L);
+        when(reportServiceClient.getReportCountBySessionCode(anyString())).thenReturn(0);
+
+        List<SessionDTO> result = sessionService.getSessionsByUsername("ahmed.ben_ali");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getInstructorUsername()).isEqualTo("ahmed.ben_ali");
     }
 }

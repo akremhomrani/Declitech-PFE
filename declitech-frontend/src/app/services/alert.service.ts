@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { Observable, Subject, BehaviorSubject } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Alert } from '../models/alert';
@@ -15,7 +15,7 @@ export class AlertService {
     public alerts$ = this.alertSubject.asObservable();
     public connectionStatus$ = this.connectionStatusSubject.asObservable();
 
-    constructor() { }
+    constructor(private ngZone: NgZone) { }
 
     connectToSession(sessionCode: string): void {
         if (!/^[A-Z0-9]{6}$/.test(sessionCode)) {
@@ -26,30 +26,46 @@ export class AlertService {
         const url = `${environment.apiUrl}/api/alerts/stream?sessionId=${sessionCode}`;
 
         this.eventSource = new EventSource(url);
+        console.log('[AlertService] SSE connecting to:', url);
 
         this.eventSource.addEventListener('connected', () => {
-            this.connectionStatusSubject.next(true);
+            this.ngZone.run(() => {
+                console.log('[AlertService] SSE connected');
+                this.connectionStatusSubject.next(true);
+            });
         });
 
         this.eventSource.addEventListener('alert', (event: MessageEvent) => {
-            const alert: Alert = JSON.parse(event.data);
+            this.ngZone.run(() => {
+                try {
+                    const alert: Alert = JSON.parse(event.data);
+                    console.log('[AlertService] Alert received:', alert);
+                    console.log('[AlertService] studentLoginIdentity:', alert.studentLoginIdentity, '| alertType:', alert.alertType);
 
-            if (alert.alertType === 'ALERT_RESOLVED') {
-                // Clear all alerts for this student
-                if (alert.studentLoginIdentity) {
-                    this.clearAlertsForParticipant(alert.studentLoginIdentity);
+                    if (alert.alertType === 'ALERT_RESOLVED') {
+                        if (alert.studentLoginIdentity) {
+                            this.clearAlertsForParticipant(alert.studentLoginIdentity);
+                            console.log('[AlertService] Cleared alerts for:', alert.studentLoginIdentity);
+                        }
+                    } else {
+                        this.addRecentAlert(alert);
+                        console.log('[AlertService] recentAlerts map after add:', JSON.stringify([...this.recentAlerts.entries()]));
+                    }
+
+                    this.alertSubject.next(alert);
+                } catch (e) {
+                    console.error('[AlertService] Failed to parse SSE data:', event.data, e);
                 }
-            } else {
-                this.addRecentAlert(alert);
-            }
-
-            this.alertSubject.next(alert);
+            });
         });
 
-        this.eventSource.addEventListener('heartbeat', () => { });
+        this.eventSource.addEventListener('heartbeat', () => {
+            console.log('[AlertService] Heartbeat received');
+        });
 
-        this.eventSource.onerror = () => {
-            this.connectionStatusSubject.next(false);
+        this.eventSource.onerror = (err) => {
+            console.error('[AlertService] SSE error:', err);
+            this.ngZone.run(() => this.connectionStatusSubject.next(false));
         };
     }
 
@@ -64,8 +80,8 @@ export class AlertService {
 
     private addRecentAlert(alert: Alert): void {
         const key = alert.studentLoginIdentity || alert.sessionId;
+        console.log('[AlertService] addRecentAlert — key used:', key);
 
-        // Stocker par studentLoginIdentity ou sessionId
         if (!this.recentAlerts.has(key)) {
             this.recentAlerts.set(key, []);
         }

@@ -52,8 +52,30 @@ out/
 
 # Claude directory
 .claude/
+.code-review-graph/
 
 # Temporary files
 *.tmp
 *.temp
 .cache/
+
+# Python compiled
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Angular cache
+.angular/
+
+# Redis dump
+Redis/dump.rdb
+dump.rdb
+
+# Keep .env.example even though *.env would catch it
+!.env.example
+
+# Maven wrapper jar (keep properties file)
+.mvn/wrapper/maven-wrapper.jar
+
+# Docker override (local only)
+docker-compose.override.yml

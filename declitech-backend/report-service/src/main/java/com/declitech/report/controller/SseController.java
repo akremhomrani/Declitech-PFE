@@ -55,8 +55,8 @@ public class SseController {
             @RequestParam String sessionId,
             jakarta.servlet.http.HttpServletResponse httpResponse) {
 
-        httpResponse.setHeader("Access-Control-Allow-Origin", "*");
-        httpResponse.setHeader("Access-Control-Allow-Headers", "*");
+        // CORS is handled by the gateway's globalcors — do NOT set ACAO here
+        // or the browser will see conflicting headers and reject the SSE connection.
         httpResponse.setHeader("Cache-Control", "no-cache");
         httpResponse.setHeader("X-Accel-Buffering", "no");
 

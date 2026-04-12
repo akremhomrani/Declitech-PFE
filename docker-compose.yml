@@ -1,48 +1,267 @@
 version: '3.8'
 
 services:
+
+  # ─── Infrastructure ───────────────────────────────────────────────────────────
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: declitrack-postgres
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_MULTIPLE_DATABASES: declitech_reports,declitech_sessions,declitech_modules,declitech_auth
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-dbs.sh:/docker-entrypoint-initdb.d/init-dbs.sh
+    ports:
+      - "5432:5432"
+    networks:
+      - declitrack-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: declitrack-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - declitrack-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-    container_name: declitech-zookeeper
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: declitrack-zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
     networks:
-      - kafka-network
+      - declitrack-network
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   kafka:
-    image: confluentinc/cp-kafka:latest
-    container_name: declitech-kafka
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: declitrack-kafka
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     ports:
       - "9092:9092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
     networks:
-      - kafka-network
+      - declitrack-network
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
-    container_name: declitech-kafka-ui
+    container_name: declitrack-kafka-ui
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     ports:
       - "8090:8080"
     environment:
-      KAFKA_CLUSTERS_0_NAME: declitech-local
+      KAFKA_CLUSTERS_0_NAME: declitrack-local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
     networks:
-      - kafka-network
+      - declitrack-network
+
+  # ─── Service Discovery ────────────────────────────────────────────────────────
+
+  eureka-server:
+    build: ./declitech-backend/eureka-server
+    container_name: declitrack-eureka
+    ports:
+      - "8761:8761"
+    networks:
+      - declitrack-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8761/actuator/health | grep UP"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ─── Spring Boot Services ─────────────────────────────────────────────────────
+
+  auth-service:
+    build: ./declitech-backend/auth-service
+    container_name: declitrack-auth
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: "-Xms128m -Xmx256m"
+      JWT_SECRET: ${JWT_SECRET}
+      GATEWAY_SECRET: ${GATEWAY_SECRET}
+      EUREKA_URL: http://eureka-server:8761/eureka/
+    networks:
+      - declitrack-network
+
+  session-service:
+    build: ./declitech-backend/session-service
+    container_name: declitrack-session
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: "-Xms128m -Xmx256m"
+      DB_SESSION_URL: jdbc:postgresql://postgres:5432/declitech_sessions
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      GATEWAY_SECRET: ${GATEWAY_SECRET}
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      DDL_AUTO: ${DDL_AUTO:-validate}
+      SHOW_SQL: ${SHOW_SQL:-false}
+    networks:
+      - declitrack-network
+
+  report-service:
+    build: ./declitech-backend/report-service
+    container_name: declitrack-report
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: "-Xms128m -Xmx384m"
+      DB_REPORT_URL: jdbc:postgresql://postgres:5432/declitech_reports
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      GATEWAY_SECRET: ${GATEWAY_SECRET}
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      KAFKA_BOOTSTRAP: kafka:9092
+      DDL_AUTO: ${DDL_AUTO:-validate}
+      SHOW_SQL: ${SHOW_SQL:-false}
+    networks:
+      - declitrack-network
+
+  module-service:
+    build: ./declitech-backend/module-service
+    container_name: declitrack-module
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: "-Xms128m -Xmx256m"
+      DB_MODULE_URL: jdbc:postgresql://postgres:5432/declitech_modules
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      GATEWAY_SECRET: ${GATEWAY_SECRET}
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      DDL_AUTO: ${DDL_AUTO:-validate}
+      SHOW_SQL: ${SHOW_SQL:-false}
+    networks:
+      - declitrack-network
+
+  gateway-service:
+    build: ./declitech-backend/gateway-service
+    container_name: declitrack-gateway
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: "-Xms128m -Xmx256m"
+      JWT_SECRET: ${JWT_SECRET}
+      GATEWAY_SECRET: ${GATEWAY_SECRET}
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      AUTH_SERVICE_URL: http://auth-service:8083
+      REPORT_SERVICE_URL: http://report-service:8081
+      SESSION_SERVICE_URL: http://session-service:8084
+      MODULE_SERVICE_URL: http://module-service:8085
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
+    networks:
+      - declitrack-network
+
+  # ─── Python Agent ─────────────────────────────────────────────────────────────
+
+  declitrack-agent:
+    build: ./declitech-agent
+    container_name: declitrack-agent
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "8765:8765"
+    environment:
+      GATEWAY_SECRET: ${GATEWAY_SECRET}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      DEBUG: ${DEBUG:-false}
+      SPRING_BOOT_URL: http://report-service:8081
+      SESSION_SERVICE_URL: http://session-service:8084
+    networks:
+      - declitrack-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8765/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ─── Frontend ─────────────────────────────────────────────────────────────────
+
+  frontend:
+    build: ./declitech-frontend
+    container_name: declitrack-frontend
+    depends_on:
+      - gateway-service
+    ports:
+      - "80:80"
+    networks:
+      - declitrack-network
+
+# ─── Volumes & Networks ───────────────────────────────────────────────────────
+
+volumes:
+  postgres_data:
 
 networks:
-  kafka-network:
+  declitrack-network:
     driver: bridge

@@ -3,7 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { LoginRequest, LoginResponse, UserPayload } from '../models/auth';
+import { LoginResponse, UserPayload } from '../models/auth';
 
 @Injectable({
   providedIn: 'root'
@@ -21,8 +21,82 @@ export class AuthService {
     this.loadUserInfo();
   }
 
-  login(credentials: LoginRequest): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials, {
+  /**
+   * Étape 1 SSO — Ouvre un popup IAM (style "Login with Google").
+   * Résout avec LoginResponse quand l'utilisateur se connecte avec succès.
+   */
+  initiateSsoLogin(userType: 'student' | 'staff'): Observable<LoginResponse> {
+    return new Observable(observer => {
+      this.http.get<{ loginUrl: string }>(`${this.apiUrl}/sso/url`, {
+        params: { type: userType },
+        withCredentials: true
+      }).subscribe({
+        next: ({ loginUrl }) => {
+          const popup = window.open(
+            loginUrl,
+            'decliiam-sso',
+            'width=480,height=600,top=100,left=200,resizable=yes,scrollbars=yes'
+          );
+
+          if (!popup) {
+            observer.error(new Error('Le popup a été bloqué par le navigateur. Autorisez les popups pour ce site.'));
+            return;
+          }
+
+          // Écouter le message envoyé par le popup après redirection
+          const onMessage = (event: MessageEvent) => {
+            if (event.origin !== window.location.origin) return;
+
+            if (event.data?.type === 'SSO_CALLBACK') {
+              cleanup();
+              const { code, state } = event.data;
+              this.handleSsoCallback(code, state).subscribe({
+                next: (r) => { observer.next(r); observer.complete(); },
+                error: (e) => observer.error(e)
+              });
+            }
+            if (event.data?.type === 'SSO_ERROR') {
+              cleanup();
+              observer.error(new Error(event.data.error || 'Erreur SSO'));
+            }
+          };
+
+          // Détecter fermeture manuelle du popup
+          const pollClosed = setInterval(() => {
+            if (popup.closed) { cleanup(); observer.error(new Error('Connexion annulée')); }
+          }, 500);
+
+          const cleanup = () => {
+            clearInterval(pollClosed);
+            window.removeEventListener('message', onMessage);
+            if (!popup.closed) popup.close();
+          };
+
+          window.addEventListener('message', onMessage);
+        },
+        error: (err) => observer.error(err)
+      });
+    });
+  }
+
+  /**
+   * Étape 3 SSO — Échange le code IAM contre une session locale.
+   * Appelé par SsoCallbackComponent après redirection.
+   */
+  handleSsoCallback(code: string, state: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/sso/callback`, { code, state }, {
+      withCredentials: true
+    }).pipe(
+      tap(response => {
+        this.storeUserInfo(response);
+        this.setCurrentUser(response);
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  loginWithIam(login: string, password: string, userType: 'staff' | 'student'): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/sso/login`, { login, password, userType }, {
       withCredentials: true
     }).pipe(
       tap(response => {
@@ -52,10 +126,10 @@ export class AuthService {
   }
 
   private clearUserData(): void {
-    sessionStorage.removeItem(this.firstNameKey);
-    sessionStorage.removeItem(this.lastNameKey);
-    sessionStorage.removeItem(this.usernameKey);
-    sessionStorage.removeItem(this.roleKey);
+    localStorage.removeItem(this.firstNameKey);
+    localStorage.removeItem(this.lastNameKey);
+    localStorage.removeItem(this.usernameKey);
+    localStorage.removeItem(this.roleKey);
     this.currentUserSubject.next(null);
   }
 
@@ -96,33 +170,33 @@ export class AuthService {
   }
 
   getFirstName(): string | null {
-    return sessionStorage.getItem(this.firstNameKey);
+    return localStorage.getItem(this.firstNameKey);
   }
 
   getLastName(): string | null {
-    return sessionStorage.getItem(this.lastNameKey);
+    return localStorage.getItem(this.lastNameKey);
   }
 
   getUsername(): string | null {
-    return sessionStorage.getItem(this.usernameKey);
+    return localStorage.getItem(this.usernameKey);
   }
 
   getRole(): string | null {
-    return sessionStorage.getItem(this.roleKey);
+    return localStorage.getItem(this.roleKey);
   }
 
   private storeUserInfo(loginResponse: LoginResponse): void {
     if (loginResponse.firstName) {
-      sessionStorage.setItem(this.firstNameKey, loginResponse.firstName);
+      localStorage.setItem(this.firstNameKey, loginResponse.firstName);
     }
     if (loginResponse.lastName) {
-      sessionStorage.setItem(this.lastNameKey, loginResponse.lastName);
+      localStorage.setItem(this.lastNameKey, loginResponse.lastName);
     }
     if (loginResponse.username) {
-      sessionStorage.setItem(this.usernameKey, loginResponse.username);
+      localStorage.setItem(this.usernameKey, loginResponse.username);
     }
     if (loginResponse.role) {
-      sessionStorage.setItem(this.roleKey, loginResponse.role);
+      localStorage.setItem(this.roleKey, loginResponse.role);
     }
   }
 
@@ -149,32 +223,26 @@ export class AuthService {
   }
 
   private handleError(error: HttpErrorResponse) {
-    let errorMessage = 'An error occurred';
-    
-    if (error.error instanceof ErrorEvent) {
-      errorMessage = error.error.message;
+    let errorMessage: string;
+
+    if (error.status === 0 || error.error instanceof ProgressEvent) {
+      errorMessage = 'Unable to reach the authentication server. Please try again later.';
+    } else if (error.error instanceof ErrorEvent) {
+      errorMessage = 'A connection error occurred. Please check your network.';
     } else {
       switch (error.status) {
-        case 400:
-          errorMessage = 'Invalid credentials';
-          break;
-        case 401:
-          errorMessage = 'Unauthorized access';
-          break;
-        case 403:
-          errorMessage = 'Access forbidden';
-          break;
-        case 404:
-          errorMessage = 'Service not found';
-          break;
+        case 400: errorMessage = 'Invalid credentials.'; break;
+        case 401: errorMessage = 'Unauthorized. Please sign in again.'; break;
+        case 403: errorMessage = 'Access denied. Contact your administrator.'; break;
+        case 404: errorMessage = 'Authentication service unavailable.'; break;
+        case 429: errorMessage = 'Too many attempts. Please wait and try again.'; break;
         case 500:
-          errorMessage = 'Internal server error';
-          break;
-        default:
-          errorMessage = error.error?.message || `Error: ${error.status}`;
+        case 502:
+        case 503: errorMessage = 'Server error. Please try again later.'; break;
+        default: errorMessage = error.error?.message || 'Authentication failed. Please try again.';
       }
     }
-    
+
     return throwError(() => new Error(errorMessage));
   }
 }

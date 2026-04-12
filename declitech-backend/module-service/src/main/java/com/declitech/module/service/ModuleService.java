@@ -1,7 +1,6 @@
 package com.declitech.module.service;
 
 import com.declitech.module.client.SessionServiceClient;
-import com.declitech.module.client.UserServiceClient;
 import com.declitech.module.dto.*;
 import com.declitech.module.exception.*;
 import com.declitech.module.model.Module;
@@ -22,24 +21,17 @@ import java.util.stream.Collectors;
 public class ModuleService {
 
     private final ModuleRepository moduleRepository;
-    private final UserServiceClient userServiceClient;
     private final SessionServiceClient sessionServiceClient;
 
     @Transactional
-    public ModuleDTO createModule(Long userId, CreateModuleRequest request) {
-        UserDTO user = userServiceClient.getUserById(userId);
-        
-        if (user == null) {
-            throw new UnauthorizedException("User not found with ID: " + userId);
-        }
-
+    public ModuleDTO createModule(Long userId, String username, String email, CreateModuleRequest request) {
         Module module = Module.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .sites(request.getSites())
-                .createdBy(user.getId())
-                .createdByUsername(user.getUsername())
-                .createdByEmail(user.getEmail())
+                .createdBy(userId)
+                .createdByUsername(username)
+                .createdByEmail(email)
                 .build();
 
         module = moduleRepository.save(module);

@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { SessionService } from '../../services/session.service';
 import { LayoutService } from '../../services/layout.service';
+import { ThemeService } from '../../services/theme.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -15,20 +16,21 @@ import { Subscription } from 'rxjs';
 })
 export class NavbarComponent implements OnInit, OnDestroy {
   sessionCode: string = '';
-  
+
   firstName: string = '';
   lastName: string = '';
   username: string = '';
   role: string = '';
   isDropdownOpen = false;
-  
+
   private subscription = new Subscription();
 
   constructor(
     private authService: AuthService,
     private router: Router,
     private sessionService: SessionService,
-    private layoutService: LayoutService
+    private layoutService: LayoutService,
+    public themeService: ThemeService
   ) {}
 
   ngOnInit(): void {
@@ -40,16 +42,16 @@ export class NavbarComponent implements OnInit, OnDestroy {
       })
     );
   }
-  
+
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
   }
 
   loadUserInfo(): void {
     this.firstName = this.authService.getFirstName() || '';
-    this.lastName = this.authService.getLastName() || '';
-    this.username = this.authService.getUsername() || '';
-    this.role = this.authService.getRole() || 'USER';
+    this.lastName  = this.authService.getLastName()  || '';
+    this.username  = this.authService.getUsername()  || '';
+    this.role      = this.authService.getRole()      || 'USER';
   }
 
   toggleDropdown(): void {
@@ -72,7 +74,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   getInitials(): string {
     const first = this.firstName?.charAt(0) || '';
-    const last = this.lastName?.charAt(0) || '';
+    const last  = this.lastName?.charAt(0)  || '';
     return (first + last).toUpperCase() || 'U';
   }
 }

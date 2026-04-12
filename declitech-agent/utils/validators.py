@@ -8,9 +8,11 @@ def validate_session_code(session_code: str) -> Tuple[bool, str, Optional[Dict[s
     
     try:
         import requests
-        url = f"{settings.SPRING_BOOT_URL}/api/sessions/code/{session_code}"
-        
-        response = requests.get(url, timeout=5)
+        url = f"{settings.SESSION_SERVICE_URL}/api/sessions/code/{session_code}"
+        headers = {
+            "X-Gateway-Secret": settings.GATEWAY_SECRET,
+        }
+        response = requests.get(url, headers=headers, timeout=5)
         
         if response.status_code != 200:
             return False, "not_found", None

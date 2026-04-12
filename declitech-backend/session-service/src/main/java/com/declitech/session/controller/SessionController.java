@@ -26,13 +26,14 @@ public class SessionController {
     public ResponseEntity<SessionDTO> createSession(
             @Valid @RequestBody CreateSessionRequest request,
             @CookieValue(value = "accessToken", required = false) String accessToken) {
-        Long instructorId = extractUserIdFromToken(accessToken);
-        if (instructorId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new SessionDTO()); // Return empty with 401
+        String username = jwtTokenProvider.extractUsernameFromToken(accessToken);
+        if (username == null || username.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
+        String firstName = jwtTokenProvider.extractFirstName(accessToken);
+        String lastName  = jwtTokenProvider.extractLastName(accessToken);
 
-        SessionDTO session = sessionService.createSession(instructorId, request);
+        SessionDTO session = sessionService.createSession(username, firstName, lastName, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(session);
     }
 
@@ -92,6 +93,28 @@ public class SessionController {
         return ResponseEntity.ok(sessions);
     }
 
+    @GetMapping("/instructor/username/{username}")
+    public ResponseEntity<List<SessionDTO>> getSessionsByUsername(@PathVariable String username) {
+        List<SessionDTO> sessions = sessionService.getSessionsByUsername(username);
+        return ResponseEntity.ok(sessions);
+    }
+
+    @GetMapping("/instructor/username/{username}/active")
+    public ResponseEntity<List<SessionDTO>> getActiveSessionsByUsername(@PathVariable String username) {
+        List<SessionDTO> sessions = sessionService.getActiveSessionsByUsername(username);
+        return ResponseEntity.ok(sessions);
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<List<SessionDTO>> getMySessions(
+            @CookieValue(value = "accessToken", required = false) String accessToken) {
+        String username = jwtTokenProvider.extractUsernameFromToken(accessToken);
+        if (username == null || username.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(sessionService.getSessionsByUsername(username));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<SessionDTO> getSessionById(@PathVariable Long id) {
         SessionDTO session = sessionService.getSessionById(id);
@@ -114,15 +137,6 @@ public class SessionController {
     public ResponseEntity<Void> endSession(@PathVariable Long id) {
         sessionService.deactivateSession(id);
         return ResponseEntity.ok().build();
-    }
-
-    private Long extractUserIdFromToken(String token) {
-        if (token == null || token.isEmpty()) {
-            return null;
-        }
-        
-        Long userId = jwtTokenProvider.extractUserIdFromToken(token);
-        return userId;
     }
 
     @ExceptionHandler(RuntimeException.class)

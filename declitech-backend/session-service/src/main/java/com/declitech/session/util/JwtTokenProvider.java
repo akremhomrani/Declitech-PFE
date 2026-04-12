@@ -57,6 +57,35 @@ public class JwtTokenProvider {
         }
     }
 
+    public String extractFirstName(String token) {
+        return extractStringClaim(token, "firstName");
+    }
+
+    public String extractLastName(String token) {
+        return extractStringClaim(token, "lastName");
+    }
+
+    public String extractRole(String token) {
+        return extractStringClaim(token, "role");
+    }
+
+    private String extractStringClaim(String token, String claim) {
+        try {
+            if (token != null && token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+            Claims claims = Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            Object value = claims.get(claim);
+            return value != null ? value.toString() : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public String extractUsernameFromToken(String token) {
         try {
             if (token != null && token.startsWith("Bearer ")) {

@@ -29,7 +29,7 @@ public class Session {
     @Column(name = "title", nullable = false, length = 200)
     private String title;
 
-    @Column(name = "instructor_id", nullable = false)
+    @Column(name = "instructor_id")
     private Long instructorId;
 
     @Column(name = "instructor_username")

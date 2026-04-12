@@ -67,7 +67,7 @@ mvn spring-boot:run
 
 #### 1. **Import Report from JSON File**
 ```http
-POST /api/reports/import?filePath=D:/PFE_Declitech/declitech-agent/emotion_report.json
+POST /api/reports/import?filePath=/path/to/emotion_report.json
 ```
 
 #### 2. **Create Report (Direct from Python Agent)**
@@ -171,7 +171,7 @@ Modify the Python agent to POST reports directly to the Spring Boot service.
 
 ### 1. Import the existing emotion report:
 ```bash
-curl -X POST "http://localhost:8081/api/reports/import?filePath=D:/PFE_Declitech/declitech-agent/emotion_report.json"
+curl -X POST "http://localhost:8081/api/reports/import?filePath=/path/to/emotion_report.json"
 ```
 
 ### 2. Get student reports:

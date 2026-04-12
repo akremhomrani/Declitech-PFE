@@ -5,15 +5,33 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Semantic color tokens (light mode) ──────────────── */
 :root {
   --primary-color: #0097B2;
-  --accent-color: #00E0F0;
+  --accent-color:  #00E0F0;
+
+  --color-bg:        243 245 247;   /* #F3F5F7 */
+  --color-sidebar:   248 250 252;   /* #F8FAFC */
+  --color-surface:   255 255 255;   /* #FFFFFF */
+  --color-border:    226 232 240;   /* #E2E8F0 */
+  --color-text-main: 30 41 59;      /* #1E293B */
+  --color-text-muted:100 116 139;   /* #64748B */
+}
+
+/* ── Dark mode overrides ─────────────────────────────── */
+html.dark {
+  --color-bg:        2 6 23;        /* slate-950 */
+  --color-sidebar:   15 23 42;      /* slate-900 */
+  --color-surface:   30 41 59;      /* slate-800 */
+  --color-border:    51 65 85;      /* slate-700 */
+  --color-text-main: 241 245 249;   /* slate-100 */
+  --color-text-muted:148 163 184;   /* slate-400 */
 }
 
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  background-color: theme('colors.background-light');
-  color: theme('colors.text-main');
+  background-color: rgb(var(--color-bg));
+  color: rgb(var(--color-text-main));
   margin: 0;
   padding: 0;
 }
@@ -25,10 +43,16 @@ body {
 .custom-scrollbar::-webkit-scrollbar-track {
   background: #F1F5F9;
 }
+html.dark .custom-scrollbar::-webkit-scrollbar-track {
+  background: rgb(15 23 42);
+}
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #CBD5E1;
   border-radius: 10px;
+}
+html.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(51 65 85);
 }
 
 .status-pulse {
@@ -48,6 +72,24 @@ body {
 
 .student-card-shadow:hover {
   box-shadow: 0 10px 15px -3px rgb(0 151 178 / 0.1), 0 4px 6px -4px rgb(0 151 178 / 0.1);
+}
+
+@keyframes alert-pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+  50%       { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+}
+
+@keyframes alert-pulse-orange {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.5); }
+  50%       { box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); }
+}
+
+.card-alert-red {
+  animation: alert-pulse-red 1.5s ease-in-out infinite;
+}
+
+.card-alert-orange {
+  animation: alert-pulse-orange 1.5s ease-in-out infinite;
 }
 
 .material-symbols-outlined {

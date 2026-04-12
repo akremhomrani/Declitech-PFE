@@ -18,6 +18,10 @@ public interface SessionRepository extends JpaRepository<Session, Long>, JpaSpec
 
     List<Session> findByInstructorId(Long instructorId);
 
+    List<Session> findByInstructorUsername(String username);
+
+    List<Session> findByInstructorUsernameAndStatus(String username, SessionStatus status);
+
     List<Session> findByStatus(SessionStatus status);
 
     List<Session> findByInstructorIdAndStatus(Long instructorId, SessionStatus status);
@@ -28,6 +32,9 @@ public interface SessionRepository extends JpaRepository<Session, Long>, JpaSpec
 
     @Query("SELECT s FROM Session s WHERE s.instructorId = :instructorId AND s.expiresAt > :now AND s.status = 'ACTIVE'")
     List<Session> findActiveSessionsByInstructorId(Long instructorId, LocalDateTime now);
+
+    @Query("SELECT s FROM Session s WHERE s.instructorUsername = :username AND s.expiresAt > :now AND s.status = 'ACTIVE'")
+    List<Session> findActiveSessionsByInstructorUsername(String username, LocalDateTime now);
 
     boolean existsBySessionCode(String sessionCode);
 }

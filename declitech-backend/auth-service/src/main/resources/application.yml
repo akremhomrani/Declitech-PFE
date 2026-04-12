@@ -5,25 +5,14 @@ spring:
   application:
     name: auth-service
 
-# Service URLs for proxying
-services:
-  user-service:
-    url: http://localhost:8082
-  session-service:
-    url: http://localhost:8084
-  report-service:
-    url: http://localhost:8081
-  module-service:
-    url: http://localhost:8085
-
 gateway:
-  secret: declitech-gateway-secret-2024
+  secret: ${GATEWAY_SECRET:declitech-gateway-secret-dev-change-in-production}
   require-header: false
 
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
     fetch-registry: true
     register-with-eureka: true
   instance:
@@ -45,6 +34,16 @@ management:
   endpoint:
     health:
       show-details: always
+
+sso:
+  iam-base-url: http://localhost:8083
+  client-id: declilearn-staging
+  redirect-uri: http://localhost:4200
+  student-auth-path: /mock/sso/auth/student
+  staff-auth-path: /mock/sso/auth/staff
+  student-exchange-path: /mock/sso/exchange
+  staff-exchange-path: /mock/sso/staff/exchange
+  mock-submit-base-url: http://localhost:8083
 
 logging:
   level:

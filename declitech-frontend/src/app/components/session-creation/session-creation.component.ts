@@ -37,8 +37,15 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
   codeCopied = false;
 
   modules: Module[] = [];
-  moduleOptions: { id: number; label: string; site: string }[] = [];
-  selectedModuleOption: string = '';
+  availableLocations: string[] = [];
+  selectedLocation: string = '';
+  selectedModuleId: string = '';
+  modalStep: number = 1;
+
+  get modulesForSelectedLocation(): Module[] {
+    if (!this.selectedLocation) return [];
+    return this.modules.filter(m => m.sites && m.sites.includes(this.selectedLocation));
+  }
 
   constructor(
     private sessionService: SessionService,
@@ -132,24 +139,28 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
   }
 
   private buildModuleOptions(): void {
-    this.moduleOptions = [];
+    const locationSet = new Set<string>();
     this.modules.forEach(module => {
-      if (module.sites && module.sites.length > 0) {
-        module.sites.forEach(site => {
-          this.moduleOptions.push({
-            id: module.id,
-            label: `${module.title} - ${site}`,
-            site: site
-          });
-        });
-      } else {
-        this.moduleOptions.push({
-          id: module.id,
-          label: module.title,
-          site: ''
-        });
+      if (module.sites) {
+        module.sites.forEach(site => locationSet.add(site));
       }
     });
+    this.availableLocations = Array.from(locationSet).sort();
+  }
+
+  onLocationChange(): void {
+    this.selectedModuleId = '';
+  }
+
+  goToModuleStep(): void {
+    if (this.selectedLocation) {
+      this.modalStep = 2;
+    }
+  }
+
+  backToLocationStep(): void {
+    this.selectedModuleId = '';
+    this.modalStep = 1;
   }
 
   openModal(): void {
@@ -160,17 +171,21 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
     this.isModalOpen = false;
     this.modalTitle = '';
     this.modalDuration = 60;
-    this.selectedModuleOption = '';
+    this.selectedLocation = '';
+    this.selectedModuleId = '';
+    this.modalStep = 1;
   }
 
   generateSession(): void {
-    if (!this.selectedModuleOption || this.modalDuration <= 0) {
+    if (!this.selectedModuleId || this.modalDuration <= 0) {
       return;
     }
 
-    const moduleId = parseInt(this.selectedModuleOption);
-    const selectedOption = this.moduleOptions.find(opt => opt.id === moduleId);
-    const sessionTitle = selectedOption ? selectedOption.label : 'Session';
+    const moduleId = parseInt(this.selectedModuleId);
+    const selectedModule = this.modules.find(m => m.id === moduleId);
+    const sessionTitle = selectedModule
+      ? `${selectedModule.title} - ${this.selectedLocation}`
+      : 'Session';
 
     this.sessionService.createSession(sessionTitle, this.modalDuration, moduleId);
     this.closeModal();

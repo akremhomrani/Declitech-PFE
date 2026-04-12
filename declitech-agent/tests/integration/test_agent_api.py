@@ -18,7 +18,7 @@ async def test_root_returns_api_info(app):
     assert response.status_code == 200
     data = response.json()
     assert data["ok"] is True
-    assert "DecliTech" in data["name"]
+    assert "DecliTrack" in data["name"]
     assert "endpoints" in data
 
 

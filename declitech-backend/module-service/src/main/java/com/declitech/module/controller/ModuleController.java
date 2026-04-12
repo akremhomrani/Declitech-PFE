@@ -25,13 +25,16 @@ public class ModuleController {
             @Valid @RequestBody CreateModuleRequest request,
             @CookieValue(value = "accessToken", required = false) String accessToken,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        
-        Long userId = extractUserIdFromToken(accessToken, authHeader);
+
+        String token = getToken(accessToken, authHeader);
+        Long userId = token != null ? jwtTokenProvider.extractUserIdWithoutValidation(token) : null;
         if (userId == null) {
             throw new UnauthorizedException("Authentication required to create a module");
         }
+        String username = jwtTokenProvider.extractUsername(token);
+        String email = jwtTokenProvider.extractEmail(token);
 
-        ModuleDTO module = moduleService.createModule(userId, request);
+        ModuleDTO module = moduleService.createModule(userId, username, email, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(module);
     }
 

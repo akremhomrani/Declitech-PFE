@@ -28,7 +28,8 @@ class Settings:
         
         # Server Configuration
         self.SERVER_BASE_URL = os.getenv("SERVER_BASE_URL", "").rstrip("/")
-        self.SPRING_BOOT_URL = os.getenv("SPRING_BOOT_URL", "http://localhost:8083").rstrip("/")
+        self.SPRING_BOOT_URL = os.getenv("SPRING_BOOT_URL", "http://localhost:8081").rstrip("/")
+        self.SESSION_SERVICE_URL = os.getenv("SESSION_SERVICE_URL", "http://localhost:8084").rstrip("/")
         self.AGENT_PORT = int(os.getenv("AGENT_PORT", "8765"))
         self.LOCAL_ONLY = os.getenv("LOCAL_ONLY", "false").lower() in ("1", "true", "yes")
         
@@ -69,9 +70,21 @@ class Settings:
         self.FACE_MIN_SIZE = tuple(map(int, os.getenv("FACE_MIN_SIZE", "50,50").split(",")))
         self.FACE_MARGIN_PERCENT = float(os.getenv("FACE_MARGIN_PERCENT", "0.15"))
         self.MODEL_INPUT_SIZE = tuple(map(int, os.getenv("MODEL_INPUT_SIZE", "48,48").split(",")))
+        self.OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+        self.OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gemma4:e4b")
+
+        # OpenRouter (track report AI conclusion)
+        self.OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
         self.OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-        self.OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "qwen/qwen2.5-vl-72b-instruct")
-        self.OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+        self.OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")
+
+        # Security
+        self.GATEWAY_SECRET = os.getenv("GATEWAY_SECRET", "declitech-gateway-secret-dev-change-in-production")
+        self.DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+
+        # Redis
+        self.REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+        self.REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 
 
 settings = Settings()

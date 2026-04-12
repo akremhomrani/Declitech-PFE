@@ -3,18 +3,20 @@ module.exports = {
   content: [
     "./src/**/*.{html,ts}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
         "primary": "#0097B2",
         "primary-dark": "#007A8F",
-        "background-light": "#F3F5F7",
-        "sidebar-bg": "#F8FAFC",
-        "surface": "#FFFFFF",
-        "border-light": "#E2E8F0",
+        // Semantic tokens — driven by CSS variables so they auto-switch in dark mode
+        "background-light": "rgb(var(--color-bg) / <alpha-value>)",
+        "sidebar-bg":       "rgb(var(--color-sidebar) / <alpha-value>)",
+        "surface":          "rgb(var(--color-surface) / <alpha-value>)",
+        "border-light":     "rgb(var(--color-border) / <alpha-value>)",
+        "text-main":        "rgb(var(--color-text-main) / <alpha-value>)",
+        "text-muted":       "rgb(var(--color-text-muted) / <alpha-value>)",
         "accent-teal": "#00E0F0",
-        "text-main": "#1E293B",
-        "text-muted": "#64748B"
       },
       fontFamily: {
         "sans": ["Plus Jakarta Sans", "sans-serif"]

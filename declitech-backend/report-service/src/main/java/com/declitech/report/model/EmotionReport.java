@@ -9,7 +9,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "emotion_reports")
+@Table(name = "emotion_reports",
+       uniqueConstraints = @UniqueConstraint(name = "uq_report_session_student",
+                                             columnNames = {"session_code", "student_login_identity"}))
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,8 +27,8 @@ public class EmotionReport {
     @Column(name = "session_id")
     private Long sessionId;
 
-    @Column(nullable = false, unique = true)
-    private String sessionId_legacy; // Keep for backward compatibility
+    @Column(name = "session_id_legacy", nullable = true)
+    private String sessionIdLegacy; // Keep for backward compatibility
 
     @Column(nullable = false)
     private LocalDateTime generatedAt;

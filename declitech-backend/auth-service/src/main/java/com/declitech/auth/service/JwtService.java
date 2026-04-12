@@ -26,6 +26,24 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
+    public boolean isSsoToken(String token) {
+        try {
+            Object sso = extractAllClaims(token).get("sso");
+            return Boolean.TRUE.equals(sso);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public String extractRole(String token) {
+        try {
+            Object role = extractAllClaims(token).get("role");
+            return role != null ? role.toString() : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);

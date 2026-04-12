@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class ScreenAnalysisService:
     def __init__(self):
         self.output_file = os.path.join(settings.BASE_DIR, "screen_analysis_output.json")
-        self.api_available = bool(settings.OPENROUTER_API_KEY)
+        self.api_available = True  # Ollama runs locally, always available
 
         try:
             self.redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
@@ -100,18 +100,16 @@ class ScreenAnalysisService:
                 ]
 
                 resp = requests.post(
-                    f"{settings.OPENROUTER_BASE_URL}/chat/completions",
-                    headers={
-                        "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
-                        "Content-Type": "application/json"
-                    },
+                    f"{settings.OLLAMA_BASE_URL}/v1/chat/completions",
+                    headers={"Content-Type": "application/json"},
                     json={
-                        "model": settings.OPENROUTER_MODEL,
+                        "model": settings.OLLAMA_MODEL,
                         "messages": messages,
                         "temperature": 0.2,
-                        "max_tokens": 500
+                        "max_tokens": 500,
+                        "stream": False
                     },
-                    timeout=int(os.getenv("REQUEST_TIMEOUT", "60"))
+                    timeout=int(os.getenv("REQUEST_TIMEOUT", "120"))
                 )
                 resp.raise_for_status()
                 raw_text = resp.json()["choices"][0]["message"]["content"]

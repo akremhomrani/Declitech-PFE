@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="DecliTech Agent API",
+        title="DecliTrack Agent API",
         description="Emotion Detection System for Educational Sessions",
         version="2.0.0",
         docs_url="/docs",
@@ -28,6 +28,10 @@ def create_app() -> FastAPI:
     app.include_router(agent_router)
     app.include_router(pedagogy_router)
 
+    @app.get("/health", tags=["system"])
+    async def health():
+        return {"status": "UP", "service": "declitrack-agent"}
+
     return app
 
 
@@ -41,6 +45,6 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=settings.AGENT_PORT,
-        reload=True,
-        log_level="info"
+        reload=settings.DEBUG,
+        log_level="info",
     )

@@ -38,17 +38,23 @@ public class EmotionReportService {
 
     @Transactional
     public EmotionReport saveReportFromDTO(EmotionReportDTO dto) {
-        Optional<EmotionReport> existingReport = reportRepository.findBySessionId(dto.getSessionId());
+        String cleanCode = dto.getSessionCode() != null
+                ? dto.getSessionCode()
+                : stripAgentPrefix(dto.getSessionId());
+
+        Optional<EmotionReport> existingReport = (cleanCode != null && dto.getStudentLoginIdentity() != null)
+                ? reportRepository.findBySessionCodeAndStudentLoginIdentity(cleanCode, dto.getStudentLoginIdentity())
+                : Optional.empty();
+
         EmotionReport report;
-        
         if (existingReport.isPresent()) {
             report = existingReport.get();
         } else {
             report = new EmotionReport();
         }
-        
-        report.setSessionId_legacy(dto.getSessionId());
-        report.setSessionCode(dto.getSessionCode() != null ? dto.getSessionCode() : dto.getSessionId());
+
+        report.setSessionIdLegacy(dto.getSessionId());
+        report.setSessionCode(cleanCode);
         report.setGeneratedAt(dto.getGeneratedAt());
         report.setStudentLoginIdentity(dto.getStudentLoginIdentity());
         
@@ -72,11 +78,7 @@ public class EmotionReportService {
             report.setFinalSentence(dto.getFinalState().getFinalSentence());
         }
         // Flush Redis alerts → PostgreSQL now that the report is being finalized
-        // Strip SESSION- / LOCAL- prefix added by Python agent (Redis keys use the raw code)
         try {
-            String cleanCode = dto.getSessionCode() != null
-                    ? dto.getSessionCode()
-                    : stripAgentPrefix(dto.getSessionId());
             alertService.flushAlertsToDb(cleanCode, dto.getStudentLoginIdentity());
         } catch (Exception e) {
             log.warn("Could not flush alerts for session={} student={}: {}",

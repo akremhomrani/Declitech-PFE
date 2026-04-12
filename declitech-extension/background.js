@@ -1,4 +1,7 @@
-const ALERT_URL = "http://localhost:8081/api/alerts/publish";
+const CONFIG = {
+    ALERT_URL: "http://localhost:8081/api/alerts/publish",
+    AGENT_URL: "http://127.0.0.1:8765",
+};
 const ALLOWED_SITES = [
     "https://app.decli.tech/",
     "https://learn.decli.tech/",
@@ -29,7 +32,7 @@ const MOUSE_CHECK_INTERVAL = 5000;
 // =========================================================
 //  AI Screen Tutor — Configuration
 // =========================================================
-const AGENT_SCREEN_URL = "http://127.0.0.1:8765/analyze-screen";
+const AGENT_SCREEN_URL = `${CONFIG.AGENT_URL}/analyze-screen`;
 const SCREEN_CAPTURE_INTERVAL = 30000; // 30 seconds
 let screenCaptureInterval = null;
 let lastVittascienceData = null;
@@ -37,7 +40,7 @@ let sessionValidationInterval = null;
 let monitoringInterval = null;
 let pedagogyScanInterval = null;
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message.type === "SESSION_STARTED") {
         activeSessionCode = message.sessionCode;
         activeParticipantId = message.participantId;
@@ -52,6 +55,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         startSessionValidationCheck();
         sendResponse({ success: true });
     } else if (message.type === "SESSION_STOPPED") {
+        fetch(`${CONFIG.AGENT_URL}/stop`, { method: "POST" }).catch(() => {});
         activeSessionCode = null;
         activeParticipantId = null;
         studentLoginIdentity = null;
@@ -80,17 +84,23 @@ function startSessionValidationCheck() {
     sessionValidationInterval = setInterval(async () => {
         if (!activeSessionCode) return;
         try {
-            const res = await fetch(`http://127.0.0.1:8765/validate/${activeSessionCode}`);
+            const res = await fetch(`${CONFIG.AGENT_URL}/validate/${activeSessionCode}`);
             if (!res.ok) return;
             const validation = await res.json().catch(() => null);
             if (!validation) return;
             if (!validation.valid) {
                 const reason = validation.reason || "";
                 if (reason === "inactive" || reason === "expired") {
-                    await fetch("http://127.0.0.1:8765/stop", { method: "POST" });
-                    
-                    // Automatically stop session in background
+                    await fetch(`${CONFIG.AGENT_URL}/stop`, { method: "POST" }).catch(() => {});
+
                     activeSessionCode = null;
+                    activeParticipantId = null;
+                    studentLoginIdentity = null;
+                    tabSwitchCount = 0;
+                    lastUrl = null;
+                    isCurrentlyOnWrongSite = false;
+                    mouseInactivityAlertSent = false;
+                    stopMonitoring();
                     stopScreenCapture();
                     stopMouseInactivityTracking();
                     stopSessionValidationCheck();
@@ -194,7 +204,7 @@ async function sendTabSwitchAlert(currentUrl, tabTitle) {
     };
 
     try {
-        await fetch(ALERT_URL, {
+        await fetch(CONFIG.ALERT_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -223,7 +233,7 @@ async function sendAlertResolved(currentUrl) {
     };
 
     try {
-        await fetch(ALERT_URL, {
+        await fetch(CONFIG.ALERT_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -279,7 +289,7 @@ async function sendMouseInactivityAlert() {
     };
 
     try {
-        await fetch(ALERT_URL, {
+        await fetch(CONFIG.ALERT_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -377,7 +387,7 @@ async function scanSingleTab(tab, immediate = false) {
         await chrome.storage.session.set({ [prevKey]: { ...data, blocksCount } });
 
         // Envoyer au agent avec la phase
-        await fetch("http://localhost:8765/pedagogy/progress", {
+        await fetch(`${CONFIG.AGENT_URL}/pedagogy/progress`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -542,17 +552,15 @@ async function captureAndAnalyze() {
     if (!activeSessionCode) return;
 
     try {
-        // Step 0: Only capture screenshots on app.decli.tech
+        // Step 0: Get active tab and verify it's an allowed educational site
         const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
         if (!tabs || tabs.length === 0) return;
 
         const tab = tabs[0];
         if (!tab.url) return;
 
-        // Skip if not on app.decli.tech (pedagogy sites are handled separately)
-        if (!tab.url.startsWith("https://app.decli.tech/")) return;
-        
-        if (SYSTEM_PREFIXES.some(p => tab.url.startsWith(p))) return;
+        // Screen capture is restricted to learn.decli.tech only
+        if (!tab.url.startsWith("https://learn.decli.tech/")) return;
 
         let screenshotDataUrl = null;
         try {

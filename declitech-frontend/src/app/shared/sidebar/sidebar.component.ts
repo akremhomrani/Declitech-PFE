@@ -90,9 +90,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   private updateRecentAlerts(): void {
     const allAlerts = this.alertService.getAllRecentAlerts();
+    console.log('[Sidebar] updateRecentAlerts — total alerts from service:', allAlerts.length, allAlerts);
     this.recentAlerts = allAlerts
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, 4);
+    console.log('[Sidebar] recentAlerts after update:', this.recentAlerts);
   }
 
   getAlertColor(alert: Alert): string {

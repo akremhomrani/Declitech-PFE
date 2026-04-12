@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EmotionService } from '../../services/emotion.service';
 import { SessionService } from '../../services/session.service';
@@ -36,18 +36,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
   constructor(
     private emotionService: EmotionService,
     private sessionService: SessionService,
-    private alertService: AlertService,
-    private cdr: ChangeDetectorRef
+    private alertService: AlertService
   ) { }
 
   ngOnInit() {
     this.sessionSubscription = this.sessionService.sessionData$.subscribe(session => {
       this.activeSessionCode = session?.code || '';
+      console.log('[Dashboard] Session code:', this.activeSessionCode);
 
       if (this.activeSessionCode) {
+        console.log('[Dashboard] Connecting to SSE for session:', this.activeSessionCode);
         this.alertService.connectToSession(this.activeSessionCode);
         this.subscribeToAlerts();
       } else {
+        console.log('[Dashboard] No session code — disconnecting SSE');
         this.alertService.disconnect();
       }
 
@@ -106,15 +108,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   subscribeToAlerts() {
+    if (this.alertSubscription) {
+      this.alertSubscription.unsubscribe();
+    }
     this.alertSubscription = this.alertService.alerts$.subscribe({
       next: (alert: Alert) => {
-        // Créer une nouvelle référence de tableau pour déclencher la détection de changement Angular
+        console.log('[Dashboard] Alert received from stream:', alert);
+        console.log('[Dashboard] Current students identities:', this.students.map(s => s.studentLoginIdentity));
         this.students = [...this.students];
         this.calculateStatistics();
-        // Forcer la détection de changement (SSE hors zone Angular)
-        this.cdr.detectChanges();
+        // Check border state for each student after alert
+        this.students.forEach(s => {
+          console.log(`[Dashboard] Student "${s.studentLoginIdentity}" — hasAnyAlert: ${this.hasAnyAlert(s)}, hasTabSwitch: ${this.hasTabSwitchAlert(s)}, hasMouseInactivity: ${this.hasMouseInactivityAlert(s)}`);
+        });
       },
-      error: () => { }
+      error: (err) => { console.error('[Dashboard] Alert stream error:', err); }
     });
   }
 
@@ -141,36 +149,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return 'Offline';
   }
 
-  getStudentStatusClass(student: EmotionReport): string {
+  hasTabSwitchAlert(student: EmotionReport): boolean {
     const identity = student.studentLoginIdentity;
+    return this.alertService.hasRecentAlert(identity, 'TAB_SWITCH') ||
+      this.alertService.hasRecentAlert(identity, 'MULTIPLE_SWITCHES');
+  }
 
-    if (this.alertService.hasRecentAlert(identity)) {
-      const hasTabSwitch = this.alertService.hasRecentAlert(identity, 'TAB_SWITCH') ||
-        this.alertService.hasRecentAlert(identity, 'MULTIPLE_SWITCHES');
-      if (hasTabSwitch) {
-        return 'border-red-500 border-4 shadow-lg shadow-red-500/20';
-      }
+  hasMouseInactivityAlert(student: EmotionReport): boolean {
+    return this.alertService.hasRecentAlert(student.studentLoginIdentity, 'MOUSE_INACTIVITY');
+  }
 
-      const hasMouseInactivity = this.alertService.hasRecentAlert(identity, 'MOUSE_INACTIVITY');
-      if (hasMouseInactivity) {
-        return 'border-orange-500 border-4 shadow-lg shadow-orange-500/20';
-      }
-
-      return 'border-amber-500 border-4 shadow-lg shadow-amber-500/20';
-    }
-
-    if (student.status === 'IN_PROGRESS') {
-      if (student.dominantEmotion === 'happy' || student.dominantEmotion === 'neutral') {
-        return 'border-primary border-2';
-      } else if (student.dominantEmotion === 'angry' || student.dominantEmotion === 'sad') {
-        return 'border-amber-400 border-2';
-      } else if (student.dominantEmotion === 'fear') {
-        return 'border-red-500 border-2';
-      }
-      return 'border-primary border-2';
-    }
-
-    return 'border-primary border-2';
+  hasAnyAlert(student: EmotionReport): boolean {
+    return this.alertService.hasRecentAlert(student.studentLoginIdentity);
   }
 
   getEngagementScore(student: EmotionReport): number {
