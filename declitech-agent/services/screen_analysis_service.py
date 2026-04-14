@@ -48,8 +48,15 @@ class ScreenAnalysisService:
 
     def _parse_json_text(self, raw_text: str) -> dict:
         text = (raw_text or "").strip()
+        if not text:
+            raise ValueError("LLM returned empty response")
         if text.startswith("```"):
             text = text.replace("```json", "").replace("```", "").strip()
+        # Extract first JSON object if model added extra text around it
+        start = text.find("{")
+        end = text.rfind("}") + 1
+        if start != -1 and end > start:
+            text = text[start:end]
         return json.loads(text)
 
     def analyze_screen(self, request: ScreenAnalysisRequest) -> ScreenAnalysisResponse:

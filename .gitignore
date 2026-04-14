@@ -53,6 +53,7 @@ out/
 # Claude directory
 .claude/
 .code-review-graph/
+.scripts/
 
 # Temporary files
 *.tmp

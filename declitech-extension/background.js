@@ -5,6 +5,7 @@ const CONFIG = {
 const ALLOWED_SITES = [
     "https://app.decli.tech/",
     "https://learn.decli.tech/",
+    "https://quiz.decli.tech/",
     "https://codecombat.com/",
     "https://www.codecombat.com/",
     "https://code.org/",
@@ -39,6 +40,9 @@ let lastVittascienceData = null;
 let sessionValidationInterval = null;
 let monitoringInterval = null;
 let pedagogyScanInterval = null;
+let quizSwitchTimeout = null;
+
+const LEARN_DURATION_MS = 10 * 1000; // ⚠ TEST MODE — change back to: 75 * 60 * 1000
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message.type === "SESSION_STARTED") {
@@ -53,6 +57,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         startMonitoring();
         startMouseInactivityTracking();
         startSessionValidationCheck();
+        quizSwitchTimeout = setTimeout(switchToQuiz, LEARN_DURATION_MS);
         sendResponse({ success: true });
     } else if (message.type === "SESSION_STOPPED") {
         fetch(`${CONFIG.AGENT_URL}/stop`, { method: "POST" }).catch(() => {});
@@ -67,6 +72,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         stopScreenCapture();
         stopMouseInactivityTracking();
         stopSessionValidationCheck();
+        clearTimeout(quizSwitchTimeout);
+        quizSwitchTimeout = null;
+        logoutLearnPlatform();
         sendResponse({ success: true });
     } else if (message.type === "MOUSE_MOVED") {
         lastMouseMoveTime = Date.now();
@@ -104,6 +112,9 @@ function startSessionValidationCheck() {
                     stopScreenCapture();
                     stopMouseInactivityTracking();
                     stopSessionValidationCheck();
+                    clearTimeout(quizSwitchTimeout);
+                    quizSwitchTimeout = null;
+                    logoutLearnPlatform();
                 }
             }
         } catch (e) {
@@ -116,6 +127,27 @@ function stopSessionValidationCheck() {
     if (sessionValidationInterval) {
         clearInterval(sessionValidationInterval);
         sessionValidationInterval = null;
+    }
+}
+
+async function switchToQuiz() {
+    quizSwitchTimeout = null;
+    chrome.tabs.create({ url: 'https://quiz.decli.tech/participant-login' });
+}
+
+async function logoutLearnPlatform() {
+    const tabs = await chrome.tabs.query({ url: 'https://learn.decli.tech/*' });
+    for (const tab of tabs) {
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            world: 'MAIN',
+            func: () => {
+                ['firstName', 'lastName', 'username', 'role', 'token', 'accessToken'].forEach(
+                    k => localStorage.removeItem(k)
+                );
+                window.location.replace('/login');
+            }
+        }).catch(() => {});
     }
 }
 

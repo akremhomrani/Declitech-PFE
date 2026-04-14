@@ -2,7 +2,6 @@ package com.declitech.auth.controller;
 
 import com.declitech.auth.dto.LoginRequest;
 import com.declitech.auth.dto.LoginResponse;
-import com.declitech.auth.dto.RefreshTokenRequest;
 import com.declitech.auth.dto.TokenResponse;
 import com.declitech.auth.exception.InvalidTokenException;
 import com.declitech.auth.service.AuthService;
@@ -27,29 +26,29 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
         LoginResponse loginResponse = authService.login(request);
-        
+
         Cookie accessTokenCookie = new Cookie("accessToken", loginResponse.getAccessToken());
         accessTokenCookie.setHttpOnly(true);
         accessTokenCookie.setSecure(false);
         accessTokenCookie.setPath("/");
         accessTokenCookie.setMaxAge(24 * 60 * 60);
-        
+
         Cookie refreshTokenCookie = new Cookie("refreshToken", loginResponse.getRefreshToken());
         refreshTokenCookie.setHttpOnly(true);
         refreshTokenCookie.setSecure(false);
         refreshTokenCookie.setPath("/");
         refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60);
-        
+
         response.addCookie(accessTokenCookie);
         response.addCookie(refreshTokenCookie);
-        
+
         LoginResponse responseBody = LoginResponse.builder()
                 .firstName(loginResponse.getFirstName())
                 .lastName(loginResponse.getLastName())
                 .username(loginResponse.getUsername())
                 .role(loginResponse.getRole())
                 .build();
-        
+
         return ResponseEntity.ok(responseBody);
     }
 
@@ -64,28 +63,28 @@ public class AuthController {
                 }
             }
         }
-        
+
         if (refreshToken == null) {
             throw new InvalidTokenException("Refresh token not found in cookies");
         }
-        
+
         TokenResponse tokenResponse = authService.refreshToken(refreshToken);
-        
+
         Cookie accessTokenCookie = new Cookie("accessToken", tokenResponse.getAccessToken());
         accessTokenCookie.setHttpOnly(true);
         accessTokenCookie.setSecure(false);
         accessTokenCookie.setPath("/");
         accessTokenCookie.setMaxAge(24 * 60 * 60);
-        
+
         Cookie refreshTokenCookie = new Cookie("refreshToken", tokenResponse.getRefreshToken());
         refreshTokenCookie.setHttpOnly(true);
         refreshTokenCookie.setSecure(false);
         refreshTokenCookie.setPath("/");
         refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60);
-        
+
         response.addCookie(accessTokenCookie);
         response.addCookie(refreshTokenCookie);
-        
+
         return ResponseEntity.ok(tokenResponse);
     }
 
@@ -95,15 +94,15 @@ public class AuthController {
         accessTokenCookie.setHttpOnly(true);
         accessTokenCookie.setPath("/");
         accessTokenCookie.setMaxAge(0);
-        
+
         Cookie refreshTokenCookie = new Cookie("refreshToken", null);
         refreshTokenCookie.setHttpOnly(true);
         refreshTokenCookie.setPath("/");
         refreshTokenCookie.setMaxAge(0);
-        
+
         response.addCookie(accessTokenCookie);
         response.addCookie(refreshTokenCookie);
-        
+
         Map<String, String> responseBody = new HashMap<>();
         responseBody.put("message", "Logged out successfully");
         return ResponseEntity.ok(responseBody);
@@ -120,13 +119,13 @@ public class AuthController {
                 }
             }
         }
-        
+
         if (token == null) {
             throw new InvalidTokenException("Access token not found in cookies");
         }
 
         boolean isValid = authService.validateToken(token);
-        
+
         Map<String, Object> response = new HashMap<>();
         response.put("valid", isValid);
 
@@ -134,7 +133,7 @@ public class AuthController {
             String role = authService.extractRoleFromToken(token);
             response.put("role", role);
         }
-        
+
         return ResponseEntity.ok(response);
     }
 

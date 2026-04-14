@@ -29,19 +29,6 @@ spring:
   flyway:
     enabled: false
 
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
-    consumer:
-      group-id: report-service
-      auto-offset-reset: earliest
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-    listener:
-      missing-topics-fatal: false
-    admin:
-      fail-fast: false
-
   data:
     redis:
       host: ${REDIS_HOST:localhost}

@@ -119,49 +119,53 @@ class SessionService:
         interval_seconds = interval_min * 60
         n_steps = max(1, int(total_seconds // interval_seconds))
 
-        if not self.camera_service.open():
-            self.last_error = "Failed to open camera"
-            self.running = False
-            return
-
-        self.camera_service.warmup()
+        camera_available = self.camera_service.open()
+        if not camera_available:
+            self.last_error = "Camera unavailable — running in screen-analysis-only mode"
+            logger.warning("Camera unavailable, session continues without emotion detection")
+        else:
+            self.camera_service.warmup()
 
         for step in range(n_steps):
             if self.stop_event.is_set():
                 break
 
-            success, frame = self.camera_service.capture()
             timestamp = datetime.utcnow().isoformat()
-
             current_event = None
-            if not success:
-                current_event = {**session_metadata, "ts": timestamp, "status": "no_frame"}
-            else:
-                result = self.emotion_service.analyze_frame(frame)
 
-                if result["status"] == "no_face":
-                    no_face_count += 1
-                    current_event = {**session_metadata, "ts": timestamp, "status": "no_face"}
-                elif result["status"] == "error":
-                    self.last_error = f"Analysis error: {result.get('error')}"
-                    current_event = {
-                        **session_metadata,
-                        "ts": timestamp,
-                        "status": "error",
-                        "error": result.get("error"),
-                    }
+            if not camera_available:
+                current_event = {**session_metadata, "ts": timestamp, "status": "no_camera"}
+            else:
+                success, frame = self.camera_service.capture()
+
+                if not success:
+                    current_event = {**session_metadata, "ts": timestamp, "status": "no_frame"}
                 else:
-                    dominant = result["dominant"]
-                    probs = result["probabilities"]
-                    dominants.append(dominant)
-                    probs_list.append(probs)
-                    current_event = {
-                        **session_metadata,
-                        "ts": timestamp,
-                        "status": "ok",
-                        "dominant": dominant,
-                        "probs": probs,
-                    }
+                    result = self.emotion_service.analyze_frame(frame)
+
+                    if result["status"] == "no_face":
+                        no_face_count += 1
+                        current_event = {**session_metadata, "ts": timestamp, "status": "no_face"}
+                    elif result["status"] == "error":
+                        self.last_error = f"Analysis error: {result.get('error')}"
+                        current_event = {
+                            **session_metadata,
+                            "ts": timestamp,
+                            "status": "error",
+                            "error": result.get("error"),
+                        }
+                    else:
+                        dominant = result["dominant"]
+                        probs = result["probabilities"]
+                        dominants.append(dominant)
+                        probs_list.append(probs)
+                        current_event = {
+                            **session_metadata,
+                            "ts": timestamp,
+                            "status": "ok",
+                            "dominant": dominant,
+                            "probs": probs,
+                        }
 
             if current_event:
                 try:
@@ -176,7 +180,8 @@ class SessionService:
                         break
                     time.sleep(1)
 
-        self.camera_service.close()
+        if camera_available:
+            self.camera_service.close()
 
         summary_mean = self.report_service.aggregate_mean(probs_list)
         final_state = self.report_service.summarize_session(
