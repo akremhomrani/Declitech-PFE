@@ -36,14 +36,13 @@ management:
       show-details: always
 
 sso:
-  iam-base-url: http://localhost:8083
-  client-id: declilearn-staging
-  redirect-uri: http://localhost:4200
-  student-auth-path: /mock/sso/auth/student
-  staff-auth-path: /mock/sso/auth/staff
-  student-exchange-path: /mock/sso/exchange
-  staff-exchange-path: /mock/sso/staff/exchange
-  mock-submit-base-url: http://localhost:8083
+  iam-base-url: ${SSO_IAM_BASE_URL:https://iam-staging.decli.tech}
+  client-id: ${SSO_CLIENT_ID:declitrack-staging}
+  redirect-uri: ${SSO_REDIRECT_URI:http://localhost:4200/auth/callback}
+  student-auth-path: /api/v1/sso/auth/student
+  staff-auth-path: /api/v1/sso/auth/staff
+  student-exchange-path: /api/v1/sso/exchange
+  staff-exchange-path: /api/v1/sso/staff/exchange
 
 logging:
   level:

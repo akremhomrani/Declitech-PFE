@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequestMapping("/mock")
 public class MockIamController {
 
-    @Value("${sso.mock-submit-base-url:http://localhost:8080}")
+    @Value("${sso.mock-submit-base-url:http://localhost:8083}")
     private String mockSubmitBaseUrl;
 
     /** code → {login, codeChallenge, userType, createdAt} */
@@ -165,7 +165,7 @@ public class MockIamController {
         resp.setToken("mock-direct-staff-token");
         resp.setLogin(user.login());
         resp.setDisplayName(user.firstName() + " " + user.lastName());
-        resp.setStaffType(user.staffType());
+        resp.setUserType(user.staffType());
         log.info("Mock IAM direct login: staff={}", login);
         return ResponseEntity.ok(resp);
     }
@@ -181,7 +181,7 @@ public class MockIamController {
         SsoStaffResponse response = new SsoStaffResponse();
         response.setToken("mock-iam-staff-token");
         response.setLogin(entry.login());
-        response.setStaffType(user != null ? user.staffType() : "COLLABORATEUR");
+        response.setUserType(user != null ? user.staffType() : "COLLABORATEUR");
         response.setDisplayName(user != null ? user.firstName() + " " + user.lastName() : entry.login());
 
         log.info("Mock IAM: staff exchange success for login={}", entry.login());

@@ -113,67 +113,11 @@ public class SsoService {
         return exchangeStaffCode(request.getCode(), entry.codeVerifier(), httpResponse);
     }
 
-    /**
-     * Connexion directe via le Mock IAM (formulaire — sans PKCE).
-     * Appelé par POST /api/auth/sso/login
-     */
-    public LoginResponse directLogin(String login, String password, String userType,
-                                      jakarta.servlet.http.HttpServletResponse httpResponse) {
-        Map<String, String> body = Map.of("login", login, "password", password, "userType", userType);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        ResponseEntity<String> raw = restTemplate.exchange(
-                iamBaseUrl + "/mock/sso/auth/direct",
-                HttpMethod.POST,
-                new HttpEntity<>(body, headers),
-                String.class);
-
-        if (raw.getStatusCode().value() == 401) {
-            throw new InvalidCredentialsException("Identifiants invalides");
-        }
-        if (raw.getStatusCode().value() == 403) {
-            throw new InvalidCredentialsException("Compte désactivé");
-        }
-        if (!raw.getStatusCode().is2xxSuccessful()) {
-            throw new InvalidCredentialsException("Erreur IAM : " + raw.getStatusCode());
-        }
-
-        if ("student".equalsIgnoreCase(userType)) {
-            SsoStudentResponse iam = parseJson(raw.getBody(), SsoStudentResponse.class);
-            UserDetails ud = buildUserDetails(iam.getLogin(), "ROLE_STUDENT");
-            Map<String, Object> claims = new HashMap<>();
-            claims.put("role", "STUDENT");
-            claims.put("firstName", iam.getFirstName());
-            claims.put("lastName", iam.getLastName());
-            claims.put("sso", true);
-            setAuthCookies(httpResponse, jwtService.generateToken(claims, ud), jwtService.generateRefreshToken(ud));
-            return LoginResponse.builder()
-                    .firstName(iam.getFirstName()).lastName(iam.getLastName())
-                    .username(iam.getLogin()).role("STUDENT").build();
-        }
-
-        SsoStaffResponse iam = parseJson(raw.getBody(), SsoStaffResponse.class);
-        String role = mapStaffRole(iam.getStaffType());
-        UserDetails ud = buildUserDetails(iam.getLogin(), "ROLE_" + role);
-        String[] name = splitDisplayName(iam.getDisplayName());
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("role", role);
-        claims.put("sso", true);
-        claims.put("staffType", iam.getStaffType());
-        claims.put("firstName", name[0]);
-        claims.put("lastName", name[1]);
-        setAuthCookies(httpResponse, jwtService.generateToken(claims, ud), jwtService.generateRefreshToken(ud));
-        return LoginResponse.builder()
-                .firstName(name[0]).lastName(name[1])
-                .username(iam.getLogin()).role(role).build();
-    }
-
     // ─── Private helpers ────────────────────────────────────────────────────────
 
     private LoginResponse exchangeStudentCode(String code, String codeVerifier,
                                                HttpServletResponse httpResponse) {
-        Map<String, String> body = Map.of("code", code, "codeVerifier", codeVerifier);
+        Map<String, String> body = Map.of("code", code, "clientId", clientId, "codeVerifier", codeVerifier);
         ResponseEntity<SsoStudentResponse> response = callIam(
                 iamBaseUrl + studentExchangePath, body, SsoStudentResponse.class);
 
@@ -208,7 +152,7 @@ public class SsoService {
 
     private LoginResponse exchangeStaffCode(String code, String codeVerifier,
                                               HttpServletResponse httpResponse) {
-        Map<String, String> body = Map.of("code", code, "codeVerifier", codeVerifier);
+        Map<String, String> body = Map.of("code", code, "clientId", clientId, "codeVerifier", codeVerifier);
         ResponseEntity<SsoStaffResponse> response = callIam(
                 iamBaseUrl + staffExchangePath, body, SsoStaffResponse.class);
 
@@ -218,14 +162,14 @@ public class SsoService {
         }
 
         SsoStaffResponse iam = response.getBody();
-        String role = mapStaffRole(iam.getStaffType());
+        String role = mapStaffRole(iam.getUserType());
         UserDetails userDetails = buildUserDetails(iam.getLogin(), "ROLE_" + role);
 
         String[] nameParts = splitDisplayName(iam.getDisplayName());
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
         claims.put("sso", true);
-        claims.put("staffType", iam.getStaffType());
+        claims.put("userType", iam.getUserType());
         claims.put("firstName", nameParts[0]);
         claims.put("lastName", nameParts[1]);
 
@@ -233,21 +177,13 @@ public class SsoService {
         String refreshToken = jwtService.generateRefreshToken(userDetails);
 
         setAuthCookies(httpResponse, accessToken, refreshToken);
-        log.info("SSO staff login successful: login={}, staffType={}", iam.getLogin(), iam.getStaffType());
+        log.info("SSO staff login successful: login={}, staffType={}", iam.getLogin(), iam.getUserType());
         return LoginResponse.builder()
                 .firstName(nameParts[0])
                 .lastName(nameParts[1])
                 .username(iam.getLogin())
                 .role(role)
                 .build();
-    }
-
-    private <T> T parseJson(String json, Class<T> type) {
-        try {
-            return new com.fasterxml.jackson.databind.ObjectMapper().readValue(json, type);
-        } catch (Exception e) {
-            throw new InvalidCredentialsException("Réponse IAM invalide");
-        }
     }
 
     private <T> ResponseEntity<T> callIam(String url, Map<String, String> body, Class<T> responseType) {
@@ -324,8 +260,7 @@ public class SsoService {
     private String mapStaffRole(String staffType) {
         if (staffType == null) return "INSTRUCTOR";
         return switch (staffType.toUpperCase()) {
-            case "COLLABORATEUR" -> "INSTRUCTOR";
-            case "FREELANCE" -> "INSTRUCTOR";
+            case "COLLABORATEUR", "INSTRUCTEUR", "FREELANCE" -> "INSTRUCTOR";
             default -> "INSTRUCTOR";
         };
     }

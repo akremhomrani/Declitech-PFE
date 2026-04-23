@@ -98,8 +98,6 @@ document.addEventListener('mousemove', () => {
   const now = Date.now();
   if (now - lastMouseMoveNotification > MOUSE_MOVE_THROTTLE) {
     lastMouseMoveNotification = now;
-    chrome.runtime.sendMessage({ type: 'MOUSE_MOVED' }).catch(() => {
-      // Silently ignore errors
-    });
+    chrome.runtime.sendMessage({ type: 'MOUSE_MOVED' }).catch(() => {});
   }
 });

@@ -8,7 +8,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 
 
@@ -47,20 +52,4 @@ public class SsoController {
         return ResponseEntity.ok(ssoService.handleCallback(request, response));
     }
 
-    /**
-     * Connexion directe via le formulaire — le frontend envoie login+password,
-     * le backend les valide contre le Mock IAM et génère les cookies JWT.
-     *
-     * POST /api/auth/sso/login
-     * Body: { "login": "ahmed.ben_ali", "password": "Test@2026", "userType": "staff" }
-     */
-    @PostMapping("/login")
-    public ResponseEntity<LoginResponse> directLogin(
-            @RequestBody DirectLoginRequest request,
-            HttpServletResponse response) {
-        return ResponseEntity.ok(
-                ssoService.directLogin(request.login(), request.password(), request.userType(), response));
-    }
-
-    record DirectLoginRequest(String login, String password, String userType) {}
 }

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DecliTrack - Join Session",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Join session + detect pseudonyme/email from the current page.",
   "action": {
     "default_popup": "popup.html",
@@ -13,27 +13,22 @@
   "content_scripts": [
     {
       "matches": [
-        "https://codecombat.com/*",
-        "https://www.codecombat.com/*",
-        "https://code.org/*",
-        "https://studio.code.org/*",
         "https://learn.decli.tech/*",
         "http://localhost:4200/*"
       ],
       "js": [
         "content_decli_app.js",
-        "content_pedagogy_codecombat.js",
         "content.js"
       ],
       "run_at": "document_idle"
     },
     {
       "matches": [
-        "https://vittascience.com/*",
-        "https://*.vittascience.com/*"
+        "https://learn.decli.tech/*",
+        "https://fr.vittascience.com/*"
       ],
       "js": [
-        "content_vittascience.js"
+        "content_learn_declitech_ai.js"
       ],
       "all_frames": true,
       "run_at": "document_idle"
@@ -49,14 +44,10 @@
     "https://app.decli.tech/*",
     "https://learn.decli.tech/*",
     "https://api-iam.decli.tech/*",
-    "https://codecombat.com/*",
-    "https://www.codecombat.com/*",
-    "https://code.org/*",
-    "https://studio.code.org/*",
-    "https://vittascience.com/*",
     "http://127.0.0.1:8765/*",
     "http://localhost:8765/*",
     "http://localhost:8081/*",
-    "http://localhost:8083/*"
+    "http://localhost:8083/*",
+    "https://fr.vittascience.com/*"
   ]
 }

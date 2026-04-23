@@ -33,9 +33,9 @@ class ScreenAnalysisRequest(BaseModel):
     session_id: str = Field(..., description="Session code")
     student_login_identity: Optional[str] = Field(None, description="Student login identity")
     timestamp: str = Field(..., description="Capture timestamp (ISO format)")
-    screenshot_base64: str = Field(..., description="Base64-encoded JPEG screenshot")
+    screenshot_base64: Optional[str] = Field(None, description="Base64-encoded JPEG screenshot")
     page_url: Optional[str] = Field(None, description="Current page URL")
-    dom_data: Optional[dict] = Field(None, description="Extracted DOM data from Vittascience")
+    dom_data: Optional[dict] = Field(None, description="Extracted DOM data from learn.decli.tech")
 
 
 class ScreenAnalysisResponse(BaseModel):

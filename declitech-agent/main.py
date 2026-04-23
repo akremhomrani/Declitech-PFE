@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 from config import settings
-from controllers import agent_router, pedagogy_router
+from controllers import agent_router
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,6 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(agent_router)
-    app.include_router(pedagogy_router)
 
     @app.get("/health", tags=["system"])
     async def health():

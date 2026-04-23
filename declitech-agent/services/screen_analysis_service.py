@@ -1,185 +1,337 @@
 import json
-import os
 import logging
+import os
+import re
+from datetime import datetime, timezone
 from typing import Optional
+
 import requests
-import redis
 
 from config import settings
 from models.schemas import ScreenAnalysisRequest, ScreenAnalysisResponse
 
 logger = logging.getLogger(__name__)
 
+PROGRESS_ORDER = ["NOT_STARTED", "STARTING", "IN_PROGRESS", "NEAR_COMPLETE", "COMPLETE"]
+
+_VISION_PROMPT = (
+    "You are analyzing a screenshot from an online learning platform. "
+    "Answer in JSON with these exact keys:\n"
+    '  "exercise_name": title of the current exercise ("Unknown" if not visible)\n'
+    '  "progress_level": one of NOT_STARTED | STARTING | IN_PROGRESS | NEAR_COMPLETE | COMPLETE\n'
+    '  "observations": one sentence describing what the student is doing\n'
+    "Return ONLY the JSON object, no other text."
+)
+
+
+def _progress_rank(level: str) -> int:
+    try:
+        return PROGRESS_ORDER.index(level)
+    except ValueError:
+        return 0
+
 
 class ScreenAnalysisService:
-    def __init__(self):
-        self.output_file = os.path.join(settings.BASE_DIR, "screen_analysis_output.json")
-        self.api_available = True  # Ollama runs locally, always available
+    def __init__(self, redis_client=None):
+        self.output_file = os.path.join(os.path.dirname(__file__), "..", "screen_analysis_output.json")
+        self._redis = redis_client
+        self._memory: dict = {}
 
-        try:
-            self.redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
-        except Exception as e:
-            logger.error(f"Failed to connect to Redis: {e}")
-            self.redis_client = None
-
-    def _build_analysis_prompt(self, dom_context: str) -> str:
-        return f"""
-                You are an AI educational tutor observing a student's screen on the Vittascience platform.
-                Analyze the provided screenshot and the following DOM data extracted from the page:
-                
-                DOM Data:
-                {dom_context}
-                
-                Based on both the screenshot and the DOM data, determine:
-                1. What is the exercise name?
-                2. What is the progress level? Choose strictly one from: [NOT_STARTED, STARTING, IN_PROGRESS, NEAR_COMPLETE, COMPLETE]
-                   - NOT_STARTED: No categories or data.
-                   - STARTING: Categories named, adding data.
-                   - IN_PROGRESS: Training data ready, but model not trained, or training in progress, or missing category names.
-                   - NEAR_COMPLETE: Model trained, testing in preview but not fully tested.
-                   - COMPLETE: Everything working, prediction showing high confidence.
-                3. Is the student on track? (true or false). Look for mistakes like unnamed categories, or unbalanced data.
-                4. Create a short observation text explaining what they are doing and if they made mistakes.
-                
-                Return exactly a JSON object with these keys:
-                "exercise_name" (str), "progress_level" (str), "on_track" (bool), "observations" (str)
-                Do not wrap in Markdown blocks.
-                """
-
-    def _parse_json_text(self, raw_text: str) -> dict:
-        text = (raw_text or "").strip()
-        if not text:
-            raise ValueError("LLM returned empty response")
-        if text.startswith("```"):
-            text = text.replace("```json", "").replace("```", "").strip()
-        # Extract first JSON object if model added extra text around it
-        start = text.find("{")
-        end = text.rfind("}") + 1
-        if start != -1 and end > start:
-            text = text[start:end]
-        return json.loads(text)
+    # ── Public ────────────────────────────────────────────────────────────────
 
     def analyze_screen(self, request: ScreenAnalysisRequest) -> ScreenAnalysisResponse:
-        # Prepare the base response
+        state = self._load_story_state(request.session_id, request.student_login_identity)
+
         response = ScreenAnalysisResponse(
             status="SUCCESS",
             exercise_name="Unknown",
             progress_level="NOT_STARTED",
             on_track=True,
-            observations="N/A"
+            observations="N/A",
         )
-        
-        # Merge DOM data and screenshot to analyze
-        dom_context = json.dumps(request.dom_data) if request.dom_data else "No DOM data available"
-        prompt = self._build_analysis_prompt(dom_context)
 
-        if self.api_available:
-            # Smart caching: Hash the DOM state to avoid API calls when nothing changed
-            state_str = json.dumps(request.dom_data, sort_keys=True) if request.dom_data else "No DOM data"
-            import hashlib
-            current_hash = hashlib.md5(state_str.encode()).hexdigest()
+        self._dom_analysis(request.dom_data, request.page_url, response)
 
-            if hasattr(self, 'last_state_hash') and self.last_state_hash == current_hash and hasattr(self, 'last_response'):
-                logger.info("DOM state identical to last request. Returning cached LLM response to save API quota.")
-                import copy
-                cached_response = copy.deepcopy(self.last_response)
-                cached_response.status = "SUCCESS_CACHED"
-                self._log_to_file(request, cached_response)
-                return cached_response
+        if response.exercise_name == "Unknown" and request.screenshot_base64:
+            self._vision_analysis(request.screenshot_base64, response)
 
-            try:
-                messages = [
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{request.screenshot_base64}"
-                                }
-                            },
-                            {
-                                "type": "text",
-                                "text": prompt
-                            }
-                        ]
-                    }
-                ]
-
-                resp = requests.post(
-                    f"{settings.OLLAMA_BASE_URL}/v1/chat/completions",
-                    headers={"Content-Type": "application/json"},
-                    json={
-                        "model": settings.OLLAMA_MODEL,
-                        "messages": messages,
-                        "temperature": 0.2,
-                        "max_tokens": 500,
-                        "stream": False
-                    },
-                    timeout=int(os.getenv("REQUEST_TIMEOUT", "120"))
-                )
-                resp.raise_for_status()
-                raw_text = resp.json()["choices"][0]["message"]["content"]
-                result_json = self._parse_json_text(raw_text)
-
-                response.exercise_name = result_json.get("exercise_name", "Unknown")
-                response.progress_level = result_json.get("progress_level", "NOT_STARTED")
-                response.on_track = result_json.get("on_track", True)
-                response.observations = result_json.get("observations", "No observations")
-
-                self.last_state_hash = current_hash
-                self.last_response = response
-
-            except Exception as e:
-                response.status = f"ERROR_LLM: {str(e)}"
-                response.observations = "Error calling Vision LLM. Fallback to DOM data."
-                self._fallback_analysis(request.dom_data, response)
-        else:
-            # Fallback heuristic using DOM data if no API key or no module
-            response.status = "SUCCESS_NO_LLM"
-            self._fallback_analysis(request.dom_data, response)
-            
-        # Write detailed analysis results to JSON file
+        self._apply_story(request, response, state)
+        self._save_story_state(request.session_id, request.student_login_identity, state)
         self._log_to_file(request, response)
-        
         return response
 
-    def _fallback_analysis(self, dom_data: Optional[dict], response: ScreenAnalysisResponse):
-        """Simple rules-based fallback using just the DOM data when no LLM is available."""
+    # ── Story state ───────────────────────────────────────────────────────────
+
+    def _story_key(self, session_id: str, identity: Optional[str]) -> str:
+        return f"story:{session_id}:{identity or 'unknown'}"
+
+    def _load_story_state(self, session_id: str, identity: Optional[str]) -> dict:
+        key = self._story_key(session_id, identity)
+        if key in self._memory:
+            return self._memory[key]
+        return {
+            "exercise_name": None,
+            "max_progress_level": "NOT_STARTED",
+            "categories": {},
+            "model_trained": False,
+            "best_prediction": None,
+            "zero_category_streak": 0,
+            "capture_count": 0,
+            "first_seen_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+    def _save_story_state(self, session_id: str, identity: Optional[str], state: dict):
+        self._memory[self._story_key(session_id, identity)] = state
+
+    def _apply_story(self, request: ScreenAnalysisRequest, response: ScreenAnalysisResponse, state: dict):
+        now = datetime.now(timezone.utc).isoformat()
+        state["capture_count"] = state.get("capture_count", 0) + 1
+
+        # Exercise name — clean once, keep forever
+        clean = self._clean_exercise_name(response.exercise_name)
+        if clean != "Unknown":
+            state["exercise_name"] = clean
+        if state.get("exercise_name"):
+            response.exercise_name = state["exercise_name"]
+
+        dom = request.dom_data or {}
+        new_cats = dom.get("categories", [])
+        training = dom.get("trainingState", {})
+        predictions = dom.get("predictions", [])
+
+        # Category merge — union with max image counts, detect resets
+        has_exercise_data = bool(new_cats or training or predictions)
+        if new_cats:
+            state["zero_category_streak"] = 0
+            state["categories"] = self._merge_categories(state.get("categories", {}), new_cats, now)
+        elif state.get("categories") and has_exercise_data:
+            streak = state.get("zero_category_streak", 0) + 1
+            state["zero_category_streak"] = streak
+            if streak >= 3:
+                state["categories"] = {}
+                state["model_trained"] = False
+                state["best_prediction"] = None
+                state["max_progress_level"] = "STARTING"
+                state["zero_category_streak"] = 0
+
+        # Sticky model_trained flag
+        if training.get("modelTrained"):
+            state["model_trained"] = True
+
+        # Best prediction — keep highest confidence seen
+        if predictions:
+            top = max(predictions, key=lambda x: x.get("confidence", 0))
+            stored = state.get("best_prediction")
+            if not stored or top.get("confidence", 0) > stored.get("confidence", 0):
+                state["best_prediction"] = top
+
+        # Advance progress — never regress (unless reset detected above)
+        effective_level = response.progress_level
+        if state["model_trained"] and _progress_rank(effective_level) < _progress_rank("NEAR_COMPLETE"):
+            effective_level = "NEAR_COMPLETE"
+        if state.get("best_prediction") and _progress_rank(effective_level) < _progress_rank("COMPLETE"):
+            effective_level = "COMPLETE"
+        state["max_progress_level"] = PROGRESS_ORDER[
+            max(_progress_rank(state.get("max_progress_level", "NOT_STARTED")), _progress_rank(effective_level))
+        ]
+        response.progress_level = state["max_progress_level"]
+
+        # Build narrative observation from full accumulated state
+        response.observations = self._build_observation(state, response.progress_level)
+
+    # ── Helpers ───────────────────────────────────────────────────────────────
+
+    def _merge_categories(self, stored: dict, new_cats: list, now: str) -> dict:
+        result = dict(stored)
+        for cat in new_cats:
+            name = (cat.get("name") or "").strip()
+            count = cat.get("imageCount", 0)
+            key = name if name else f"__unnamed_{count}"
+            if key in result:
+                result[key]["max_images"] = max(result[key]["max_images"], count)
+                result[key]["last_seen_at"] = now
+            else:
+                result[key] = {"name": name, "max_images": count, "last_seen_at": now}
+        return result
+
+    def _clean_exercise_name(self, raw: Optional[str]) -> str:
+        if not raw or raw.strip() == "Unknown":
+            return "Unknown"
+        parts = [p.strip() for p in raw.split("\n") if p.strip()]
+        nav_words = {"settings", "dashboard", "home", "accueil", "menu", "profil", "profile"}
+        parts = [p for p in parts if p.lower() not in nav_words]
+        return parts[-1] if parts else "Unknown"
+
+    def _build_observation(self, state: dict, level: str) -> str:
+        name = state.get("exercise_name") or "the exercise"
+        cats = state.get("categories", {})
+        named_cats = [c for c in cats.values() if c.get("name") and c.get("max_images", 0) > 0]
+        n_cats = len(named_cats)
+        total_images = sum(c["max_images"] for c in named_cats)
+        cat_summary = ", ".join(f"{c['name']} ({c['max_images']} imgs)" for c in named_cats)
+
+        if level == "NOT_STARTED":
+            return f"Student has not started '{name}' yet."
+        if level == "STARTING":
+            return f"Student opened '{name}'."
+        if level == "IN_PROGRESS":
+            if n_cats == 0:
+                return f"Student is working on '{name}' — no categories created yet."
+            return f"Student is building a model on '{name}': {n_cats} categories — {cat_summary} ({total_images} total images)."
+        if level == "NEAR_COMPLETE":
+            if n_cats:
+                return f"Model trained on {n_cats} categories ({cat_summary}). Waiting for student to test it."
+            return f"Model trained on '{name}'. Waiting for student to test it."
+        if level == "COMPLETE":
+            pred = state.get("best_prediction")
+            if pred and pred.get("category"):
+                base = f"Model works! Detected '{pred['category']}' with {pred['confidence']}% confidence."
+                return f"{base} Categories: {cat_summary}." if cat_summary else base
+            return f"Exercise '{name}' complete." + (f" Categories: {cat_summary}." if cat_summary else "")
+        return "Analysis in progress."
+
+    # ── DOM analysis ──────────────────────────────────────────────────────────
+
+    def _dom_analysis(self, dom_data: Optional[dict], page_url: Optional[str], response: ScreenAnalysisResponse):
         if not dom_data:
-            response.observations = "No DOM data or LLM."
+            response.status = "NO_DOM_DATA"
+            response.observations = "No DOM data received from content script."
             return
-            
+
+        if page_url and "learn.decli.tech" in page_url:
+            exercise = dom_data.get("exerciseName") or dom_data.get("pageTitle") or "Unknown"
+            if dom_data.get("exerciseInfo"):
+                exercise = dom_data["exerciseInfo"].get("title") or exercise
+            response.exercise_name = exercise
+
+            categories = dom_data.get("categories", [])
+            training = dom_data.get("trainingState", {})
+            predictions = dom_data.get("predictions", [])
+
+            if categories or training:
+                if predictions:
+                    response.progress_level = "COMPLETE"
+                    top = max(predictions, key=lambda x: x.get("confidence", 0))
+                    response.observations = (
+                        f"Model works! Detected {top['category']} with {top['confidence']}%."
+                        if top.get("confidence", 0) > 80
+                        else "Model trained and being tested."
+                    )
+                elif training.get("modelTrained"):
+                    response.progress_level = "NEAR_COMPLETE"
+                    response.observations = f"Model trained on {len(categories)} categories. Waiting for test."
+                elif categories:
+                    has_empty = any(not c.get("name") for c in categories)
+                    response.progress_level = "IN_PROGRESS"
+                    if has_empty:
+                        response.on_track = False
+                        response.observations = "Student added data but forgot to name a category."
+                    else:
+                        total = sum(c.get("imageCount", 0) for c in categories)
+                        response.observations = f"Student created {len(categories)} categories ({total} images). Ready to train."
+                else:
+                    response.progress_level = "STARTING"
+                    response.observations = f"Student opened: {exercise}"
+            elif dom_data.get("completed"):
+                response.progress_level = "COMPLETE"
+                response.observations = f"Student completed: {exercise}"
+            elif dom_data.get("studentCode"):
+                response.progress_level = "IN_PROGRESS"
+                response.observations = f"Student is coding on: {exercise}"
+            elif dom_data.get("progress"):
+                response.progress_level = "IN_PROGRESS"
+                response.observations = f"Progress: {dom_data['progress']} — {exercise}"
+            else:
+                response.progress_level = "STARTING"
+                response.observations = f"Student opened: {exercise}"
+            return
+
         categories = dom_data.get("categories", [])
         training = dom_data.get("trainingState", {})
         predictions = dom_data.get("predictions", [])
-        
+
         if dom_data.get("exerciseInfo"):
-            response.exercise_name = dom_data.get("exerciseInfo").get("title", "Unknown")
-            
+            response.exercise_name = dom_data["exerciseInfo"].get("title", "Unknown")
+
         if not categories:
             response.progress_level = "NOT_STARTED"
             response.observations = "Student has not started yet."
         elif not training.get("modelTrained"):
-            has_empty_names = any(not c.get("name") for c in categories)
+            has_empty = any(not c.get("name") for c in categories)
             response.progress_level = "IN_PROGRESS"
-            if has_empty_names:
+            if has_empty:
                 response.on_track = False
                 response.observations = "Student added data but forgot to name a category."
             else:
-                response.on_track = True
                 response.observations = f"Student created {len(categories)} categories. Ready to train."
-        elif training.get("modelTrained"):
+        else:
             if predictions:
                 response.progress_level = "COMPLETE"
-                top_pred = max(predictions, key=lambda x: x.get("confidence", 0)) if predictions else None
-                if top_pred and top_pred.get("confidence", 0) > 80:
-                    response.observations = f"Model works! Detected {top_pred['category']} with {top_pred['confidence']}%."
-                else:
-                    response.observations = "Model trained and testing."
+                top = max(predictions, key=lambda x: x.get("confidence", 0))
+                response.observations = (
+                    f"Model works! Detected {top['category']} with {top['confidence']}%."
+                    if top.get("confidence", 0) > 80
+                    else "Model trained and testing."
+                )
             else:
                 response.progress_level = "NEAR_COMPLETE"
                 response.observations = "Model is trained, waiting for student to test it."
+
+    # ── Vision analysis ───────────────────────────────────────────────────────
+
+    def _vision_analysis(self, screenshot_base64: str, response: ScreenAnalysisResponse):
+        if not settings.OPENROUTER_API_KEY:
+            logger.debug("No OPENROUTER_API_KEY — skipping vision analysis")
+            return
+        try:
+            resp = requests.post(
+                f"{settings.OPENROUTER_BASE_URL}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": settings.OPENROUTER_VISION_MODEL,
+                    "messages": [{
+                        "role": "user",
+                        "content": [
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{screenshot_base64}"}},
+                            {"type": "text", "text": _VISION_PROMPT},
+                        ],
+                    }],
+                    "max_tokens": 300,
+                },
+                timeout=settings.API_TIMEOUT,
+            )
+            if not resp.ok:
+                logger.warning("Vision API returned %s: %s", resp.status_code, resp.text[:200])
+                return
+            raw = resp.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+            data = self._parse_json(raw)
+            if data.get("exercise_name") and data["exercise_name"] != "Unknown":
+                response.exercise_name = data["exercise_name"]
+            if data.get("progress_level"):
+                response.progress_level = data["progress_level"]
+            if data.get("observations"):
+                response.observations = data["observations"]
+            response.status = "SUCCESS_VISION"
+        except Exception as exc:
+            logger.warning("Vision analysis failed: %s", exc)
+
+    def _parse_json(self, text: str) -> dict:
+        try:
+            return json.loads(text.strip())
+        except json.JSONDecodeError:
+            pass
+        match = re.search(r"\{[^{}]*\}", text, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group())
+            except json.JSONDecodeError:
+                pass
+        return {}
+
+    # ── File log ──────────────────────────────────────────────────────────────
 
     def _log_to_file(self, request: ScreenAnalysisRequest, response: ScreenAnalysisResponse):
         log_entry = {
@@ -188,21 +340,19 @@ class ScreenAnalysisService:
             "student_identity": request.student_login_identity,
             "page_url": request.page_url,
             "dom_data_received": bool(request.dom_data),
-            "analysis_result": response.dict()
+            "screenshot_received": bool(request.screenshot_base64),
+            "analysis_result": response.dict(),
         }
-        
         try:
             data = []
             if os.path.exists(self.output_file):
-                with open(self.output_file, 'r', encoding='utf-8') as f:
+                with open(self.output_file, "r", encoding="utf-8") as f:
                     try:
                         data = json.load(f)
                     except json.JSONDecodeError:
                         pass
-            
             data.append(log_entry)
-            
-            with open(self.output_file, 'w', encoding='utf-8') as f:
+            with open(self.output_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
         except Exception as e:
-            logger.error(f"Failed to write to JSON file: {e}")
+            logger.error("Failed to write to JSON file: %s", e)

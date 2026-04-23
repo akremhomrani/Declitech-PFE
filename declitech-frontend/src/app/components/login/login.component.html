@@ -51,7 +51,8 @@
     </div>
 
     <!-- SSO Button -->
-    <button *ngIf="!isLoading" type="button" class="sso-btn" (click)="loginWithIAM('staff')">
+    <!-- TODO: revert to 'staff' once IAM admin fixes /api/v1/sso/auth/staff 500 on staging -->
+    <button *ngIf="!isLoading" type="button" class="sso-btn" (click)="loginWithIAM('student')">
       <span class="sso-btn-glow"></span>
       <svg class="sso-icon" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
         <path d="M6 6H42L36 24L42 42H6L12 24L6 6Z" fill="currentColor"></path>

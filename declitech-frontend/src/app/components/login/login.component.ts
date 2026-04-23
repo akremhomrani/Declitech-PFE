@@ -80,41 +80,19 @@ export class LoginComponent implements OnInit, OnDestroy {
     setTimeout(() => { this.animationDone = true; }, 100);
     this.animateSpotlight();
 
-    const code  = this.route.snapshot.queryParamMap.get('code');
-    const state = this.route.snapshot.queryParamMap.get('state');
-    const error = this.route.snapshot.queryParamMap.get('error');
+    const params = this.route.snapshot.queryParamMap;
+    const code = params.get('code');
+    const state = params.get('state');
+    const error = params.get('error');
 
-    // Popup context: relay result to parent and close
-    if (window.opener) {
-      if (error) {
-        window.opener.postMessage(
-          { type: 'SSO_ERROR', error: this.mapIamError(error) },
-          window.location.origin
-        );
-      } else if (code && state) {
-        window.opener.postMessage(
-          { type: 'SSO_CALLBACK', code, state },
-          window.location.origin
-        );
-      }
-      window.close();
-      return;
-    }
-
-    if (error) {
-      this.errorMessage = this.mapIamError(error);
-      return;
-    }
-
+    // IAM redirects back to http://localhost:4200?code=...&state=...
+    // Forward straight to SsoCallbackComponent which handles the exchange
     if (code && state) {
-      this.isLoading = true;
-      this.authService.handleSsoCallback(code, state).subscribe({
-        next: () => this.router.navigate(['/dashboard']),
-        error: (err: Error) => {
-          this.isLoading = false;
-          this.errorMessage = this.sanitizeError(err.message) || 'SSO authentication error.';
-        }
-      });
+      this.router.navigate(['/auth/callback'], { queryParams: { code, state } });
+      return;
+    }
+    if (error) {
+      this.router.navigate(['/auth/callback'], { queryParams: { error } });
       return;
     }
 
@@ -127,16 +105,9 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.errorMessage = '';
     this.authService.initiateSsoLogin(userType).subscribe({
-      next: () => {
-        this.isLoading = false;
-        this.router.navigate(['/dashboard']);
-      },
       error: (err: Error) => {
         this.isLoading = false;
-        const cancelled = err.message === 'Connexion annulée';
-        if (!cancelled) {
-          this.errorMessage = this.sanitizeError(err.message);
-        }
+        this.errorMessage = this.sanitizeError(err.message);
       }
     });
   }
@@ -149,12 +120,4 @@ export class LoginComponent implements OnInit, OnDestroy {
     return message;
   }
 
-  private mapIamError(error: string): string {
-    switch (error) {
-      case 'invalid_credentials': return 'Invalid credentials.';
-      case 'account_inactive':    return 'Account disabled. Contact administrator.';
-      case 'too_many_attempts':   return 'Too many attempts. Try again later.';
-      default:                    return 'Login error: ' + error;
-    }
-  }
 }

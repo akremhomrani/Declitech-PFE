@@ -15,6 +15,6 @@ public class SsoStaffResponse {
     @JsonProperty("login")
     private String login;
 
-    @JsonProperty("staffType")
-    private String staffType;
+    @JsonProperty("userType")
+    private String userType;
 }

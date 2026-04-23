@@ -22,61 +22,18 @@ export class AuthService {
   }
 
   /**
-   * Étape 1 SSO — Ouvre un popup IAM (style "Login with Google").
-   * Résout avec LoginResponse quand l'utilisateur se connecte avec succès.
+   * SSO step 1 — Fetches the IAM login URL and redirects the full page to it.
+   * After login, IAM redirects to /auth/callback which is handled by SsoCallbackComponent.
    */
-  initiateSsoLogin(userType: 'student' | 'staff'): Observable<LoginResponse> {
-    return new Observable(observer => {
-      this.http.get<{ loginUrl: string }>(`${this.apiUrl}/sso/url`, {
-        params: { type: userType },
-        withCredentials: true
-      }).subscribe({
-        next: ({ loginUrl }) => {
-          const popup = window.open(
-            loginUrl,
-            'decliiam-sso',
-            'width=480,height=600,top=100,left=200,resizable=yes,scrollbars=yes'
-          );
-
-          if (!popup) {
-            observer.error(new Error('Le popup a été bloqué par le navigateur. Autorisez les popups pour ce site.'));
-            return;
-          }
-
-          // Écouter le message envoyé par le popup après redirection
-          const onMessage = (event: MessageEvent) => {
-            if (event.origin !== window.location.origin) return;
-
-            if (event.data?.type === 'SSO_CALLBACK') {
-              cleanup();
-              const { code, state } = event.data;
-              this.handleSsoCallback(code, state).subscribe({
-                next: (r) => { observer.next(r); observer.complete(); },
-                error: (e) => observer.error(e)
-              });
-            }
-            if (event.data?.type === 'SSO_ERROR') {
-              cleanup();
-              observer.error(new Error(event.data.error || 'Erreur SSO'));
-            }
-          };
-
-          // Détecter fermeture manuelle du popup
-          const pollClosed = setInterval(() => {
-            if (popup.closed) { cleanup(); observer.error(new Error('Connexion annulée')); }
-          }, 500);
-
-          const cleanup = () => {
-            clearInterval(pollClosed);
-            window.removeEventListener('message', onMessage);
-            if (!popup.closed) popup.close();
-          };
-
-          window.addEventListener('message', onMessage);
-        },
-        error: (err) => observer.error(err)
-      });
-    });
+  initiateSsoLogin(userType: 'student' | 'staff'): Observable<void> {
+    return this.http.get<{ loginUrl: string }>(`${this.apiUrl}/sso/url`, {
+      params: { type: userType },
+      withCredentials: true
+    }).pipe(
+      tap(({ loginUrl }) => { window.location.href = loginUrl; }),
+      map(() => void 0 as void),
+      catchError(this.handleError)
+    );
   }
 
   /**

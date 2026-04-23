@@ -92,6 +92,7 @@ function loadSettings() {
   durationMinEl.value = Number.isFinite(s.durationMin) ? s.durationMin : 30;
   intervalMinEl.value = Number.isFinite(s.intervalMin) ? s.intervalMin : 15;
 }
+
 function saveSettings() {
   const s = {
     studentId: (studentIdEl.value || "").trim() || "E12",
@@ -102,6 +103,7 @@ function saveSettings() {
   localStorage.setItem("decli_settings", JSON.stringify(s));
   return s;
 }
+
 btnSaveSettings.addEventListener("click", () => {
   saveSettings();
   setMsg("Settings saved.");
@@ -136,15 +138,11 @@ async function refreshStatus() {
     const isRunning = s.running;
     agentStatus.textContent = isRunning ? "Running" : "Ready";
     setLive(true);
-
     if (isRunning) {
       btnJoin.style.display = "none";
       sessionActive.style.display = "flex";
       currentSessionCode = s.session_id ? s.session_id.replace("SESSION-", "").replace("LOCAL-", "") : null;
-
-      if (!sessionCheckInterval) {
-        startSessionValidityCheck();
-      }
+      if (!sessionCheckInterval) startSessionValidityCheck();
     } else {
       btnJoin.style.display = "block";
       sessionActive.style.display = "none";
@@ -161,26 +159,18 @@ async function refreshStatus() {
 
 function startSessionValidityCheck() {
   if (sessionCheckInterval) return;
-
   sessionCheckInterval = setInterval(async () => {
     if (!currentSessionCode) return;
-
     try {
       const validation = await httpGet(`/validate/${currentSessionCode}`);
-
-      // Ne déconnecter QUE si la session est explicitement inactive ou expirée
-      // (pas en cas d'erreur réseau ou de réponse ambiguë)
       if (!validation.valid) {
         const reason = validation.reason || "";
         if (reason === "inactive" || reason === "expired") {
           setMsg(`Session ended: ${reason}`, false);
           await autoDisconnect();
         }
-        // Autres raisons (erreur réseau, not_found, etc.) → on ignore, la session continue
       }
-    } catch (e) {
-      // Erreur réseau : on ignore, ne pas couper la caméra
-    }
+    } catch (e) {}
   }, SESSION_CHECK_INTERVAL);
 }
 
@@ -194,18 +184,14 @@ function stopSessionValidityCheck() {
 async function autoDisconnect() {
   try {
     await httpPost("/stop", {});
-
     chrome.runtime.sendMessage({ type: "SESSION_STOPPED" });
-
     setMsg("Session ended. Camera stopped.");
     currentSessionCode = null;
     stopSessionValidityCheck();
     btnJoin.style.display = "block";
     sessionActive.style.display = "none";
     agentStatus.textContent = "Ready";
-  } catch (e) {
-    
-  }
+  } catch (e) {}
 }
 
 async function detectIdentityFromActiveTab() {
@@ -213,12 +199,10 @@ async function detectIdentityFromActiveTab() {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tab = tabs?.[0];
       if (!tab?.id) return resolve("");
-
       chrome.scripting.executeScript({
         target: { tabId: tab.id },
         func: () => {
           const norm = (s) => (s || "").toLowerCase().trim();
-
           const inputs = Array.from(document.querySelectorAll("input"))
             .filter(i => {
               const t = norm(i.type);
@@ -226,14 +210,12 @@ async function detectIdentityFromActiveTab() {
               const r = i.getBoundingClientRect();
               return r.width > 50 && r.height > 20 && !i.disabled && !i.readOnly;
             });
-
           function score(i) {
             const attrs = norm([i.name, i.id, i.placeholder, i.getAttribute("aria-label"), i.getAttribute("autocomplete")].filter(Boolean).join(" "));
             let s = 0;
             if (attrs.includes("pseud")) s += 30;
             if (attrs.includes("username") || attrs.includes("user") || attrs.includes("utilisateur")) s += 25;
             if (attrs.includes("email") || attrs.includes("mail")) s += 20;
-
             let lbl = "";
             if (i.id) {
               const l = document.querySelector(`label[for="${CSS.escape(i.id)}"]`);
@@ -252,24 +234,17 @@ async function detectIdentityFromActiveTab() {
             if (lbl.includes("pseudonyme") || lbl.includes("pseudo")) s += 40;
             if (lbl.includes("nom d'utilisateur") || lbl.includes("utilisateur")) s += 30;
             if (lbl.includes("email") || lbl.includes("mail")) s += 25;
-
             return s;
           }
-
           let best = null, bestScore = -999;
           for (const i of inputs) {
             const sc = score(i);
-            if (sc > bestScore) {
-              bestScore = sc;
-              best = i;
-            }
+            if (sc > bestScore) { bestScore = sc; best = i; }
           }
-
           return best && best.value ? best.value.trim() : "";
         }
       }, (results) => {
-        const val = results?.[0]?.result || "";
-        resolve(val);
+        resolve(results?.[0]?.result || "");
       });
     });
   });
@@ -278,7 +253,7 @@ async function detectIdentityFromActiveTab() {
 async function loadDetectedIdentity() {
   const v = (await detectIdentityFromActiveTab()) || "";
   if (v) {
-    chrome.storage.local.set({ decli_identity: v }, () => { });
+    chrome.storage.local.set({ decli_identity: v }, () => {});
     detIdentity.textContent = v;
     detHint.textContent = "Captured from current page.";
   } else {
@@ -303,13 +278,9 @@ btnJoin.addEventListener("click", async () => {
     setMsg("Please enter the 6-character code.", true);
     return;
   }
-
   const s = saveSettings();
-
-
   const identity = (await detectIdentityFromActiveTab()) || detIdentity.textContent || "";
   const login_identity = identity === "—" ? "" : identity;
-
   try {
     setMsg("Connecting to agent...");
     const payload = {
@@ -318,18 +289,16 @@ btnJoin.addEventListener("click", async () => {
       device_id: s.deviceId,
       duration_min: s.durationMin,
       interval_min: s.intervalMin,
-      login_identity: login_identity
+      login_identity
     };
-    const r = await httpPost("/start", payload);
+    await httpPost("/start", payload);
     currentSessionCode = code;
-
     chrome.runtime.sendMessage({
       type: "SESSION_STARTED",
       sessionCode: code,
       participantId: `PARTICIPANT-${s.studentId}`,
       studentLoginIdentity: login_identity
     });
-
     setMsg(`Joined. Session: ${code}`);
     await refreshStatus();
   } catch (err) {
