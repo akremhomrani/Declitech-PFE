@@ -27,7 +27,8 @@ spring:
     time-zone: UTC
 
   flyway:
-    enabled: false
+    enabled: ${FLYWAY_ENABLED:false}
+    baseline-on-migrate: ${FLYWAY_BASELINE:true}
 
   data:
     redis:

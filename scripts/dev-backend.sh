@@ -55,7 +55,6 @@ fi
 launch "auth"    auth-service    8083
 launch "session" session-service 8084
 launch "report"  report-service  8081
-launch "module"  module-service  8085
 launch "gateway" gateway-service 8080
 
 # Wait for all in parallel
@@ -63,6 +62,5 @@ log "Waiting for all services..."
 wait_for_port "auth"    8083 60 &
 wait_for_port "session" 8084 60 &
 wait_for_port "report"  8081 60 &
-wait_for_port "module"  8085 60 &
 wait_for_port "gateway" 8080 60 &
 wait

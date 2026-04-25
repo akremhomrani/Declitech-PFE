@@ -31,9 +31,9 @@ start_one() {
   case $TARGET in
     redis|agent)           bash "$SCRIPTS/dev-infra.sh"    ;;
     eureka|auth|session|\
-    report|module|gateway) bash "$SCRIPTS/dev-backend.sh"  ;;
+    report|gateway)        bash "$SCRIPTS/dev-backend.sh"  ;;
     frontend)              bash "$SCRIPTS/dev-frontend.sh" ;;
-    *) fail "Unknown: $TARGET. Valid: redis agent eureka auth session report module gateway frontend"; exit 1 ;;
+    *) fail "Unknown: $TARGET. Valid: redis agent eureka auth session report gateway frontend"; exit 1 ;;
   esac
 }
 
@@ -54,7 +54,7 @@ else
 
   echo ""
   log "─── Status ──────────────────────────────"
-  for entry in "Redis:6379" "Agent:8765" "Eureka:8761" "Auth:8083" "Session:8084" "Report:8081" "Module:8085" "Gateway:8080" "Frontend:4200"; do
+  for entry in "Redis:6379" "Agent:8765" "Eureka:8761" "Auth:8083" "Session:8084" "Report:8081" "Gateway:8080" "Frontend:4200"; do
     name="${entry%%:*}"; port="${entry##*:}"
     is_up "$port" && ok "$name :$port" || fail "$name :$port"
   done

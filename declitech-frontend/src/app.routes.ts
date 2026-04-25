@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './app/components/login/login.component';
 import { DashboardComponent } from './app/components/dashboard/dashboard.component';
-import { ModuleManagementComponent } from './app/components/module-management/module-management.component';
 import { SessionCreationComponent } from './app/components/session-creation/session-creation.component';
 import { SessionHistoryComponent } from './app/components/session-history/session-history.component';
 import { SessionDetailsComponent } from './app/components/session-details/session-details.component';
@@ -18,7 +17,6 @@ export const routes: Routes = [
   { path: 'session/create', component: SessionCreationComponent, canActivate: [AuthGuard] },
   { path: 'session/history', component: SessionHistoryComponent, canActivate: [AuthGuard] },
   { path: 'session/details/:id', component: SessionDetailsComponent, canActivate: [AuthGuard] },
-  { path: 'modules', component: ModuleManagementComponent, canActivate: [AuthGuard] },
   { path: 'analytics', component: InstructorAnalyticsComponent, canActivate: [AuthGuard] },
   { path: 'not-found', component: NotFoundComponent },
   { path: '**', component: NotFoundComponent }

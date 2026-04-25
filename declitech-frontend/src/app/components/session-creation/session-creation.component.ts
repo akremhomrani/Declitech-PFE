@@ -5,10 +5,10 @@ import { RouterLink } from '@angular/router';
 import { NavbarComponent } from '../../shared/navbar/navbar.component';
 import { SidebarComponent } from '../../shared/sidebar/sidebar.component';
 import { SessionService } from '../../services/session.service';
-import { ModuleService } from '../../services/module.service';
+import { IamService } from '../../services/iam.service';
 import { AuthService } from '../../services/auth.service';
 import { EmotionService } from '../../services/emotion.service';
-import { Module } from '../../models/module';
+import { IamSite, IamModule } from '../../models/iam/iam-site.model';
 import { Subscription, interval } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
@@ -36,20 +36,21 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
   modalDuration = 90;
   codeCopied = false;
 
-  modules: Module[] = [];
+  sites: IamSite[] = [];
   availableLocations: string[] = [];
   selectedLocation: string = '';
   selectedModuleId: string = '';
   modalStep: number = 1;
 
-  get modulesForSelectedLocation(): Module[] {
-    if (!this.selectedLocation) return [];
-    return this.modules.filter(m => m.sites && m.sites.includes(this.selectedLocation));
+  get modulesForSelectedLocation(): IamModule[] {
+    const site = this.sites.find(s => s.name === this.selectedLocation);
+    if (!site) return [];
+    return site.salles.flatMap(salle => salle.modules);
   }
 
   constructor(
     private sessionService: SessionService,
-    private moduleService: ModuleService,
+    private iamService: IamService,
     private emotionService: EmotionService,
     private authService: AuthService
   ) { }
@@ -61,7 +62,7 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.loadModules();
+    this.loadSites();
 
     this.subscription.add(
       this.sessionService.sessionData$.subscribe(session => {
@@ -126,26 +127,16 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
     }
   }
 
-  private loadModules(): void {
-    this.moduleService.getAllModules().subscribe({
-      next: (modules) => {
-        this.modules = modules;
-        this.buildModuleOptions();
+  private loadSites(): void {
+    this.iamService.getSites().subscribe({
+      next: (sites) => {
+        this.sites = sites;
+        this.availableLocations = sites.map(s => s.name).sort();
       },
       error: (error) => {
-        console.error('Error loading modules:', error);
+        console.error('Error loading IAM sites:', error);
       }
     });
-  }
-
-  private buildModuleOptions(): void {
-    const locationSet = new Set<string>();
-    this.modules.forEach(module => {
-      if (module.sites) {
-        module.sites.forEach(site => locationSet.add(site));
-      }
-    });
-    this.availableLocations = Array.from(locationSet).sort();
   }
 
   onLocationChange(): void {
@@ -182,9 +173,9 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
     }
 
     const moduleId = parseInt(this.selectedModuleId);
-    const selectedModule = this.modules.find(m => m.id === moduleId);
+    const selectedModule = this.modulesForSelectedLocation.find(m => m.id === moduleId);
     const sessionTitle = selectedModule
-      ? `${selectedModule.title} - ${this.selectedLocation}`
+      ? `${selectedModule.name} - ${this.selectedLocation}`
       : 'Session';
 
     this.sessionService.createSession(sessionTitle, this.modalDuration, moduleId);

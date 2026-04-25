@@ -15,12 +15,12 @@ export interface EmotionReport {
   id?: number;
   sessionId: string;
   sessionCode?: string;
-  sessionId_legacy?: string;
   generatedAt: string;
   studentLoginIdentity: string;
   status?: string;
   finalState?: string;
   finalSentence?: string;
+  emotionMeans?: Record<string, number>;
   angryMean?: number;
   disgustMean?: number;
   fearMean?: number;

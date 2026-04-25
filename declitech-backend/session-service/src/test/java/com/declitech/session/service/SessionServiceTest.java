@@ -67,8 +67,8 @@ class SessionServiceTest {
         when(codeGenerator.generateCode()).thenReturn("XYZ999");
         when(sessionRepository.existsBySessionCode("XYZ999")).thenReturn(false);
         when(sessionRepository.save(any(Session.class))).thenReturn(activeSession);
-        when(reportServiceClient.getParticipantCountBySessionCode(anyString())).thenReturn(0L);
-        when(reportServiceClient.getReportCountBySessionCode(anyString())).thenReturn(0);
+        when(reportServiceClient.getParticipantCountBySessionId(anyLong())).thenReturn(0L);
+        when(reportServiceClient.getReportCountBySessionId(anyLong())).thenReturn(0);
 
         SessionDTO result = sessionService.createSession("ahmed.ben_ali", "Ahmed", "Ben Ali", request);
 
@@ -89,8 +89,8 @@ class SessionServiceTest {
         when(sessionRepository.existsBySessionCode("DUP111")).thenReturn(true);
         when(sessionRepository.existsBySessionCode("UNI222")).thenReturn(false);
         when(sessionRepository.save(any(Session.class))).thenReturn(activeSession);
-        when(reportServiceClient.getParticipantCountBySessionCode(anyString())).thenReturn(0L);
-        when(reportServiceClient.getReportCountBySessionCode(anyString())).thenReturn(0);
+        when(reportServiceClient.getParticipantCountBySessionId(anyLong())).thenReturn(0L);
+        when(reportServiceClient.getReportCountBySessionId(anyLong())).thenReturn(0);
 
         SessionDTO result = sessionService.createSession("ahmed.ben_ali", "Ahmed", "Ben Ali", request);
 
@@ -106,8 +106,8 @@ class SessionServiceTest {
     @DisplayName("getSessionByCode - code existant → SessionDTO")
     void getSessionByCode_Exists_ShouldReturnSession() {
         when(sessionRepository.findBySessionCode("ABC123")).thenReturn(Optional.of(activeSession));
-        when(reportServiceClient.getParticipantCountBySessionCode("ABC123")).thenReturn(3L);
-        when(reportServiceClient.getReportCountBySessionCode("ABC123")).thenReturn(3);
+        when(reportServiceClient.getParticipantCountBySessionId(10L)).thenReturn(3L);
+        when(reportServiceClient.getReportCountBySessionId(10L)).thenReturn(3);
 
         SessionDTO result = sessionService.getSessionByCode("ABC123");
 
@@ -140,8 +140,8 @@ class SessionServiceTest {
 
         when(sessionRepository.findById(1L)).thenReturn(Optional.of(recentSession));
         when(sessionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(reportServiceClient.getParticipantCountBySessionCode(anyString())).thenReturn(0L);
-        when(reportServiceClient.getReportCountBySessionCode(anyString())).thenReturn(0);
+        when(reportServiceClient.getParticipantCountBySessionId(anyLong())).thenReturn(0L);
+        when(reportServiceClient.getReportCountBySessionId(anyLong())).thenReturn(0);
 
         SessionDTO result = sessionService.deactivateSession(1L);
 
@@ -153,8 +153,8 @@ class SessionServiceTest {
     void deactivateSession_OldSession_ShouldSetStatusEnded() {
         when(sessionRepository.findById(10L)).thenReturn(Optional.of(activeSession));
         when(sessionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(reportServiceClient.getParticipantCountBySessionCode(anyString())).thenReturn(0L);
-        when(reportServiceClient.getReportCountBySessionCode(anyString())).thenReturn(0);
+        when(reportServiceClient.getParticipantCountBySessionId(anyLong())).thenReturn(0L);
+        when(reportServiceClient.getReportCountBySessionId(anyLong())).thenReturn(0);
 
         SessionDTO result = sessionService.deactivateSession(10L);
 
@@ -179,8 +179,8 @@ class SessionServiceTest {
     @DisplayName("getAllActiveSessions - retourne uniquement les sessions ACTIVE")
     void getAllActiveSessions_ShouldReturnOnlyActiveSessions() {
         when(sessionRepository.findByStatus(SessionStatus.ACTIVE)).thenReturn(List.of(activeSession));
-        when(reportServiceClient.getParticipantCountBySessionCode(anyString())).thenReturn(0L);
-        when(reportServiceClient.getReportCountBySessionCode(anyString())).thenReturn(0);
+        when(reportServiceClient.getParticipantCountBySessionId(anyLong())).thenReturn(0L);
+        when(reportServiceClient.getReportCountBySessionId(anyLong())).thenReturn(0);
 
         List<SessionDTO> result = sessionService.getAllActiveSessions();
 
@@ -196,8 +196,8 @@ class SessionServiceTest {
     @DisplayName("getSessionsByUsername - retourne les sessions de l'instructeur IAM")
     void getSessionsByUsername_ShouldReturnInstructorSessions() {
         when(sessionRepository.findByInstructorUsername("ahmed.ben_ali")).thenReturn(List.of(activeSession));
-        when(reportServiceClient.getParticipantCountBySessionCode(anyString())).thenReturn(0L);
-        when(reportServiceClient.getReportCountBySessionCode(anyString())).thenReturn(0);
+        when(reportServiceClient.getParticipantCountBySessionId(anyLong())).thenReturn(0L);
+        when(reportServiceClient.getReportCountBySessionId(anyLong())).thenReturn(0);
 
         List<SessionDTO> result = sessionService.getSessionsByUsername("ahmed.ben_ali");
 

@@ -3,7 +3,7 @@
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 REDIS_DIR="$ROOT/Redis"
-AGENT="$ROOT/declitech-agent"
+AGENT="$ROOT/declitech-backend/agent-service"
 LOG_DIR="$ROOT/logs/services"
 mkdir -p "$LOG_DIR"
 
@@ -35,6 +35,8 @@ fi
 # Agent (starts right after Redis)
 if is_up 8765; then
   ok "Agent already up"
+elif [[ ! -f "$AGENT/.venv/Scripts/python.exe" ]]; then
+  fail "Agent venv missing — run: cd declitech-backend/agent-service && python -m venv .venv && .venv/Scripts/pip install -r requirements.txt"
 else
   log "Starting Python agent..."
   cd "$AGENT"

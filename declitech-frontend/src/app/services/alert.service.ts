@@ -25,12 +25,9 @@ export class AlertService {
 
         const url = `${environment.apiUrl}/api/alerts/stream?sessionId=${sessionCode}`;
 
-        this.eventSource = new EventSource(url);
-        console.log('[AlertService] SSE connecting to:', url);
-
+        this.eventSource = new EventSource(url, { withCredentials: true });
         this.eventSource.addEventListener('connected', () => {
             this.ngZone.run(() => {
-                console.log('[AlertService] SSE connected');
                 this.connectionStatusSubject.next(true);
             });
         });
@@ -39,17 +36,13 @@ export class AlertService {
             this.ngZone.run(() => {
                 try {
                     const alert: Alert = JSON.parse(event.data);
-                    console.log('[AlertService] Alert received:', alert);
-                    console.log('[AlertService] studentLoginIdentity:', alert.studentLoginIdentity, '| alertType:', alert.alertType);
 
                     if (alert.alertType === 'ALERT_RESOLVED') {
                         if (alert.studentLoginIdentity) {
                             this.clearAlertsForParticipant(alert.studentLoginIdentity);
-                            console.log('[AlertService] Cleared alerts for:', alert.studentLoginIdentity);
                         }
                     } else {
                         this.addRecentAlert(alert);
-                        console.log('[AlertService] recentAlerts map after add:', JSON.stringify([...this.recentAlerts.entries()]));
                     }
 
                     this.alertSubject.next(alert);
@@ -59,9 +52,7 @@ export class AlertService {
             });
         });
 
-        this.eventSource.addEventListener('heartbeat', () => {
-            console.log('[AlertService] Heartbeat received');
-        });
+        this.eventSource.addEventListener('heartbeat', () => { });
 
         this.eventSource.onerror = (err) => {
             console.error('[AlertService] SSE error:', err);
@@ -80,7 +71,6 @@ export class AlertService {
 
     private addRecentAlert(alert: Alert): void {
         const key = alert.studentLoginIdentity || alert.sessionId;
-        console.log('[AlertService] addRecentAlert — key used:', key);
 
         if (!this.recentAlerts.has(key)) {
             this.recentAlerts.set(key, []);

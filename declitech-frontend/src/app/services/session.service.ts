@@ -4,6 +4,29 @@ import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { SessionData, SessionHistory, PagedSessionResponse } from '../models/session';
 
+interface CreateSessionRequest {
+  title: string;
+  durationHours: number;
+  moduleId?: number;
+}
+
+interface CreateSessionResponse {
+  id: number;
+  sessionCode: string;
+  title: string;
+  participantCount?: number;
+  expiresAt?: string;
+  isActive?: boolean;
+}
+
+export interface SessionFilters {
+  search?: string;
+  title?: string;
+  sessionCode?: string;
+  status?: string;
+  instructorUsername?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -19,6 +42,7 @@ export class SessionService {
   private sessionEndedSubject = new Subject<{ code: string; reason: string }>();
   public sessionEnded$ = this.sessionEndedSubject.asObservable();
 
+  private readonly TIMER_INTERVAL_MS = 1_000;
   private apiUrl = `${environment.apiUrl}/api/sessions`;
 
   constructor(private http: HttpClient) {
@@ -27,13 +51,13 @@ export class SessionService {
 
   createSession(title: string, duration: number, moduleId?: number): void {
     const durationHours = duration / 60;
-    const request: any = { title, durationHours };
-    
+    const request: CreateSessionRequest = { title, durationHours };
+
     if (moduleId) {
       request.moduleId = moduleId;
     }
 
-    this.http.post<any>(this.apiUrl, request, { withCredentials: true }).subscribe({
+    this.http.post<CreateSessionResponse>(this.apiUrl, request, { withCredentials: true }).subscribe({
       next: (response) => {
         const sessionData: SessionData = {
           id: response.id,
@@ -131,7 +155,7 @@ export class SessionService {
     return this.http.get<PagedSessionResponse>(`${this.apiUrl}/history/paginated`, { params });
   }
 
-  filterSessionHistory(filters: any, page: number = 0, size: number = 10): Observable<PagedSessionResponse> {
+  filterSessionHistory(filters: SessionFilters, page: number = 0, size: number = 10): Observable<PagedSessionResponse> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
@@ -155,7 +179,7 @@ export class SessionService {
       const minutes = Math.floor(elapsed / 60);
       const seconds = elapsed % 60;
       this.elapsedTimeSubject.next(`${minutes}m ${seconds}s`);
-    }, 1000);
+    }, this.TIMER_INTERVAL_MS);
   }
 
   private startSessionExpirationTimer(sessionData: SessionData): void {

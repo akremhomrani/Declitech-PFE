@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/reports")
@@ -27,7 +26,7 @@ public class EmotionReportController {
             EmotionReport report = reportService.importReportFromJson(filePath);
             return ResponseEntity.ok(Map.of(
                 "message", "Report imported successfully",
-                "sessionId", report.getSessionId(),
+                "sessionId", String.valueOf(report.getSessionId()),
                 "studentLoginIdentity", report.getStudentLoginIdentity()
             ));
         } catch (Exception e) {
@@ -43,7 +42,7 @@ public class EmotionReportController {
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "message", "Report saved successfully",
                 "id", report.getId(),
-                "sessionId", report.getSessionId()
+                "sessionId", String.valueOf(report.getSessionId())
             ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -52,62 +51,45 @@ public class EmotionReportController {
     }
 
     @GetMapping("/session/{sessionId}")
-    public ResponseEntity<?> getReportBySessionId(@PathVariable String sessionId) {
-        return reportService.getReportBySessionId(sessionId)
-            .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<List<EmotionReport>> getReportsBySessionId(@PathVariable Long sessionId) {
+        return ResponseEntity.ok(reportService.getReportsBySessionId(sessionId));
     }
 
     @GetMapping("/session-code/{sessionCode}")
     public ResponseEntity<List<EmotionReport>> getReportsBySessionCode(@PathVariable String sessionCode) {
-        List<EmotionReport> reports = reportService.getReportsBySessionCode(sessionCode);
-        return ResponseEntity.ok(reports);
-    }
-
-    @GetMapping("/session-id/{sessionId}")
-    public ResponseEntity<List<EmotionReport>> getReportsByNumericSessionId(@PathVariable Long sessionId) {
-        List<EmotionReport> reports = reportService.getReportsByNumericSessionId(sessionId);
-        return ResponseEntity.ok(reports);
+        return ResponseEntity.ok(reportService.getReportsBySessionCode(sessionCode));
     }
 
     @GetMapping("/count")
-    public ResponseEntity<Integer> getReportCountBySessionCode(@RequestParam String sessionCode) {
-        Integer count = reportService.getReportCountBySessionCode(sessionCode);
-        return ResponseEntity.ok(count);
+    public ResponseEntity<Integer> getReportCountBySessionId(@RequestParam Long sessionId) {
+        return ResponseEntity.ok(reportService.getReportCountBySessionId(sessionId));
     }
 
     @GetMapping("/participants/count")
-    public ResponseEntity<Long> getParticipantCountBySessionCode(@RequestParam String sessionCode) {
-        Long count = reportService.getDistinctParticipantCountBySessionCode(sessionCode);
-        return ResponseEntity.ok(count);
+    public ResponseEntity<Long> getParticipantCountBySessionId(@RequestParam Long sessionId) {
+        return ResponseEntity.ok(reportService.getDistinctParticipantCountBySessionId(sessionId));
     }
 
     @GetMapping("/student/{studentLoginIdentity}")
-    public ResponseEntity<List<EmotionReport>> getStudentReports(
-            @PathVariable String studentLoginIdentity) {
-        List<EmotionReport> reports = reportService.getReportsByStudentLoginIdentity(studentLoginIdentity);
-        return ResponseEntity.ok(reports);
+    public ResponseEntity<List<EmotionReport>> getStudentReports(@PathVariable String studentLoginIdentity) {
+        return ResponseEntity.ok(reportService.getReportsByStudentLoginIdentity(studentLoginIdentity));
     }
 
     @GetMapping("/student/{studentLoginIdentity}/statistics")
-    public ResponseEntity<Map<String, Object>> getStudentStatistics(
-            @PathVariable String studentLoginIdentity) {
-        Map<String, Object> stats = reportService.getStudentStatistics(studentLoginIdentity);
-        return ResponseEntity.ok(stats);
+    public ResponseEntity<Map<String, Object>> getStudentStatistics(@PathVariable String studentLoginIdentity) {
+        return ResponseEntity.ok(reportService.getStudentStatistics(studentLoginIdentity));
     }
 
     @GetMapping
     public ResponseEntity<List<EmotionReport>> getAllReports() {
-        List<EmotionReport> reports = reportService.getAllReports();
-        return ResponseEntity.ok(reports);
+        return ResponseEntity.ok(reportService.getAllReports());
     }
 
     @GetMapping("/date-range")
     public ResponseEntity<List<EmotionReport>> getReportsByDateRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
-        List<EmotionReport> reports = reportService.getReportsByDateRange(start, end);
-        return ResponseEntity.ok(reports);
+        return ResponseEntity.ok(reportService.getReportsByDateRange(start, end));
     }
 
     @GetMapping("/student/{studentLoginIdentity}/date-range")
@@ -115,19 +97,15 @@ public class EmotionReportController {
             @PathVariable String studentLoginIdentity,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
-        List<EmotionReport> reports = reportService.getStudentReportsByDateRange(
-            studentLoginIdentity, start, end
-        );
-        return ResponseEntity.ok(reports);
+        return ResponseEntity.ok(reportService.getStudentReportsByDateRange(studentLoginIdentity, start, end));
     }
 
     @PatchMapping("/{id}/note")
-    public ResponseEntity<?> updateNote(
-            @PathVariable Long id,
-            @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> updateNote(@PathVariable Long id, @RequestBody Map<String, String> body) {
         String note = body.getOrDefault("note", "");
         return reportService.updateInstructorNote(id, note)
-                .<ResponseEntity<?>>map(r -> ResponseEntity.ok(Map.of("id", r.getId(), "note", r.getInstructorNote() != null ? r.getInstructorNote() : "")))
+                .<ResponseEntity<?>>map(r -> ResponseEntity.ok(
+                    Map.of("id", r.getId(), "note", r.getInstructorNote() != null ? r.getInstructorNote() : "")))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -140,11 +118,10 @@ public class EmotionReportController {
         ));
     }
 
-    @GetMapping("/emotions/live/{sessionCode}/{studentLoginIdentity}")
+    @GetMapping("/emotions/live/{sessionKey}/{studentLoginIdentity}")
     public ResponseEntity<List<String>> getLiveTimeline(
-            @PathVariable String sessionCode,
+            @PathVariable String sessionKey,
             @PathVariable String studentLoginIdentity) {
-        List<String> timeline = reportService.getLiveTimelineFromRedis(sessionCode, studentLoginIdentity);
-        return ResponseEntity.ok(timeline);
+        return ResponseEntity.ok(reportService.getLiveTimelineFromRedis(sessionKey, studentLoginIdentity));
     }
 }

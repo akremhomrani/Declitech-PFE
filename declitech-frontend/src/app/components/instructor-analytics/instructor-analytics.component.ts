@@ -6,9 +6,9 @@ import { NavbarComponent } from '../../shared/navbar/navbar.component';
 import { SidebarComponent } from '../../shared/sidebar/sidebar.component';
 import { SessionService } from '../../services/session.service';
 import { AuthService } from '../../services/auth.service';
-import { ModuleService } from '../../services/module.service';
+import { IamService } from '../../services/iam.service';
+import { IamModule } from '../../models/iam/iam-site.model';
 import { SessionHistory } from '../../models/session';
-import { Module } from '../../models/module';
 
 export interface MonthBar {
   label: string;
@@ -57,7 +57,7 @@ export class InstructorAnalyticsComponent implements OnInit, OnDestroy {
 
   allSessions: SessionHistory[] = [];
   filteredSessions: SessionHistory[] = [];
-  modules: Module[] = [];
+  modules: IamModule[] = [];
 
   // ── Active module filter ───────────────────────────────
   selectedModuleId: number | null | 'all' = 'all';
@@ -91,12 +91,12 @@ export class InstructorAnalyticsComponent implements OnInit, OnDestroy {
   largestClass: SessionHistory | null = null;
 
   private rafHandles: number[] = [];
-  private timeouts: any[]      = [];
+  private timeouts: ReturnType<typeof setTimeout>[] = [];
 
   constructor(
     private sessionService: SessionService,
     private authService: AuthService,
-    private moduleService: ModuleService,
+    private iamService: IamService,
     private router: Router,
     private zone: NgZone
   ) {}
@@ -116,13 +116,13 @@ export class InstructorAnalyticsComponent implements OnInit, OnDestroy {
 
   private startPolling(): void {
     const isInstructor = this.authService.getRole() === 'INSTRUCTOR';
-    const filters: any = {};
+    const filters: { instructorUsername?: string } = {};
     if (isInstructor) filters.instructorUsername = this.instructorUsername;
 
-    // Load modules once (they rarely change) then poll sessions
-    this.moduleService.getAllModules().subscribe({
-      next: (modules) => {
-        this.modules = modules;
+    // Load modules from IAM once (they rarely change) then poll sessions
+    this.iamService.getSites().subscribe({
+      next: (sites) => {
+        this.modules = sites.flatMap(s => s.salles.flatMap(sa => sa.modules));
 
         this.pollSub = interval(this.POLL_INTERVAL_MS).pipe(
           startWith(0),                      // fire immediately on subscribe
@@ -154,7 +154,7 @@ export class InstructorAnalyticsComponent implements OnInit, OnDestroy {
           }
         });
       },
-      error: () => { this.isLoading = false; }
+      error: () => { this.modules = []; this.isLoading = false; }
     });
   }
 
@@ -276,7 +276,7 @@ export class InstructorAnalyticsComponent implements OnInit, OnDestroy {
     const stats: ModuleStat[] = [];
     map.forEach((count, id) => {
       const mod  = id !== null ? this.modules.find(m => m.id === id) : null;
-      const name = mod ? mod.title : (id !== null ? `Module #${id}` : 'No Module');
+      const name = mod ? mod.name : (id !== null ? `Module #${id}` : 'No Module');
       stats.push({ id, name, count, animatedWidth: 0 });
     });
 

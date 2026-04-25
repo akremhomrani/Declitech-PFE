@@ -29,15 +29,11 @@ export class EmotionService {
   }
 
   getReportsBySessionId(sessionId: number): Observable<EmotionReport[]> {
-    return this.http.get<EmotionReport[]>(`${this.apiUrl}/session-id/${sessionId}`);
+    return this.http.get<EmotionReport[]>(`${this.apiUrl}/session/${sessionId}`);
   }
 
   getReportCountBySessionCode(sessionCode: string): Observable<number> {
     return this.http.get<number>(`${this.apiUrl}/count?sessionCode=${sessionCode}`);
-  }
-
-  getStudentStatistics(studentLoginIdentity: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}/student/${studentLoginIdentity}/statistics`);
   }
 
   getActiveStudents(): Observable<EmotionReport[]> {

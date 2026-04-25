@@ -5,6 +5,11 @@ import { tap, catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { LoginResponse, UserPayload } from '../models/auth';
 
+interface ValidateTokenResponse {
+  valid: boolean;
+  role?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -14,6 +19,7 @@ export class AuthService {
   private lastNameKey = 'user_last_name';
   private usernameKey = 'user_username';
   private roleKey = 'user_role';
+  private readonly POPUP_POLL_INTERVAL_MS = 500;
   private currentUserSubject = new BehaviorSubject<UserPayload | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
@@ -21,10 +27,6 @@ export class AuthService {
     this.loadUserInfo();
   }
 
-  /**
-   * Étape 1 SSO — Ouvre un popup IAM (style "Login with Google").
-   * Résout avec LoginResponse quand l'utilisateur se connecte avec succès.
-   */
   initiateSsoLogin(userType: 'student' | 'staff'): Observable<LoginResponse> {
     return new Observable(observer => {
       this.http.get<{ loginUrl: string }>(`${this.apiUrl}/sso/url`, {
@@ -43,7 +45,6 @@ export class AuthService {
             return;
           }
 
-          // Écouter le message envoyé par le popup après redirection
           const onMessage = (event: MessageEvent) => {
             if (event.origin !== window.location.origin) return;
 
@@ -61,10 +62,9 @@ export class AuthService {
             }
           };
 
-          // Détecter fermeture manuelle du popup
           const pollClosed = setInterval(() => {
             if (popup.closed) { cleanup(); observer.error(new Error('Connexion annulée')); }
-          }, 500);
+          }, this.POPUP_POLL_INTERVAL_MS);
 
           const cleanup = () => {
             clearInterval(pollClosed);
@@ -79,10 +79,6 @@ export class AuthService {
     });
   }
 
-  /**
-   * Étape 3 SSO — Échange le code IAM contre une session locale.
-   * Appelé par SsoCallbackComponent après redirection.
-   */
   handleSsoCallback(code: string, state: string): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/sso/callback`, { code, state }, {
       withCredentials: true
@@ -107,8 +103,8 @@ export class AuthService {
     );
   }
 
-  refreshToken(): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/refresh`, {}, {
+  refreshToken(): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/refresh`, {}, {
       withCredentials: true
     }).pipe(
       catchError(error => {
@@ -139,7 +135,7 @@ export class AuthService {
   }
 
   validateToken(): Observable<boolean> {
-    return this.http.get<any>(`${this.apiUrl}/validate`, {
+    return this.http.get<ValidateTokenResponse>(`${this.apiUrl}/validate`, {
       withCredentials: true
     }).pipe(
       map(response => response.valid === true),
@@ -151,7 +147,7 @@ export class AuthService {
   }
 
   validateTokenWithRole(): Observable<{ valid: boolean; role: string | null }> {
-    return this.http.get<any>(`${this.apiUrl}/validate`, {
+    return this.http.get<ValidateTokenResponse>(`${this.apiUrl}/validate`, {
       withCredentials: true
     }).pipe(
       map(response => ({

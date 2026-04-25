@@ -1,0 +1,117 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-admin}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./setup-databases.sql:/docker-entrypoint-initdb.d/00-setup.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  eureka-server:
+    build: ./eureka-server
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8761/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  gateway-service:
+    build: ./gateway-service
+    ports:
+      - "8080:8080"
+    env_file: .env
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    environment:
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      AGENT_SERVICE_URL: http://agent-service:8765
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
+
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "8083:8083"
+    env_file: .env
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    environment:
+      EUREKA_URL: http://eureka-server:8761/eureka/
+
+  session-service:
+    build: ./session-service
+    ports:
+      - "8084:8084"
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/declitech_sessions
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      REPORT_SERVICE_URL: http://report-service:8081
+
+  report-service:
+    build: ./report-service
+    ports:
+      - "8081:8081"
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/declitech_reports
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      EUREKA_URL: http://eureka-server:8761/eureka/
+
+  agent-service:
+    build: ./agent-service
+    ports:
+      - "8765:8765"
+    env_file: ./agent-service/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_BOOT_URL: http://report-service:8081
+      SESSION_SERVICE_URL: http://session-service:8084
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    profiles:
+      - testing
+    # Camera is unavailable inside Docker.
+    # For real emotion-detection sessions run: python main.py (local dev)
+    # For integration tests: docker compose --profile testing up agent-service
+
+volumes:
+  postgres_data:

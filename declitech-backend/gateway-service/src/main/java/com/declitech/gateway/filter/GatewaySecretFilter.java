@@ -11,8 +11,8 @@ import reactor.core.publisher.Mono;
 
 /**
  * Injects the X-Gateway-Secret header into every downstream request.
- * Downstream services (session-service, module-service, etc.) check for this
- * header to ensure they are only called through the gateway, not directly.
+ * Downstream services check for this header to ensure they are only called
+ * through the gateway, not directly.
  */
 @Component
 public class GatewaySecretFilter implements GlobalFilter, Ordered {

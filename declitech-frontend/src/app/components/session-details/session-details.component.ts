@@ -59,6 +59,15 @@ export class SessionDetailsComponent implements OnInit {
   isSavingNote: boolean = false;
   noteSaved: boolean = false;
 
+  private readonly PDF_A4_WIDTH_MM = 210;
+  private readonly PDF_A4_HEIGHT_MM = 297;
+  private readonly ALERT_HIGH_THRESHOLD = 0.3;
+  private readonly ALERT_MED_THRESHOLD = 0.2;
+  private readonly NOTE_SAVED_MS = 3_000;
+  private readonly PDF_RENDER_WAIT_MS = 100;
+  private readonly PDF_CLONE_WAIT_MS = 150;
+  private readonly STUDENT_ID_OFFSET = 1_000;
+
   constructor(
     private route: ActivatedRoute,
     private emotionService: EmotionService,
@@ -73,7 +82,7 @@ export class SessionDetailsComponent implements OnInit {
     }
   }
 
-  loadSessionDetails(): void {
+  private loadSessionDetails(): void {
     if (!this.sessionId) return;
 
     this.isLoading = true;
@@ -89,7 +98,7 @@ export class SessionDetailsComponent implements OnInit {
     });
   }
 
-  loadSessionReports(): void {
+  private loadSessionReports(): void {
     if (!this.sessionCode) return;
 
     this.emotionService.getReportsBySessionCode(this.sessionCode).subscribe({
@@ -117,14 +126,14 @@ export class SessionDetailsComponent implements OnInit {
     });
   }
 
-  transformReportsToStudents(reports: EmotionReport[]): StudentReport[] {
+  private transformReportsToStudents(reports: EmotionReport[]): StudentReport[] {
     return reports.map((report, index) => {
       const focusScore = this.calculateFocusScore(report);
       const emotion = this.mapEmotionToLabel(report.dominantEmotion || 'neutral');
       const emotionColor = this.getEmotionColor(report.dominantEmotion || 'neutral');
 
       return {
-        id: `#${report.id || index + 1000}`,
+        id: `#${report.id || index + this.STUDENT_ID_OFFSET}`,
         name: report.studentLoginIdentity || 'Student',
         lastSessionDate: this.formatDate(report.generatedAt || report.createdAt || ''),
         avgFocusScore: focusScore,
@@ -136,7 +145,7 @@ export class SessionDetailsComponent implements OnInit {
     });
   }
 
-  calculateFocusScore(report: EmotionReport): number {
+  private calculateFocusScore(report: EmotionReport): number {
     const happy = (report.happyMean || 0) * 100;
     const neutral = (report.neutralMean || 0) * 100;
     const sad = (report.sadMean || 0) * 100;
@@ -148,7 +157,7 @@ export class SessionDetailsComponent implements OnInit {
     return Number(boundedScore.toFixed(2));
   }
 
-  mapEmotionToLabel(emotion: string): string {
+  private mapEmotionToLabel(emotion: string): string {
     const emotionMap: { [key: string]: string } = {
       'happy': 'Focused',
       'neutral': 'Steady',
@@ -161,7 +170,7 @@ export class SessionDetailsComponent implements OnInit {
     return emotionMap[emotion.toLowerCase()] || emotion;
   }
 
-  getEmotionColor(emotion: string): string {
+  private getEmotionColor(emotion: string): string {
     const colorMap: { [key: string]: string } = {
       'happy': 'teal',
       'neutral': 'slate',
@@ -174,15 +183,15 @@ export class SessionDetailsComponent implements OnInit {
     return colorMap[emotion.toLowerCase()] || 'slate';
   }
 
-  calculateAlerts(report: EmotionReport): number {
+  private calculateAlerts(report: EmotionReport): number {
     let alerts = 0;
-    if ((report.angryMean || 0) > 0.3) alerts++;
-    if ((report.fearMean || 0) > 0.3) alerts++;
-    if ((report.disgustMean || 0) > 0.2) alerts++;
+    if ((report.angryMean || 0) > this.ALERT_HIGH_THRESHOLD) alerts++;
+    if ((report.fearMean || 0) > this.ALERT_HIGH_THRESHOLD) alerts++;
+    if ((report.disgustMean || 0) > this.ALERT_MED_THRESHOLD) alerts++;
     return alerts;
   }
 
-  loadAlertCounts(): void {
+  private loadAlertCounts(): void {
     this.allStudents.forEach(student => {
       const identity = student.name;
       if (!identity || !this.sessionCode) return;
@@ -206,7 +215,7 @@ export class SessionDetailsComponent implements OnInit {
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
-  calculateStatistics(reports: EmotionReport[]): void {
+  private calculateStatistics(reports: EmotionReport[]): void {
     if (reports.length === 0) {
       this.classAvgFocus = 0;
       this.mostCommonEmotion = 'No data';
@@ -239,7 +248,7 @@ export class SessionDetailsComponent implements OnInit {
     else this.participationScore = 'D';
   }
 
-  updateDisplayedStudents(): void {
+  private updateDisplayedStudents(): void {
     const startIndex = (this.currentPage - 1) * this.resultsPerPage;
     const endIndex = startIndex + this.resultsPerPage;
     this.students = this.allStudents.slice(startIndex, endIndex);
@@ -276,9 +285,7 @@ export class SessionDetailsComponent implements OnInit {
       this.noteSaved = false;
       this.isReportModalOpen = true;
 
-      // Load persisted alerts for this student
-      // this.sessionCode is always the clean code (e.g. "VU5ZGO")
-      // sessionId_legacy has "SESSION-VU5ZGO" prefix from Python agent — never use it here
+      // sessionCode is always the clean code (e.g. "VU5ZGO"), never "SESSION-VU5ZGO" from legacy Python agent
       const sessionId = this.sessionCode || this.selectedEmotionReport?.sessionCode || '';
       const identity = this.selectedEmotionReport?.studentLoginIdentity
         || this.selectedStudent?.name
@@ -314,16 +321,14 @@ export class SessionDetailsComponent implements OnInit {
 
   saveNote(): void {
     if (!this.selectedEmotionReport?.id || this.isSavingNote) return;
-    console.log('[Note] saving for reportId=', this.selectedEmotionReport.id, 'note=', this.noteText);
     this.isSavingNote = true;
     this.noteSaved = false;
     this.emotionService.updateInstructorNote(this.selectedEmotionReport.id, this.noteText).subscribe({
       next: (res) => {
-        console.log('[Note] saved OK', res);
         if (this.selectedEmotionReport) this.selectedEmotionReport.instructorNote = this.noteText;
         this.isSavingNote = false;
         this.noteSaved = true;
-        setTimeout(() => { this.noteSaved = false; }, 3000);
+        setTimeout(() => { this.noteSaved = false; }, this.NOTE_SAVED_MS);
       },
       error: (err) => {
         console.error('[Note] error', err);
@@ -409,14 +414,9 @@ export class SessionDetailsComponent implements OnInit {
 
   getInitials(name: string): string {
     if (!name) return 'ST';
-
-    // Split by spaces or dots (e.g., 'ya.benattig' -> ['ya', 'benattig'])
     const parts = name.split(/[\s.]+/).filter(p => p.length > 0);
-
     if (parts.length === 0) return 'ST';
     if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-
-    // Take first letter of first two parts
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
 
@@ -427,13 +427,12 @@ export class SessionDetailsComponent implements OnInit {
     try {
       this.isExportingPdf = true;
 
-      // Wait for Angular change detection to flush
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Angular change detection must flush before cloning DOM state
+      await new Promise(resolve => setTimeout(resolve, this.PDF_RENDER_WAIT_MS));
 
       // Clone the entire modal so we can expand it without affecting UI
       const clone = modalElement.cloneNode(true) as HTMLElement;
 
-      // Show print header, hide sticky interactive header
       const clonePrintHeaders = clone.querySelectorAll('.print-header');
       clonePrintHeaders.forEach(el => {
         (el as HTMLElement).style.display = 'flex';
@@ -442,7 +441,6 @@ export class SessionDetailsComponent implements OnInit {
       const cloneSticky = clone.querySelectorAll('[data-html2canvas-ignore]');
       cloneSticky.forEach(el => (el as HTMLElement).style.display = 'none');
 
-      // Remove interactive-only elements (export button, close button)
       const ignoredEls = clone.querySelectorAll('[data-html2canvas-ignore]');
       ignoredEls.forEach(el => el.parentNode?.removeChild(el));
 
@@ -459,8 +457,8 @@ export class SessionDetailsComponent implements OnInit {
       clone.style.backgroundColor = '#ffffff';
       document.body.appendChild(clone);
 
-      // Small delay to ensure clone is rendered
-      await new Promise(resolve => setTimeout(resolve, 150));
+      // Small delay to ensure clone is fully rendered before capture
+      await new Promise(resolve => setTimeout(resolve, this.PDF_CLONE_WAIT_MS));
 
       const canvas = await html2canvas(clone, {
         scale: 2,
@@ -473,11 +471,10 @@ export class SessionDetailsComponent implements OnInit {
         windowHeight: clone.scrollHeight
       });
 
-      // Remove clone from DOM
       document.body.removeChild(clone);
 
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
+      const imgWidth = this.PDF_A4_WIDTH_MM;
+      const pageHeight = this.PDF_A4_HEIGHT_MM;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
       const pdf = new jsPDF('p', 'mm', 'a4');

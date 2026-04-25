@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface ReportServiceClient {
 
     @GetMapping("/api/reports/count")
-    Integer getReportCountBySessionCode(@RequestParam("sessionCode") String sessionCode);
+    Integer getReportCountBySessionId(@RequestParam("sessionId") Long sessionId);
 
     @GetMapping("/api/reports/participants/count")
-    Long getParticipantCountBySessionCode(@RequestParam("sessionCode") String sessionCode);
+    Long getParticipantCountBySessionId(@RequestParam("sessionId") Long sessionId);
 }

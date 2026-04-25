@@ -134,7 +134,7 @@ class AlertServiceTest {
         List<SessionAlert> result = alertService.flushAlertsToDb("SESS-001", "eya@declitech.com");
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getSessionId()).isEqualTo("SESS-001");
+        assertThat(result.get(0).getAlertType()).isEqualTo(AlertType.TAB_SWITCH);
         verify(alertRepository).saveAll(anyList());
         verify(redisTemplate).delete(anyString());
     }
@@ -185,10 +185,10 @@ class AlertServiceTest {
                 SessionAlert.builder().id(2L).alertType(AlertType.MOUSE_INACTIVITY).build()
         );
         when(alertRepository.findBySessionIdAndStudentLoginIdentityOrderByTimestampAsc(
-                "SESS-001", "eya@declitech.com")).thenReturn(expected);
+                "1", "eya@declitech.com")).thenReturn(expected);
 
         List<SessionAlert> result = alertService.getAlertsBySessionAndStudent(
-                "SESS-001", "eya@declitech.com");
+                "1", "eya@declitech.com");
 
         assertThat(result).hasSize(2);
         assertThat(result.get(0).getAlertType()).isEqualTo(AlertType.TAB_SWITCH);

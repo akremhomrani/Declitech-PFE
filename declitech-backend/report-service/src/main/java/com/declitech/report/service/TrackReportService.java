@@ -21,7 +21,8 @@ public class TrackReportService {
 
     @Transactional
     public TrackReportDTO createTrackReport(TrackReportDTO request) {
-        log.info("Creating formal tracked session report for student: {} in session: {}", request.getStudentIdentity(), request.getSessionCode());
+        log.info("Creating track report for student: {} in session: {}",
+                request.getStudentIdentity(), request.getSessionId());
 
         TrackReport report = TrackReport.builder()
                 .sessionId(request.getSessionId())
@@ -37,27 +38,27 @@ public class TrackReportService {
     }
 
     @Transactional(readOnly = true)
+    public List<TrackReportDTO> getTrackReportsBySessionId(String sessionId) {
+        return trackReportRepository.findBySessionId(sessionId)
+                .stream().map(this::convertToDTO).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
     public List<TrackReportDTO> getTrackReportsBySessionCode(String sessionCode) {
         return trackReportRepository.findBySessionCode(sessionCode)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                .stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<TrackReportDTO> getTrackReportsByStudentIdentity(String studentIdentity) {
         return trackReportRepository.findByStudentIdentity(studentIdentity)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                .stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<TrackReportDTO> getAllTrackReports() {
         return trackReportRepository.findAll()
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                .stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
     private TrackReportDTO convertToDTO(TrackReport report) {

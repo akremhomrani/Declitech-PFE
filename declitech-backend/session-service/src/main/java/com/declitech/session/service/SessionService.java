@@ -2,6 +2,7 @@ package com.declitech.session.service;
 
 import com.declitech.session.client.ReportServiceClient;
 import com.declitech.session.dto.CreateSessionRequest;
+import com.declitech.session.dto.JoinSessionResponse;
 import com.declitech.session.dto.PagedSessionResponse;
 import com.declitech.session.dto.SessionDTO;
 import com.declitech.session.dto.SessionFilterRequest;
@@ -34,6 +35,7 @@ public class SessionService {
     private final SessionRepository sessionRepository;
     private final SessionCodeGenerator codeGenerator;
     private final ReportServiceClient reportServiceClient;
+    private final SessionTokenService sessionTokenService;
 
     @Value("${declitech.session.duration-hours:1.5}")
     private Double defaultDurationHours;
@@ -79,7 +81,6 @@ public class SessionService {
     public SessionDTO getSessionByCode(String sessionCode) {
         Session session = sessionRepository.findBySessionCode(sessionCode)
                 .orElseThrow(() -> new RuntimeException("Session not found with code: " + sessionCode));
-
         return convertToDTO(session);
     }
 
@@ -91,60 +92,34 @@ public class SessionService {
     }
 
     @Transactional(readOnly = true)
-    public List<SessionDTO> getSessionsByInstructor(Long instructorId) {
-        List<Session> sessions = sessionRepository.findByInstructorIdAndStatus(instructorId, SessionStatus.ACTIVE);
-        return sessions.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
-    public List<SessionDTO> getActiveSessionsByInstructor(Long instructorId) {
-        List<Session> sessions = sessionRepository.findActiveSessionsByInstructorId(instructorId, LocalDateTime.now());
-        return sessions.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
     public List<SessionDTO> getSessionsByUsername(String username) {
         List<Session> sessions = sessionRepository.findByInstructorUsername(username);
-        return sessions.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        return sessions.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<SessionDTO> getActiveSessionsByUsername(String username) {
         List<Session> sessions = sessionRepository.findActiveSessionsByInstructorUsername(username, LocalDateTime.now());
-        return sessions.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        return sessions.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<SessionDTO> getAllActiveSessions() {
         List<Session> sessions = sessionRepository.findByStatus(SessionStatus.ACTIVE);
-        return sessions.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        return sessions.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<SessionDTO> getAllSessions() {
         List<Session> sessions = sessionRepository.findAll();
-        return sessions.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        return sessions.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<SessionDTO> getSessionsByModuleId(Long moduleId) {
         log.info("Fetching sessions for module ID: {}", moduleId);
         List<Session> sessions = sessionRepository.findByModuleId(moduleId);
-        return sessions.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        return sessions.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -155,12 +130,8 @@ public class SessionService {
             String sortBy,
             String sortDirection) {
 
-        if (page < 0) {
-            page = 0;
-        }
-        if (size <= 0 || size > 100) {
-            size = 10;
-        }
+        if (page < 0) page = 0;
+        if (size <= 0 || size > 100) size = 10;
 
         Sort sort = Sort.by(Sort.Direction.fromString(sortDirection.toUpperCase()), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
@@ -182,21 +153,38 @@ public class SessionService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
+    public JoinSessionResponse joinSession(String sessionCode, String studentLoginIdentity) {
+        Session session = sessionRepository.findBySessionCode(sessionCode)
+                .orElseThrow(() -> new RuntimeException("Session not found with code: " + sessionCode));
+
+        if (session.getStatus() != SessionStatus.ACTIVE) {
+            throw new RuntimeException("Session is not active");
+        }
+
+        String token = sessionTokenService.issueSessionToken(
+                session.getId(), session.getSessionCode(), studentLoginIdentity, session.getExpiresAt());
+
+        log.info("Student '{}' joined session code={}", studentLoginIdentity, sessionCode);
+
+        return JoinSessionResponse.builder()
+                .sessionToken(token)
+                .sessionId(session.getId())
+                .sessionCode(session.getSessionCode())
+                .sessionTitle(session.getTitle())
+                .expiresAt(session.getExpiresAt())
+                .build();
+    }
+
     @Transactional
     public SessionDTO deactivateSession(Long id) {
         Session session = sessionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Session not found with ID: " + id));
-        
+
         long minutesSinceCreation = java.time.Duration.between(session.getCreatedAt(), LocalDateTime.now()).toMinutes();
-        
-        if (minutesSinceCreation <= 5) {
-            session.setStatus(SessionStatus.CANCELLED);
-        } else {
-            session.setStatus(SessionStatus.ENDED);
-        }
-        
+        session.setStatus(minutesSinceCreation <= 5 ? SessionStatus.CANCELLED : SessionStatus.ENDED);
+
         session = sessionRepository.save(session);
-        
         return convertToDTO(session);
     }
 
@@ -205,11 +193,7 @@ public class SessionService {
     public void expireOldSessions() {
         LocalDateTime now = LocalDateTime.now();
         List<Session> expiredSessions = sessionRepository.findByStatusAndExpiresAtBefore(SessionStatus.ACTIVE, now);
-        
-        for (Session session : expiredSessions) {
-            session.setStatus(SessionStatus.EXPIRED);
-        }
-        
+        expiredSessions.forEach(s -> s.setStatus(SessionStatus.EXPIRED));
         sessionRepository.saveAll(expiredSessions);
     }
 
@@ -219,22 +203,22 @@ public class SessionService {
             long minutes = java.time.Duration.between(session.getCreatedAt(), session.getExpiresAt()).toMinutes();
             durationHours = minutes / 60.0;
         }
-        
+
         Integer actualParticipantCount = 0;
         Integer actualReportCount = 0;
         try {
-            Long participantCount = reportServiceClient.getParticipantCountBySessionCode(session.getSessionCode());
+            Long participantCount = reportServiceClient.getParticipantCountBySessionId(session.getId());
             actualParticipantCount = participantCount != null ? participantCount.intValue() : 0;
-            actualReportCount = reportServiceClient.getReportCountBySessionCode(session.getSessionCode());
+            actualReportCount = reportServiceClient.getReportCountBySessionId(session.getId());
             actualReportCount = actualReportCount != null ? actualReportCount : 0;
         } catch (Exception e) {
+            // report-service may be unavailable — counts default to 0
         }
-        
+
         return SessionDTO.builder()
                 .id(session.getId())
                 .sessionCode(session.getSessionCode())
                 .title(session.getTitle())
-                .instructorId(session.getInstructorId())
                 .instructorUsername(session.getInstructorUsername())
                 .instructorEmail(session.getInstructorEmail())
                 .moduleId(session.getModuleId())

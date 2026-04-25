@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import java.security.Key;
+import javax.crypto.SecretKey;
 import java.util.List;
 
 /**
@@ -33,11 +33,11 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
      * Order matters: more specific paths first.
      */
     private static final List<String> PUBLIC_PATHS = List.of(
-            "/api/auth/",         // login, SSO, refresh, logout
-            "/mock/",             // Mock IAM popup
-            "/api/alerts/",       // SSE stream + publish (EventSource + extension)
-            "/api/reports/track", // Python agent POST
-            "/actuator/"          // health checks
+            "/api/auth/",          // login, SSO, refresh, logout
+            "/mock/",              // Mock IAM popup
+            "/api/sessions/join/", // student joins with session code — no token yet
+            "/api/reports/track",  // Python agent posts directly to report-service (bypasses gateway)
+            "/actuator/"           // health checks
     );
 
     @Value("${jwt.secret}")
@@ -94,8 +94,8 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     }
 
     private void validateToken(String token) {
-        Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
-        Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
+        SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+        Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
     }
 
     private Mono<Void> writeUnauthorized(ServerWebExchange exchange, String message) {

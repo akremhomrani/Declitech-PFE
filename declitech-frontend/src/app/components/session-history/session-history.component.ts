@@ -7,14 +7,7 @@ import { SidebarComponent } from '../../shared/sidebar/sidebar.component';
 import { SessionService } from '../../services/session.service';
 import { AuthService } from '../../services/auth.service';
 import { SessionHistory, PagedSessionResponse } from '../../models/session';
-
-interface SessionFilters {
-  search?: string;
-  title?: string;
-  sessionCode?: string;
-  status?: string;
-  instructorUsername?: string;
-}
+import { SessionFilters } from '../../services/session.service';
 
 @Component({
   selector: 'app-session-history',
@@ -39,7 +32,8 @@ export class SessionHistoryComponent implements OnInit, OnDestroy {
   hasNext = false;
   hasPrevious = false;
 
-  private searchTimeout: any;
+  private readonly SEARCH_DEBOUNCE_MS = 500;
+  private searchTimeout: ReturnType<typeof setTimeout> | undefined;
 
   constructor(
     private sessionService: SessionService,
@@ -61,7 +55,7 @@ export class SessionHistoryComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadSessions(): void {
+  private loadSessions(): void {
     this.isLoading = true;
     const page = this.currentPage - 1;
 
@@ -124,7 +118,7 @@ export class SessionHistoryComponent implements OnInit, OnDestroy {
     this.searchTimeout = setTimeout(() => {
       this.currentPage = 1;
       this.loadSessions();
-    }, 500);
+    }, this.SEARCH_DEBOUNCE_MS);
   }
 
   onFilterChange(): void {

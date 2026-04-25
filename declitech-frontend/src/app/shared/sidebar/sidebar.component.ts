@@ -25,6 +25,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   isAdmin = false;
   isInstructor = false;
 
+  private readonly ALERT_REFRESH_INTERVAL_MS = 10_000;
   private subscription = new Subscription();
 
   constructor(
@@ -63,7 +64,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     );
 
     this.subscription.add(
-      interval(10000).subscribe(() => {
+      interval(this.ALERT_REFRESH_INTERVAL_MS).subscribe(() => {
         this.recentAlerts = [...this.recentAlerts];
       })
     );
@@ -89,12 +90,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   private updateRecentAlerts(): void {
-    const allAlerts = this.alertService.getAllRecentAlerts();
-    console.log('[Sidebar] updateRecentAlerts — total alerts from service:', allAlerts.length, allAlerts);
-    this.recentAlerts = allAlerts
+    this.recentAlerts = this.alertService.getAllRecentAlerts()
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, 4);
-    console.log('[Sidebar] recentAlerts after update:', this.recentAlerts);
   }
 
   getAlertColor(alert: Alert): string {

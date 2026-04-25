@@ -5,6 +5,7 @@ import com.declitech.session.model.SessionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -16,25 +17,18 @@ public interface SessionRepository extends JpaRepository<Session, Long>, JpaSpec
 
     Optional<Session> findBySessionCode(String sessionCode);
 
-    List<Session> findByInstructorId(Long instructorId);
-
     List<Session> findByInstructorUsername(String username);
 
     List<Session> findByInstructorUsernameAndStatus(String username, SessionStatus status);
 
     List<Session> findByStatus(SessionStatus status);
 
-    List<Session> findByInstructorIdAndStatus(Long instructorId, SessionStatus status);
-
     List<Session> findByModuleId(Long moduleId);
 
     List<Session> findByStatusAndExpiresAtBefore(SessionStatus status, LocalDateTime now);
 
-    @Query("SELECT s FROM Session s WHERE s.instructorId = :instructorId AND s.expiresAt > :now AND s.status = 'ACTIVE'")
-    List<Session> findActiveSessionsByInstructorId(Long instructorId, LocalDateTime now);
-
     @Query("SELECT s FROM Session s WHERE s.instructorUsername = :username AND s.expiresAt > :now AND s.status = 'ACTIVE'")
-    List<Session> findActiveSessionsByInstructorUsername(String username, LocalDateTime now);
+    List<Session> findActiveSessionsByInstructorUsername(@Param("username") String username, @Param("now") LocalDateTime now);
 
     boolean existsBySessionCode(String sessionCode);
 }

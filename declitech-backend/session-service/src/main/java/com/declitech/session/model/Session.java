@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
 
@@ -13,6 +15,8 @@ import java.time.LocalDateTime;
 @Table(name = "sessions", uniqueConstraints = {
     @UniqueConstraint(columnNames = "session_code")
 })
+@SQLDelete(sql = "UPDATE sessions SET deleted_at = NOW() WHERE id = ? AND version = ?")
+@SQLRestriction("deleted_at IS NULL")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,9 +32,6 @@ public class Session {
 
     @Column(name = "title", nullable = false, length = 200)
     private String title;
-
-    @Column(name = "instructor_id")
-    private Long instructorId;
 
     @Column(name = "instructor_username")
     private String instructorUsername;
@@ -53,10 +54,16 @@ public class Session {
     @Builder.Default
     private SessionStatus status = SessionStatus.ACTIVE;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
+
     @PrePersist
     protected void onCreate() {
         if (expiresAt == null && createdAt != null) {
-            // Default: 1.5 hours duration
             expiresAt = createdAt.plusMinutes(90);
         }
     }

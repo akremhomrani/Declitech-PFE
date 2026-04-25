@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { EmotionService } from '../../services/emotion.service';
 import { SessionService } from '../../services/session.service';
 import { AlertService } from '../../services/alert.service';
-import { Alert } from '../../models/alert';
 import { EmotionReport, SessionStatistics } from '../../models/emotion-report.model';
 import { interval, Subscription, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
@@ -20,6 +19,7 @@ import { SidebarComponent } from '../../shared/sidebar/sidebar.component';
 export class DashboardComponent implements OnInit, OnDestroy {
   students: EmotionReport[] = [];
   activeSessionCode: string = '';
+  activeSessionId: number | undefined;
   activeTab: string = 'monitoring';
   statistics: SessionStatistics = {
     totalStudents: 30,
@@ -29,6 +29,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     averageAttention: 0
   };
 
+  private readonly REFRESH_INTERVAL_MS = 5_000;
   private refreshSubscription?: Subscription;
   private sessionSubscription?: Subscription;
   private alertSubscription?: Subscription;
@@ -42,14 +43,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.sessionSubscription = this.sessionService.sessionData$.subscribe(session => {
       this.activeSessionCode = session?.code || '';
-      console.log('[Dashboard] Session code:', this.activeSessionCode);
+      this.activeSessionId = session?.id;
 
       if (this.activeSessionCode) {
-        console.log('[Dashboard] Connecting to SSE for session:', this.activeSessionCode);
         this.alertService.connectToSession(this.activeSessionCode);
         this.subscribeToAlerts();
       } else {
-        console.log('[Dashboard] No session code — disconnecting SSE');
         this.alertService.disconnect();
       }
 
@@ -72,7 +71,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.alertService.disconnect();
   }
 
-  loadStudents() {
+  private loadStudents() {
     if (!this.activeSessionCode) {
       this.students = [];
       this.calculateStatistics();
@@ -88,8 +87,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  startAutoRefresh() {
-    this.refreshSubscription = interval(5000)
+  private startAutoRefresh() {
+    this.refreshSubscription = interval(this.REFRESH_INTERVAL_MS)
       .pipe(
         switchMap(() => {
           if (!this.activeSessionCode) {
@@ -107,26 +106,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
       });
   }
 
-  subscribeToAlerts() {
+  private subscribeToAlerts() {
     if (this.alertSubscription) {
       this.alertSubscription.unsubscribe();
     }
     this.alertSubscription = this.alertService.alerts$.subscribe({
-      next: (alert: Alert) => {
-        console.log('[Dashboard] Alert received from stream:', alert);
-        console.log('[Dashboard] Current students identities:', this.students.map(s => s.studentLoginIdentity));
+      next: () => {
         this.students = [...this.students];
         this.calculateStatistics();
-        // Check border state for each student after alert
-        this.students.forEach(s => {
-          console.log(`[Dashboard] Student "${s.studentLoginIdentity}" — hasAnyAlert: ${this.hasAnyAlert(s)}, hasTabSwitch: ${this.hasTabSwitchAlert(s)}, hasMouseInactivity: ${this.hasMouseInactivityAlert(s)}`);
-        });
       },
       error: (err) => { console.error('[Dashboard] Alert stream error:', err); }
     });
   }
 
-  calculateStatistics() {
+  private calculateStatistics() {
     this.statistics.connectedStudents = this.students.filter(s => s.status === 'IN_PROGRESS').length;
     this.statistics.focusedStudents = this.students.filter(s =>
       s.status === 'IN_PROGRESS' && (s.dominantEmotion === 'happy' || s.dominantEmotion === 'neutral')

@@ -3,4 +3,4 @@
 
 CREATE DATABASE declitech_reports;
 CREATE DATABASE declitech_sessions;
-CREATE DATABASE declitech_modules;
+-- declitech_modules DROPPED: modules are managed in IAM (external source of truth)

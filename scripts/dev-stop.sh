@@ -57,7 +57,6 @@ port_of() {
     auth)     echo 8083 ;;
     session)  echo 8084 ;;
     report)   echo 8081 ;;
-    module)   echo 8085 ;;
     gateway)  echo 8080 ;;
     agent)    echo 8765 ;;
     frontend) echo 4200 ;;
@@ -68,7 +67,7 @@ port_of() {
 # ── Stop one ──────────────────────────────────────────────────────────────────
 stop_one() {
   local port; port=$(port_of "$TARGET")
-  [[ -z "$port" ]] && { fail "Unknown: $TARGET. Valid: redis eureka auth session report module gateway agent frontend"; exit 1; }
+  [[ -z "$port" ]] && { fail "Unknown: $TARGET. Valid: redis eureka auth session report gateway agent frontend"; exit 1; }
   kill_service "$TARGET" "$port"
   if ! $KEEP_LOGS; then
     rm -f "$LOG_DIR/$TARGET.log"
@@ -79,7 +78,7 @@ stop_one() {
 # ── Stop all ──────────────────────────────────────────────────────────────────
 stop_all() {
   log "Stopping all services..."
-  for svc in redis eureka auth session report module gateway agent frontend; do
+  for svc in redis eureka auth session report gateway agent frontend; do
     kill_service "$svc" "$(port_of $svc)"
   done
 

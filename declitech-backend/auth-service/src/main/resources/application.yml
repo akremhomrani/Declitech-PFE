@@ -19,6 +19,10 @@ eureka:
     hostname: localhost
     prefer-ip-address: true
 
+# Cookie security — false for local HTTP dev, true in production (HTTPS)
+cookie:
+  secure: ${COOKIE_SECURE:false}
+
 # JWT Configuration
 jwt:
   secret: ${JWT_SECRET:ZGVjbGl0ZWNoLXNlY3VyZS1rZXktZm9yLWp3dC10b2tlbi1nZW5lcmF0aW9uLTIwMjYtdmVyeS1zZWN1cmUtY2hhbmdlLWluLXByb2R1Y3Rpb24=}
@@ -33,7 +37,7 @@ management:
         include: health,info,metrics
   endpoint:
     health:
-      show-details: always
+      show-details: ${ACTUATOR_SHOW_DETAILS:when-authorized}
 
 sso:
   iam-base-url: http://localhost:8083

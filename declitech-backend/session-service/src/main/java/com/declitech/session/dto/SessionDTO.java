@@ -16,7 +16,6 @@ public class SessionDTO {
     private Long id;
     private String sessionCode;
     private String title;
-    private Long instructorId;
     private String instructorUsername;
     private String instructorEmail;
     private Long moduleId;

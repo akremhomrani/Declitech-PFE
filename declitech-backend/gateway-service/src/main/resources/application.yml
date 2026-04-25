@@ -44,15 +44,28 @@ spring:
           predicates:
             - Path=/api/reports/**
 
+        - id: sessions-join
+          uri: ${SESSION_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/sessions/join/**
+            - Method=POST
+
         - id: sessions
           uri: ${SESSION_SERVICE_URL:http://localhost:8084}
           predicates:
             - Path=/api/sessions/**
 
-        - id: modules
-          uri: ${MODULE_SERVICE_URL:http://localhost:8085}
+        - id: iam-referential
+          uri: ${SESSION_SERVICE_URL:http://localhost:8084}
           predicates:
-            - Path=/api/modules/**
+            - Path=/api/iam/**
+
+        - id: agent-service
+          uri: ${AGENT_SERVICE_URL:http://localhost:8765}
+          predicates:
+            - Path=/api/agent/**
+          filters:
+            - AddRequestHeader=X-Gateway-Secret, ${gateway.secret}
 
       default-filters:
         - name: AddResponseHeader
@@ -89,7 +102,10 @@ spring:
               - PATCH
               - OPTIONS
             allowedHeaders:
-              - '*'
+              - Content-Type
+              - Authorization
+              - X-Requested-With
+              - X-Gateway-Secret
             allowCredentials: true
             exposedHeaders:
               - Authorization
@@ -116,7 +132,7 @@ management:
         include: health,info,metrics,gateway
   endpoint:
     health:
-      show-details: always
+      show-details: ${ACTUATOR_SHOW_DETAILS:when-authorized}
 
 logging:
   level:

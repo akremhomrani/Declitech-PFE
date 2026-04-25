@@ -5,5 +5,5 @@ export interface Alert {
   severity: 'LOW' | 'MEDIUM' | 'HIGH';
   message: string;
   timestamp: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }

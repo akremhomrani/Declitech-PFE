@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -28,6 +29,8 @@ class EmotionReportServiceTest {
 
     @Mock private EmotionReportRepository reportRepository;
     @Mock private ObjectMapper objectMapper;
+    @Mock private StringRedisTemplate redisTemplate;
+    @Mock private AlertService alertService;
 
     @InjectMocks
     private EmotionReportService reportService;
@@ -39,12 +42,12 @@ class EmotionReportServiceTest {
     void setUp() {
         sampleReport = new EmotionReport();
         sampleReport.setId(1L);
-        sampleReport.setSessionCode("SESSION-ABC");
+        sampleReport.setSessionId(42L);
         sampleReport.setStudentLoginIdentity("eya@declitech.com");
-        sampleReport.setHappyMean(0.7);
-        sampleReport.setAngryMean(0.05);
-        sampleReport.setSadMean(0.05);
-        sampleReport.setFearMean(0.05);
+        sampleReport.setEmotionMeans(Map.of(
+                "happy", 0.7, "sad", 0.05, "angry", 0.05,
+                "fear", 0.05, "neutral", 0.1, "disgust", 0.03, "surprise", 0.02
+        ));
         sampleReport.setFinalState("SATISFAIT_ENGAGE");
         sampleReport.setDominantEmotion("happy");
         sampleReport.setGeneratedAt(LocalDateTime.now());
@@ -62,8 +65,8 @@ class EmotionReportServiceTest {
         finalState.setFinalSentence("L'enfant semble satisfait et engagé pendant la séance.");
 
         sampleDTO = new EmotionReportDTO();
-        sampleDTO.setSessionId("SESSION-ABC");
-        sampleDTO.setSessionCode("SESSION-ABC");
+        sampleDTO.setSessionId("SESSION-42");
+        sampleDTO.setSessionCode("SESSION-42");
         sampleDTO.setStudentLoginIdentity("eya@declitech.com");
         sampleDTO.setGeneratedAt(LocalDateTime.now());
         sampleDTO.setSummaryMean(summaryMean);
@@ -78,13 +81,13 @@ class EmotionReportServiceTest {
     @Test
     @DisplayName("saveReportFromDTO - nouveau rapport → sauvegardé en DB")
     void saveReportFromDTO_NewReport_ShouldPersistCorrectly() {
-        when(reportRepository.findBySessionId("SESSION-ABC")).thenReturn(Optional.empty());
+        when(reportRepository.findBySessionIdAndStudentLoginIdentity(42L, "eya@declitech.com"))
+                .thenReturn(Optional.empty());
         when(reportRepository.save(any(EmotionReport.class))).thenReturn(sampleReport);
 
         EmotionReport result = reportService.saveReportFromDTO(sampleDTO);
 
         assertThat(result).isNotNull();
-        assertThat(result.getSessionCode()).isEqualTo("SESSION-ABC");
         assertThat(result.getDominantEmotion()).isEqualTo("happy");
         assertThat(result.getFinalState()).isEqualTo("SATISFAIT_ENGAGE");
         verify(reportRepository).save(any(EmotionReport.class));
@@ -93,76 +96,61 @@ class EmotionReportServiceTest {
     @Test
     @DisplayName("saveReportFromDTO - rapport existant → mis à jour (pas de doublon)")
     void saveReportFromDTO_ExistingReport_ShouldUpdateAndNotDuplicate() {
-        when(reportRepository.findBySessionId("SESSION-ABC")).thenReturn(Optional.of(sampleReport));
+        when(reportRepository.findBySessionIdAndStudentLoginIdentity(42L, "eya@declitech.com"))
+                .thenReturn(Optional.of(sampleReport));
         when(reportRepository.save(any(EmotionReport.class))).thenReturn(sampleReport);
 
         EmotionReport result = reportService.saveReportFromDTO(sampleDTO);
 
         assertThat(result).isNotNull();
-        // Vérifie qu'on sauvegarde le rapport existant, pas un nouveau
         verify(reportRepository, times(1)).save(sampleReport);
     }
 
     // =========================================================
-    //  getReportBySessionId()
+    //  getReportsBySessionId()
     // =========================================================
 
     @Test
-    @DisplayName("getReportBySessionId - rapport existant → Optional.of(rapport)")
-    void getReportBySessionId_Exists_ShouldReturnReport() {
-        when(reportRepository.findBySessionId("SESSION-ABC")).thenReturn(Optional.of(sampleReport));
+    @DisplayName("getReportsBySessionId - rapport existant → liste avec un élément")
+    void getReportsBySessionId_Exists_ShouldReturnList() {
+        when(reportRepository.findBySessionId(42L)).thenReturn(List.of(sampleReport));
 
-        Optional<EmotionReport> result = reportService.getReportBySessionId("SESSION-ABC");
-
-        assertThat(result).isPresent();
-        assertThat(result.get().getSessionCode()).isEqualTo("SESSION-ABC");
-    }
-
-    @Test
-    @DisplayName("getReportBySessionId - rapport absent → Optional.empty()")
-    void getReportBySessionId_NotFound_ShouldReturnEmptyOptional() {
-        when(reportRepository.findBySessionId("UNKNOWN")).thenReturn(Optional.empty());
-
-        Optional<EmotionReport> result = reportService.getReportBySessionId("UNKNOWN");
-
-        assertThat(result).isEmpty();
-    }
-
-    // =========================================================
-    //  getReportsBySessionCode()
-    // =========================================================
-
-    @Test
-    @DisplayName("getReportsBySessionCode - retourne la liste des rapports pour la session")
-    void getReportsBySessionCode_ShouldReturnList() {
-        when(reportRepository.findBySessionCode("SESSION-ABC")).thenReturn(List.of(sampleReport));
-
-        List<EmotionReport> result = reportService.getReportsBySessionCode("SESSION-ABC");
+        List<EmotionReport> result = reportService.getReportsBySessionId(42L);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getStudentLoginIdentity()).isEqualTo("eya@declitech.com");
     }
 
+    @Test
+    @DisplayName("getReportsBySessionId - aucun rapport → liste vide")
+    void getReportsBySessionId_NotFound_ShouldReturnEmptyList() {
+        when(reportRepository.findBySessionId(999L)).thenReturn(Collections.emptyList());
+
+        List<EmotionReport> result = reportService.getReportsBySessionId(999L);
+
+        assertThat(result).isEmpty();
+    }
+
     // =========================================================
-    //  getReportCountBySessionCode()
+    //  getReportCountBySessionId()
     // =========================================================
 
     @Test
-    @DisplayName("getReportCountBySessionCode - retourne le bon compte")
-    void getReportCountBySessionCode_ShouldReturnCorrectCount() {
-        when(reportRepository.countBySessionCode("SESSION-ABC")).thenReturn(5);
+    @DisplayName("getReportCountBySessionId - retourne le bon compte")
+    void getReportCountBySessionId_ShouldReturnCorrectCount() {
+        when(reportRepository.countBySessionId(42L)).thenReturn(5);
 
-        Integer count = reportService.getReportCountBySessionCode("SESSION-ABC");
+        Integer count = reportService.getReportCountBySessionId(42L);
 
         assertThat(count).isEqualTo(5);
     }
 
     @Test
-    @DisplayName("getReportCountBySessionCode - repository retourne null → retourne 0")
-    void getReportCountBySessionCode_NullFromRepo_ShouldReturnZero() {
-        when(reportRepository.countBySessionCode("SESSION-XYZ")).thenReturn(null);
+    @DisplayName("getReportCountBySessionId - repository retourne null → retourne 0")
+    void getReportCountBySessionId_NullFromRepo_ShouldReturnZero() {
+        when(reportRepository.countBySessionId(99L)).thenReturn(null);
 
-        Integer count = reportService.getReportCountBySessionCode("SESSION-XYZ");
+        Integer count = reportService.getReportCountBySessionId(99L);
 
         assertThat(count).isEqualTo(0);
     }
@@ -200,25 +188,25 @@ class EmotionReportServiceTest {
     }
 
     // =========================================================
-    //  getDistinctParticipantCountBySessionCode()
+    //  getDistinctParticipantCountBySessionId()
     // =========================================================
 
     @Test
-    @DisplayName("getDistinctParticipantCountBySessionCode - retourne le bon nombre de participants")
+    @DisplayName("getDistinctParticipantCountBySessionId - retourne le bon nombre de participants")
     void getDistinctParticipantCount_ShouldReturnCorrectCount() {
-        when(reportRepository.countDistinctParticipantsBySessionCode("SESSION-ABC")).thenReturn(12L);
+        when(reportRepository.countDistinctParticipantsBySessionId(42L)).thenReturn(12L);
 
-        Long count = reportService.getDistinctParticipantCountBySessionCode("SESSION-ABC");
+        Long count = reportService.getDistinctParticipantCountBySessionId(42L);
 
         assertThat(count).isEqualTo(12L);
     }
 
     @Test
-    @DisplayName("getDistinctParticipantCountBySessionCode - null du repo → 0L")
+    @DisplayName("getDistinctParticipantCountBySessionId - null du repo → 0L")
     void getDistinctParticipantCount_NullFromRepo_ShouldReturnZero() {
-        when(reportRepository.countDistinctParticipantsBySessionCode("EMPTY")).thenReturn(null);
+        when(reportRepository.countDistinctParticipantsBySessionId(99L)).thenReturn(null);
 
-        Long count = reportService.getDistinctParticipantCountBySessionCode("EMPTY");
+        Long count = reportService.getDistinctParticipantCountBySessionId(99L);
 
         assertThat(count).isEqualTo(0L);
     }

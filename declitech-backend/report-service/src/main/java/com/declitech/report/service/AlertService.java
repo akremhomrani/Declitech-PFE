@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
@@ -35,7 +37,7 @@ public class AlertService {
     private final SessionAlertRepository alertRepository;
     private final ObjectMapper objectMapper;
 
-    // In-memory SSE emitters — keyed by sessionId
+    // In-memory SSE emitters — keyed by sessionId string (sessionCode or raw ID from client)
     private final Map<String, CopyOnWriteArrayList<SseEmitter>> sessionEmitters = new ConcurrentHashMap<>();
 
     // =========================================================
@@ -62,11 +64,8 @@ public class AlertService {
     // =========================================================
 
     public void saveAndBroadcast(AlertEvent alertEvent) {
-        // 1. SSE broadcast — ALWAYS, immediate, regardless of dedup
         broadcastToSession(alertEvent.getSessionId(), alertEvent);
 
-        // 2. Dedup — skip Redis write for repeated same alert within DEDUP_WINDOW_SECONDS
-        //    ALERT_RESOLVED is never deduped (we always want to record the return)
         if (alertEvent.getAlertType() != AlertType.ALERT_RESOLVED) {
             String dedupKey = REDIS_DEDUP_PREFIX
                     + alertEvent.getSessionId() + ":"
@@ -75,11 +74,10 @@ public class AlertService {
             Boolean isNew = redisTemplate.opsForValue()
                     .setIfAbsent(dedupKey, "1", DEDUP_WINDOW_SECONDS, TimeUnit.SECONDS);
             if (!Boolean.TRUE.equals(isNew)) {
-                return; // same alert already stored within dedup window
+                return;
             }
         }
 
-        // 3. Push to Redis buffer (flushes to DB when report is generated)
         String redisKey = REDIS_ALERT_PREFIX
                 + alertEvent.getSessionId() + ":"
                 + alertEvent.getStudentLoginIdentity();
@@ -109,14 +107,14 @@ public class AlertService {
     //  Flush Redis → PostgreSQL (called at report generation)
     // =========================================================
 
-    public List<SessionAlert> flushAlertsToDb(String sessionId, String studentLoginIdentity) {
-        String redisKey = REDIS_ALERT_PREFIX + sessionId + ":" + studentLoginIdentity;
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public List<SessionAlert> flushAlertsToDb(String sessionKey, String studentLoginIdentity) {
+        String redisKey = REDIS_ALERT_PREFIX + sessionKey + ":" + studentLoginIdentity;
         List<String> rawAlerts = redisTemplate.opsForList().range(redisKey, 0, -1);
 
         if (rawAlerts == null || rawAlerts.isEmpty()) {
-            // No Redis data — check if DB already has alerts (previous flush)
             return alertRepository.findBySessionIdAndStudentLoginIdentityOrderByTimestampAsc(
-                    sessionId, studentLoginIdentity);
+                    sessionKey, studentLoginIdentity);
         }
 
         List<SessionAlert> entities = rawAlerts.stream()
@@ -133,8 +131,8 @@ public class AlertService {
                 .collect(Collectors.toList());
 
         List<SessionAlert> saved = alertRepository.saveAll(entities);
-        redisTemplate.delete(redisKey); // Clear Redis after persisting
-        log.info("Flushed {} alerts to DB for session={} student={}", saved.size(), sessionId, studentLoginIdentity);
+        redisTemplate.delete(redisKey);
+        log.info("Flushed {} alerts to DB for session={} student={}", saved.size(), sessionKey, studentLoginIdentity);
         return saved;
     }
 
@@ -142,9 +140,9 @@ public class AlertService {
     //  Query from DB
     // =========================================================
 
-    public List<SessionAlert> getAlertsBySessionAndStudent(String sessionId, String studentLoginIdentity) {
+    public List<SessionAlert> getAlertsBySessionAndStudent(String sessionKey, String studentLoginIdentity) {
         return alertRepository.findBySessionIdAndStudentLoginIdentityOrderByTimestampAsc(
-                sessionId, studentLoginIdentity);
+                sessionKey, studentLoginIdentity);
     }
 
     // =========================================================
@@ -188,4 +186,5 @@ public class AlertService {
                 .switchCount(switchCount)
                 .build();
     }
+
 }

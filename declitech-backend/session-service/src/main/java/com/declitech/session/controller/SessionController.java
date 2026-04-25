@@ -1,6 +1,8 @@
 package com.declitech.session.controller;
 
 import com.declitech.session.dto.CreateSessionRequest;
+import com.declitech.session.dto.JoinSessionRequest;
+import com.declitech.session.dto.JoinSessionResponse;
 import com.declitech.session.dto.PagedSessionResponse;
 import com.declitech.session.dto.SessionDTO;
 import com.declitech.session.dto.SessionFilterRequest;
@@ -35,6 +37,14 @@ public class SessionController {
 
         SessionDTO session = sessionService.createSession(username, firstName, lastName, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(session);
+    }
+
+    @PostMapping("/join/{sessionCode}")
+    public ResponseEntity<JoinSessionResponse> joinSession(
+            @PathVariable String sessionCode,
+            @Valid @RequestBody JoinSessionRequest request) {
+        JoinSessionResponse response = sessionService.joinSession(sessionCode, request.getStudentLoginIdentity());
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/code/{sessionCode}")
@@ -79,18 +89,6 @@ public class SessionController {
                 filter, page, size, sortBy, sortDirection);
 
         return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/instructor/{instructorId}")
-    public ResponseEntity<List<SessionDTO>> getSessionsByInstructor(@PathVariable Long instructorId) {
-        List<SessionDTO> sessions = sessionService.getSessionsByInstructor(instructorId);
-        return ResponseEntity.ok(sessions);
-    }
-
-    @GetMapping("/instructor/{instructorId}/active")
-    public ResponseEntity<List<SessionDTO>> getActiveSessionsByInstructor(@PathVariable Long instructorId) {
-        List<SessionDTO> sessions = sessionService.getActiveSessionsByInstructor(instructorId);
-        return ResponseEntity.ok(sessions);
     }
 
     @GetMapping("/instructor/username/{username}")
