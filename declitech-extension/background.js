@@ -37,6 +37,7 @@ const AGENT_SCREEN_URL = `${CONFIG.AGENT_URL}/analyze-screen`;
 const SCREEN_CAPTURE_INTERVAL = 30000; // 30 seconds
 let screenCaptureInterval = null;
 let lastVittascienceData = null;
+let lastPythonModuleData = null;
 let sessionValidationInterval = null;
 let monitoringInterval = null;
 let pedagogyScanInterval = null;
@@ -82,6 +83,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         sendResponse({ success: true });
     } else if (message.type === "VITTASCIENCE_DATA") {
         lastVittascienceData = message.data;
+        sendResponse({ success: true });
+    } else if (message.type === "PYTHON_MODULE_DATA") {
+        lastPythonModuleData = message.data;
+        sendResponse({ success: true });
+    } else if (message.type === "PYTHON_EXECUTION") {
+        // Handle Python code execution event
+        sendPythonExecutionEvent(message.data);
         sendResponse({ success: true });
     }
     return true;
@@ -327,6 +335,33 @@ async function sendMouseInactivityAlert() {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(alert)
+        });
+    } catch (error) {
+        // Silently fail
+    }
+}
+
+async function sendPythonExecutionEvent(executionData) {
+    if (!activeSessionCode) return;
+
+    const payload = {
+        sessionCode: activeSessionCode,
+        participantId: activeParticipantId,
+        studentLoginIdentity: studentLoginIdentity,
+        timestamp: executionData.timestamp || new Date().toISOString(),
+        moduleType: "Python",
+        code: executionData.code || "",
+        output: executionData.output || "",
+        executionStatus: executionData.output ? "SUCCESS" : "NO_OUTPUT"
+    };
+
+    try {
+        await fetch(`${CONFIG.AGENT_URL}/python-execution`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
         });
     } catch (error) {
         // Silently fail
@@ -607,8 +642,10 @@ async function captureAndAnalyze() {
 
         if (!screenshotDataUrl) return;
 
-        // Step 2: Request fresh DOM data from Vittascience content script
+        // Step 2: Request fresh DOM data from Vittascience/Python content scripts
         let domData = lastVittascienceData;
+        let pythonData = lastPythonModuleData;
+
         try {
             const responses = await chrome.tabs.sendMessage(tab.id, {
                 type: "REQUEST_VITTASCIENCE_DATA"
@@ -620,6 +657,17 @@ async function captureAndAnalyze() {
             // Content script might not be loaded yet
         }
 
+        try {
+            const responses = await chrome.tabs.sendMessage(tab.id, {
+                type: "REQUEST_PYTHON_DATA"
+            });
+            if (responses && responses.success) {
+                pythonData = responses.data;
+            }
+        } catch (e) {
+            // Python module not active
+        }
+
         // Step 3: Send screenshot + DOM data to Python agent
         const payload = {
             session_id: activeSessionCode,
@@ -628,7 +676,8 @@ async function captureAndAnalyze() {
             timestamp: new Date().toISOString(),
             screenshot_base64: screenshotDataUrl.split(",")[1], // Remove data:image/jpeg;base64, prefix
             page_url: tab.url,
-            dom_data: domData
+            dom_data: domData,
+            python_module_data: pythonData
         };
 
         await fetch(AGENT_SCREEN_URL, {

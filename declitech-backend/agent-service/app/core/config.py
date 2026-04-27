@@ -36,11 +36,7 @@ class Settings(BaseSettings):
     FACE_MARGIN_PERCENT: float = 0.15
     MODEL_INPUT_SIZE: str = "48,48"
 
-    # Screen analysis (Ollama local vision LLM)
-    OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "gemma4:e4b"
-
-    # Track report AI conclusion (OpenRouter)
+    # Screen analysis + conclusions (OpenRouter Qwen)
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
     OPENROUTER_API_KEY: str = ""
     OPENROUTER_MODEL: str = "openai/gpt-4o-mini"

@@ -35,7 +35,8 @@ class ScreenAnalysisRequest(BaseModel):
     timestamp: str = Field(..., description="Capture timestamp (ISO format)")
     screenshot_base64: str = Field(..., description="Base64-encoded JPEG screenshot")
     page_url: Optional[str] = Field(None, description="Current page URL")
-    dom_data: Optional[dict] = Field(None, description="Extracted DOM data from Vittascience")
+    dom_data: Optional[dict] = Field(None, description="Extracted DOM data from Vittascience ML")
+    python_module_data: Optional[dict] = Field(None, description="Python module execution data (code, output, module name)")
 
 
 class ScreenAnalysisResponse(BaseModel):
