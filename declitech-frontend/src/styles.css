@@ -5,27 +5,25 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Semantic color tokens (light mode) ──────────────── */
 :root {
   --primary-color: #0097B2;
   --accent-color:  #00E0F0;
 
-  --color-bg:        243 245 247;   /* #F3F5F7 */
-  --color-sidebar:   248 250 252;   /* #F8FAFC */
-  --color-surface:   255 255 255;   /* #FFFFFF */
-  --color-border:    226 232 240;   /* #E2E8F0 */
-  --color-text-main: 30 41 59;      /* #1E293B */
-  --color-text-muted:100 116 139;   /* #64748B */
+  --color-bg:        243 245 247;   
+  --color-sidebar:   248 250 252;   
+  --color-surface:   255 255 255;   
+  --color-border:    226 232 240;   
+  --color-text-main: 30 41 59;      
+  --color-text-muted:100 116 139;   
 }
 
-/* ── Dark mode overrides ─────────────────────────────── */
 html.dark {
-  --color-bg:        2 6 23;        /* slate-950 */
-  --color-sidebar:   15 23 42;      /* slate-900 */
-  --color-surface:   30 41 59;      /* slate-800 */
-  --color-border:    51 65 85;      /* slate-700 */
-  --color-text-main: 241 245 249;   /* slate-100 */
-  --color-text-muted:148 163 184;   /* slate-400 */
+  --color-bg:        2 6 23;        
+  --color-sidebar:   15 23 42;      
+  --color-surface:   30 41 59;      
+  --color-border:    51 65 85;      
+  --color-text-main: 241 245 249;   
+  --color-text-muted:148 163 184;   
 }
 
 body {

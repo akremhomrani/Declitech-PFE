@@ -1,16 +1,15 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../environments/environment';
+import { ApiPaths } from './api-paths';
+import { HTTP_WITH_CREDENTIALS } from './http-options';
 import { IamSite } from '../models/iam/iam-site.model';
 
 @Injectable({ providedIn: 'root' })
 export class IamService {
-  private readonly apiUrl = `${environment.apiUrl}/api/iam`;
-
-  constructor(private http: HttpClient) {}
+  private readonly http = inject(HttpClient);
 
   getSites(): Observable<IamSite[]> {
-    return this.http.get<IamSite[]>(`${this.apiUrl}/sites`, { withCredentials: true });
+    return this.http.get<IamSite[]>(ApiPaths.iam.sites, HTTP_WITH_CREDENTIALS);
   }
 }

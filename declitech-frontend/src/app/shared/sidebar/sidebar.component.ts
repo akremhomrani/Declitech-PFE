@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { TranslateModule } from '@ngx-translate/core';
 import { SessionService } from '../../services/session.service';
 import { AlertService } from '../../services/alert.service';
 import { Alert } from '../../models/alert';
@@ -11,12 +12,13 @@ import { Subscription, interval } from 'rxjs';
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, TranslateModule],
   templateUrl: './sidebar.component.html',
   styleUrls: ['./sidebar.component.css']
 })
 export class SidebarComponent implements OnInit, OnDestroy {
   sessionCode: string = '';
+  sessionTitle: string = '';
   elapsedTime: string = '';
   recentAlerts: Alert[] = [];
   showEndSessionModal = false;
@@ -48,6 +50,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.subscription.add(
       this.sessionService.sessionData$.subscribe(session => {
         this.sessionCode = session?.code || '';
+        this.sessionTitle = session?.title || '';
       })
     );
 
@@ -105,29 +108,28 @@ export class SidebarComponent implements OnInit, OnDestroy {
     return 'amber';
   }
 
-  getAlertTitle(alert: Alert): string {
+  getAlertTitleKey(alert: Alert): string {
     switch (alert.alertType) {
       case 'TAB_SWITCH':
       case 'MULTIPLE_SWITCHES':
-        return 'TAB SWITCHED';
+        return 'ALERT_TYPE.TAB_SWITCHED_TITLE';
       case 'MOUSE_INACTIVITY':
-        return 'NO MOVEMENT';
+        return 'ALERT_TYPE.NO_MOVEMENT_TITLE';
       default:
-        return 'DISTRACTED';
+        return 'ALERT_TYPE.DISTRACTED_TITLE';
     }
   }
 
-  getRelativeTime(timestamp: string): string {
+  getRelativeTime(timestamp: string): { value: string | number; unit: 'now' | 's' | 'm' | 'h' } {
     const now = new Date().getTime();
     const alertTime = new Date(timestamp).getTime();
     const diffMs = now - alertTime;
     const diffSec = Math.floor(diffMs / 1000);
     const diffMin = Math.floor(diffSec / 60);
 
-    if (diffSec < 10) return 'Now';
-    if (diffSec < 60) return `${diffSec}s`;
-    if (diffMin < 60) return `${diffMin}m`;
-    const diffHour = Math.floor(diffMin / 60);
-    return `${diffHour}h`;
+    if (diffSec < 10) return { value: '', unit: 'now' };
+    if (diffSec < 60) return { value: diffSec, unit: 's' };
+    if (diffMin < 60) return { value: diffMin, unit: 'm' };
+    return { value: Math.floor(diffMin / 60), unit: 'h' };
   }
 }

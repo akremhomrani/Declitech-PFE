@@ -12,7 +12,8 @@
       <div class="flex flex-col leading-none">
         <span class="text-xl font-extrabold tracking-tight text-text-main">Decli<span
             class="text-primary">Track</span></span>
-        <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-primary">Live Monitor</span>
+        <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-primary">{{ 'DASHBOARD.TITLE' | translate
+          }}</span>
       </div>
     </div>
     <div *ngIf="sessionCode"
@@ -21,8 +22,8 @@
         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
         <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
       </span>
-      <span class="text-[10px] font-bold uppercase tracking-widest text-primary">Active Session: {{ sessionCode
-        }}</span>
+      <span class="text-[10px] font-bold uppercase tracking-widest text-primary">{{ 'DASHBOARD.ACTIVE_SESSION' |
+        translate }}: {{ sessionCode }}</span>
     </div>
   </div>
 
@@ -32,27 +33,37 @@
         class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
       <input
         class="w-full bg-slate-100 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 border-transparent focus:bg-white dark:focus:bg-slate-700 focus:border-primary/30 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none text-text-main placeholder:text-slate-400"
-        placeholder="Search student by name or ID..." type="text" />
+        [placeholder]="'COMMON.SEARCH' | translate" type="text" />
     </div>
 
     <div class="flex gap-2">
-      <!-- Dark / Light toggle -->
+      <div class="relative">
+        <button (click)="toggleLanguageMenu()"
+          class="flex items-center justify-center rounded-xl h-11 px-3 gap-1.5 bg-slate-100 dark:bg-slate-800 text-text-main transition-all hover:bg-primary/10 hover:text-primary"
+          [title]="'NAV.LANGUAGE' | translate">
+          <span class="material-symbols-outlined text-xl">language</span>
+          <span class="text-xs font-bold uppercase">{{ languageService.currentLanguage() }}</span>
+        </button>
+        <div *ngIf="isLanguageMenuOpen"
+          class="absolute top-full right-0 mt-2 w-32 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-border-light overflow-hidden z-50"
+          (click)="$event.stopPropagation()">
+          <button *ngFor="let lang of languageService.supportedLanguages" (click)="selectLanguage(lang)"
+            class="w-full flex items-center justify-between px-4 py-2.5 text-sm text-text-main hover:bg-primary/10 transition-colors"
+            [ngClass]="{ 'bg-primary/5 text-primary font-bold': languageService.currentLanguage() === lang }">
+            <span class="uppercase font-semibold">{{ lang }}</span>
+            <span *ngIf="languageService.currentLanguage() === lang"
+              class="material-symbols-outlined text-base">check</span>
+          </button>
+        </div>
+      </div>
+
       <button (click)="themeService.toggle()"
         class="flex items-center justify-center rounded-xl h-11 w-11 bg-slate-100 dark:bg-slate-800 text-text-main transition-all hover:bg-primary/10 hover:text-primary"
-        [title]="themeService.isDark() ? 'Switch to light mode' : 'Switch to dark mode'">
+        [title]="(themeService.isDark() ? 'NAV.THEME_LIGHT' : 'NAV.THEME_DARK') | translate">
         <span class="material-symbols-outlined text-xl">{{ themeService.isDark() ? 'light_mode' : 'dark_mode' }}</span>
       </button>
 
-      <button
-        class="relative flex items-center justify-center rounded-xl h-11 w-11 bg-slate-100 dark:bg-slate-800 text-text-main transition-all hover:bg-primary/10 hover:text-primary">
-        <span class="material-symbols-outlined">notifications</span>
-        <span
-          class="absolute top-2.5 right-2.5 flex h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900"></span>
-      </button>
-      <button
-        class="flex items-center justify-center rounded-xl h-11 w-11 bg-slate-100 dark:bg-slate-800 text-text-main transition-all hover:bg-primary/10 hover:text-primary">
-        <span class="material-symbols-outlined">settings</span>
-      </button>
+
     </div>
 
     <div class="h-8 w-[1px] bg-border-light mx-1"></div>
@@ -60,7 +71,7 @@
     <div class="relative flex items-center gap-3 pl-2">
       <div class="text-right hidden sm:block">
         <p class="text-sm font-bold leading-none text-text-main">
-          {{ firstName && lastName ? (firstName + ' ' + lastName) : 'Guest' }}
+          {{ firstName && lastName ? (firstName + ' ' + lastName) : ('COMMON.STUDENT' | translate) }}
         </p>
         <p class="text-[10px] text-primary font-semibold uppercase tracking-tighter mt-1">
           {{ role || 'USER' }}
@@ -82,7 +93,7 @@
           <button (click)="logout()"
             class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
             <span class="material-symbols-outlined text-lg">logout</span>
-            <span>Logout</span>
+            <span>{{ 'AUTH.LOGOUT' | translate }}</span>
           </button>
         </div>
       </div>
@@ -90,4 +101,4 @@
   </div>
 </header>
 
-<div *ngIf="isDropdownOpen" (click)="closeDropdown()" class="fixed inset-0 z-40"></div>
+<div *ngIf="isDropdownOpen || isLanguageMenuOpen" (click)="closeDropdown()" class="fixed inset-0 z-40"></div>

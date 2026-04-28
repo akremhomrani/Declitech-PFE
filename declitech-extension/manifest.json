@@ -1,14 +1,15 @@
 {
   "manifest_version": 3,
   "name": "DecliTrack - Join Session",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Join session + detect pseudonyme/email from the current page.",
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "popup/popup.html",
     "default_title": "DecliTrack"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background/background.js",
+    "type": "module"
   },
   "content_scripts": [
     {
@@ -21,9 +22,9 @@
         "http://localhost:4200/*"
       ],
       "js": [
-        "content_decli_app.js",
-        "content_pedagogy_codecombat.js",
-        "content.js"
+        "content/decli-app.js",
+        "content/codecombat.js",
+        "content/identity.js"
       ],
       "run_at": "document_idle"
     },
@@ -33,11 +34,21 @@
         "https://*.vittascience.com/*"
       ],
       "js": [
-        "content_vittascience.js",
-        "content_python_module.js"
+        "content/vittascience.js",
+        "content/python-module.js"
       ],
       "all_frames": true,
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content/identity-badge.js"
+      ],
+      "run_at": "document_start"
     }
   ],
   "permissions": [

@@ -60,6 +60,16 @@ class TestReportServiceSummarizeSession:
         )
         assert result["state"] == "DONNEES_INSUFFISANTES"
 
+    def test_camera_unavailable_returns_dedicated_state(self):
+        """Caméra indisponible → CAMERA_UNAVAILABLE (priorité sur DONNEES_INSUFFISANTES)"""
+        result = ReportService.summarize_session(
+            dominants=[], probs_list=[],
+            no_face_count=0, total_captures=10,
+            camera_available=False,
+        )
+        assert result["state"] == "CAMERA_UNAVAILABLE"
+        assert "caméra" in result["final_sentence"].lower()
+
     def test_insufficient_data_when_60_percent_no_face(self):
         """60% de captures sans visage → DONNEES_INSUFFISANTES"""
         dominants = ["happy"] * 4

@@ -30,7 +30,14 @@ class ReportService:
         probs_list: List[Dict[str, float]],
         no_face_count: int,
         total_captures: int,
+        camera_available: bool = True,
     ) -> Dict[str, Any]:
+        if not camera_available:
+            return {
+                "state": "CAMERA_UNAVAILABLE",
+                "final_sentence": "Caméra indisponible pendant la session : aucune donnée émotionnelle collectée.",
+            }
+
         valid = len(dominants)
 
         if valid == 0 or (no_face_count / max(1, total_captures)) >= 0.6:

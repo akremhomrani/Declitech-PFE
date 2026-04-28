@@ -1,0 +1,275 @@
+<div class="max-w-md mx-auto relative min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
+
+  <!-- Top bar -->
+  <header class="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 sticky top-0 z-50">
+    <div class="flex justify-between items-center px-4 h-16">
+      <div class="flex items-center gap-3 min-w-0">
+        <button
+          (click)="goBack()"
+          class="text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors p-2 rounded-full active:scale-95 duration-150"
+          [attr.aria-label]="'OBSERVATION.BACK' | translate">
+          <span class="material-symbols-outlined">arrow_back</span>
+        </button>
+        <div class="min-w-0">
+          <h1 class="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100 leading-tight">{{ 'OBSERVATION.TITLE' | translate }}</h1>
+          <div class="flex items-center gap-2 mt-0.5">
+            <span *ngIf="sessionCode" class="font-mono text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded uppercase tracking-wider">{{ sessionCode }}</span>
+            <span class="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
+              {{ sessionTitle || ('OBSERVATION.NO_SESSION' | translate) }}
+            </span>
+          </div>
+        </div>
+      </div>
+      <button
+        type="button"
+        (click)="toggleTheme()"
+        [attr.aria-label]="(theme.isDark() ? 'NAV.THEME_LIGHT' : 'NAV.THEME_DARK') | translate"
+        [attr.title]="(theme.isDark() ? 'NAV.THEME_LIGHT' : 'NAV.THEME_DARK') | translate"
+        class="w-9 h-9 rounded-full flex items-center justify-center border transition-all flex-shrink-0
+               bg-amber-100 border-amber-200 text-amber-600
+               dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200
+               hover:scale-105 active:scale-95">
+        <span class="material-symbols-outlined text-[20px]">
+          {{ theme.isDark() ? 'light_mode' : 'dark_mode' }}
+        </span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Status strip -->
+  <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm sticky top-16 z-40 border-b border-slate-100 dark:border-slate-800">
+    <div class="px-4 py-3 flex justify-between items-center">
+      <div class="flex flex-wrap gap-3">
+        <div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+          <span class="material-symbols-outlined text-[16px]">group</span>
+          <span class="text-[12px] font-semibold uppercase tracking-wider">{{ rows.length }} {{ 'OBSERVATION.STUDENTS_COUNT' | translate }}</span>
+        </div>
+        <div class="flex items-center gap-1.5 text-primary">
+          <span class="material-symbols-outlined text-[16px]">history_edu</span>
+          <span class="text-[12px] font-semibold uppercase tracking-wider">{{ annotatedCount }} {{ 'OBSERVATION.ANNOTATED' | translate }}</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 text-amber-600 dark:text-amber-500">
+        <span class="material-symbols-outlined text-[16px]">timer</span>
+        <span class="font-mono text-xs font-semibold">{{ elapsedTime }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Refresh indicator -->
+  <div class="flex justify-center -mt-2 relative z-30 h-0">
+    <div *ngIf="isRefreshing"
+      class="bg-white dark:bg-slate-800 shadow-lg rounded-full px-3 py-1 flex items-center gap-2 border border-slate-100 dark:border-slate-700">
+      <span class="material-symbols-outlined text-primary text-[16px] animate-spin" style="animation-duration: 1.2s;">sync</span>
+      <span class="text-[10px] font-bold text-slate-500 dark:text-slate-300 uppercase tracking-widest">{{ 'OBSERVATION.UPDATING' | translate }}</span>
+    </div>
+  </div>
+
+  <!-- Main canvas -->
+  <main class="flex-1 px-4 pt-6 pb-8">
+
+    <!-- Empty: no session -->
+    <div *ngIf="!sessionCode" class="text-center py-16 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-sm">
+      <span class="material-symbols-outlined text-6xl text-slate-300 dark:text-slate-600 mb-4 block">play_circle</span>
+      <p class="text-slate-600 dark:text-slate-400 font-medium">{{ 'OBSERVATION.NO_SESSION' | translate }}</p>
+      <a routerLink="/session/create" class="inline-flex items-center gap-2 mt-4 px-5 py-2.5 bg-primary text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-primary-dark transition-all shadow-md shadow-primary/10">
+        <span class="material-symbols-outlined text-base">add_circle</span>
+        {{ 'OBSERVATION.CREATE_SESSION' | translate }}
+      </a>
+    </div>
+
+    <!-- Empty: session, no students -->
+    <div *ngIf="sessionCode && rows.length === 0"
+      class="text-center py-16 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-sm">
+      <span class="material-symbols-outlined text-6xl text-slate-300 dark:text-slate-600 mb-4 block">person_search</span>
+      <p class="text-slate-600 dark:text-slate-400 font-medium">{{ 'OBSERVATION.WAITING_STUDENTS' | translate }}</p>
+      <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">{{ 'OBSERVATION.WAITING_HINT' | translate }}</p>
+    </div>
+
+    <!-- Student cards -->
+    <div *ngIf="rows.length > 0" class="space-y-4">
+      <button
+        *ngFor="let row of rows; trackBy: trackByIdentity"
+        type="button"
+        (click)="openStudent(row)"
+        class="w-full text-left bg-white dark:bg-slate-800 rounded-xl shadow-[0_4px_20px_rgba(15,23,42,0.04)] border border-slate-50 dark:border-slate-700 overflow-hidden active:scale-[0.98] transition-transform duration-150">
+
+        <div class="p-4 flex items-start gap-4">
+          <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-2xl flex-shrink-0">
+            {{ getEmotionEmoji(row.report.dominantEmotion) }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex justify-between items-start gap-2">
+              <div class="min-w-0">
+                <h3 class="text-[18px] font-semibold leading-tight text-slate-900 dark:text-slate-100 truncate">
+                  {{ row.report.studentLoginIdentity }}
+                </h3>
+                <p class="text-sm text-slate-400 dark:text-slate-500 truncate">
+                  <ng-container *ngIf="row.observation.tags.length > 0; else statusLabel">
+                    {{ 'OBSERVATION.RECORDED' | translate }}
+                  </ng-container>
+                  <ng-template #statusLabel>{{ getDominantEmotion(row.report) }}</ng-template>
+                </p>
+              </div>
+              <span class="material-symbols-outlined text-slate-300 dark:text-slate-600 flex-shrink-0">chevron_right</span>
+            </div>
+
+            <div class="mt-3 flex flex-wrap gap-2">
+              <ng-container *ngIf="row.observation.tags.length > 0; else emptyTags">
+                <span
+                  *ngFor="let id of row.observation.tags; trackBy: trackBySelected"
+                  class="px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"
+                  [style.background]="tagIndex[id].color + '15'"
+                  [style.color]="tagIndex[id].color">
+                  <span class="w-1 h-1 rounded-full" [style.background]="tagIndex[id].color"></span>
+                  {{ tagIndex[id].label }}
+                </span>
+              </ng-container>
+              <ng-template #emptyTags>
+                <span class="bg-slate-100 dark:bg-slate-700 text-slate-400 border border-dashed border-slate-200 dark:border-slate-600 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                  {{ 'OBSERVATION.TAP_TO_ADD' | translate }}
+                </span>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="row.observation.tags.length > 0 || row.observation.comment"
+          class="bg-slate-50/50 dark:bg-slate-900/30 px-4 py-2 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+          <span class="text-[11px] text-slate-500 dark:text-slate-400 italic truncate">
+            <ng-container *ngIf="row.observation.comment; else justSaved">
+              "{{ row.observation.comment }}"
+            </ng-container>
+            <ng-template #justSaved>{{ 'OBSERVATION.RECORDED' | translate }}</ng-template>
+          </span>
+          <span class="material-symbols-outlined text-[14px] text-primary flex-shrink-0" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+        </div>
+      </button>
+    </div>
+  </main>
+
+</div>
+
+<!-- Bottom sheet modal -->
+<ng-container *ngIf="selectedRow">
+  <div class="fixed inset-0 z-50 backdrop-blur-observation animate-fadeIn" (click)="closeSheet()"></div>
+
+  <section class="fixed inset-x-0 bottom-0 z-50 max-w-md mx-auto bg-white dark:bg-slate-800 rounded-t-3xl h-[85%] flex flex-col shadow-2xl overflow-hidden animate-slideUp">
+
+    <div class="flex justify-center pt-3 pb-2">
+      <div class="w-10 h-1.5 bg-slate-200 dark:bg-slate-600 rounded-full"></div>
+    </div>
+
+    <div class="px-6 pb-4 border-b border-slate-100 dark:border-slate-700">
+      <div class="flex justify-between items-start gap-3">
+        <div class="flex items-center gap-4 min-w-0">
+          <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-3xl flex-shrink-0">
+            {{ getEmotionEmoji(selectedRow.report.dominantEmotion) }}
+          </div>
+          <div class="min-w-0">
+            <h2 class="text-2xl font-semibold leading-tight tracking-tight text-slate-900 dark:text-slate-100 break-all">
+              {{ selectedRow.report.studentLoginIdentity }}
+            </h2>
+            <p class="text-primary font-medium text-sm capitalize">
+              {{ 'OBSERVATION.DOMINANT_EMOTION' | translate }}: {{ getDominantEmotion(selectedRow.report) }}
+            </p>
+          </div>
+        </div>
+        <button (click)="closeSheet()" [attr.aria-label]="'OBSERVATION.CLOSE' | translate"
+          class="p-2 bg-slate-50 dark:bg-slate-700 rounded-full text-slate-400 active:scale-95 transition-all flex-shrink-0">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto custom-scrollbar px-6 py-6 space-y-8">
+
+      <section>
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">{{ 'OBSERVATION.SELECTED' | translate }}</h3>
+        <div *ngIf="draftTags.length > 0; else emptyDraft" class="flex flex-wrap gap-2">
+          <button
+            *ngFor="let id of draftTags; trackBy: trackBySelected"
+            type="button"
+            (click)="removeDraftTag(id)"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium shadow-sm text-white"
+            [style.background]="tagIndex[id].color">
+            <span>{{ tagIndex[id].emoji }}</span>
+            <span>{{ tagIndex[id].label }}</span>
+            <span class="material-symbols-outlined text-[14px]">close</span>
+          </button>
+        </div>
+        <ng-template #emptyDraft>
+          <p class="text-xs text-slate-500 dark:text-slate-400 italic">{{ 'OBSERVATION.TAP_HINT' | translate }}</p>
+        </ng-template>
+      </section>
+
+      <div class="space-y-6">
+        <details *ngFor="let cat of categories" class="group" open>
+          <summary class="flex justify-between items-center list-none cursor-pointer">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              {{ cat.index }}. {{ cat.label }}
+            </h3>
+            <span class="material-symbols-outlined group-open:rotate-180 transition-transform text-slate-400">expand_more</span>
+          </summary>
+          <div class="pt-4 flex flex-wrap gap-3">
+            <button
+              *ngFor="let tag of tagsByCategory(cat.id); trackBy: trackByTagId"
+              type="button"
+              (click)="toggleTag(tag.id)"
+              class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-medium transition-colors"
+              [class.shadow-sm]="isSelected(tag.id)"
+              [ngStyle]="isSelected(tag.id)
+                ? { 'background-color': tag.color, 'color': '#ffffff', 'border': '1px solid ' + tag.color }
+                : { 'background-color': 'transparent', 'color': tag.color, 'border': '1px solid ' + tag.color + '55' }">
+              <span>{{ tag.emoji }}</span>
+              <span>{{ tag.label }}</span>
+            </button>
+          </div>
+        </details>
+      </div>
+
+      <div class="pt-4">
+        <label for="obs-comment"
+          class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 block">
+          {{ 'OBSERVATION.ADD_NOTE' | translate }}
+        </label>
+        <div class="relative">
+          <textarea
+            id="obs-comment"
+            rows="4"
+            maxlength="300"
+            [(ngModel)]="draftComment"
+            [placeholder]="'OBSERVATION.NOTE_PLACEHOLDER' | translate"
+            class="w-full bg-slate-50 dark:bg-slate-700 border-none rounded-2xl p-4 text-base focus:ring-2 focus:ring-primary transition-all resize-none text-slate-900 dark:text-slate-100"></textarea>
+          <span class="absolute bottom-3 right-4 text-[10px] font-medium text-slate-500 dark:text-slate-400">
+            {{ draftComment.length }}/300
+          </span>
+        </div>
+      </div>
+
+      <div *ngIf="saveMessage"
+        class="text-center text-sm font-bold"
+        [class.text-emerald-500]="saveMessage === 'OBSERVATION.SAVED'"
+        [class.text-red-500]="saveMessage !== 'OBSERVATION.SAVED'">
+        {{ saveMessage | translate }}
+      </div>
+    </div>
+
+    <div class="px-6 py-6 border-t border-slate-100 dark:border-slate-700 flex items-center gap-4 bg-white dark:bg-slate-800">
+      <button
+        type="button"
+        (click)="closeSheet()"
+        class="flex-1 py-4 text-slate-500 dark:text-slate-400 font-semibold text-base active:opacity-60 transition-opacity">
+        {{ 'COMMON.CANCEL' | translate }}
+      </button>
+      <button
+        type="button"
+        (click)="save()"
+        [disabled]="saving"
+        class="flex-[2] py-4 bg-primary text-white rounded-2xl font-semibold text-base shadow-lg shadow-primary/20 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+        <span *ngIf="!saving">{{ 'OBSERVATION.SAVE' | translate }}</span>
+        <span *ngIf="saving">{{ 'OBSERVATION.SAVING' | translate }}</span>
+      </button>
+    </div>
+  </section>
+</ng-container>

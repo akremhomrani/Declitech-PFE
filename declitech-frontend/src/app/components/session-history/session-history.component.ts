@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslateModule } from '@ngx-translate/core';
 import { NavbarComponent } from '../../shared/navbar/navbar.component';
 import { SidebarComponent } from '../../shared/sidebar/sidebar.component';
 import { SessionService } from '../../services/session.service';
@@ -12,7 +13,7 @@ import { SessionFilters } from '../../services/session.service';
 @Component({
   selector: 'app-session-history',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent, SidebarComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent, SidebarComponent, TranslateModule],
   templateUrl: './session-history.component.html',
   styleUrls: ['./session-history.component.css']
 })
@@ -154,17 +155,13 @@ export class SessionHistoryComponent implements OnInit, OnDestroy {
     }
   }
 
-  getStatusText(session: SessionHistory): string {
+  getStatusKey(session: SessionHistory): string {
     switch (session.status) {
-      case 'ACTIVE':
-        return 'Active';
-      case 'EXPIRED':
-        return 'Expired';
-      case 'CANCELLED':
-        return 'Cancelled';
+      case 'ACTIVE':    return 'SESSION_HISTORY.STATUS_ACTIVE';
+      case 'EXPIRED':   return 'SESSION_HISTORY.STATUS_EXPIRED';
+      case 'CANCELLED': return 'SESSION_HISTORY.STATUS_CANCELLED';
       case 'ENDED':
-      default:
-        return 'Ended';
+      default:          return 'SESSION_HISTORY.STATUS_ENDED';
     }
   }
 

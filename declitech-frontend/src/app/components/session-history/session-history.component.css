@@ -1,51 +1,44 @@
-/* Ensure smooth transitions and proper overflow handling */
+
 @media (max-width: 768px) {
-  /* Ensure tables don't overflow on small screens */
+  
   table {
     font-size: 0.875rem;
   }
-  
-  /* Better touch targets on mobile */
+
   button {
     min-height: 36px;
     min-width: 36px;
   }
 }
 
-/* Smooth transitions for responsive changes */
 * {
   transition-property: padding, margin, font-size;
   transition-duration: 0.2s;
   transition-timing-function: ease-in-out;
 }
 
-/* Prevent layout shift during loading */
 .animate-spin {
   will-change: transform;
 }
 
-/* Better truncation for long text on small screens */
 @media (max-width: 640px) {
   .truncate {
     max-width: 120px;
   }
 }
 
-/* Ensure pagination buttons are always accessible */
 @media (max-width: 380px) {
   .flex.items-center.gap-2 button {
     padding: 0.5rem;
   }
 }
 
-/* Better grid layout for stats cards on very small screens */
 @media (max-width: 360px) {
   .grid {
     gap: 0.5rem;
   }
 }
 
-/* Optimize table for tablet landscape */
 @media (min-width: 768px) and (max-width: 1024px) {
   table td, table th {
     padding-left: 0.75rem;
@@ -53,7 +46,6 @@
   }
 }
 
-/* Better scrollbar styling for tables */
 .overflow-x-auto::-webkit-scrollbar {
   height: 8px;
 }

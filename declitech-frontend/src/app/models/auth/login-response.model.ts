@@ -1,6 +1,6 @@
 export interface LoginResponse {
-  accessToken?: string;  // Not sent in response body (stored in httpOnly cookie)
-  refreshToken?: string; // Not sent in response body (stored in httpOnly cookie)
+  accessToken?: string;
+  refreshToken?: string;
   firstName: string;
   lastName: string;
   username: string;

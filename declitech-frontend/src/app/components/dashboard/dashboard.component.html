@@ -8,7 +8,7 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 flex items-center justify-between shadow-sm">
           <div>
-            <p class="text-text-muted text-[10px] font-bold uppercase tracking-widest mb-2">Connected</p>
+            <p class="text-text-muted text-[10px] font-bold uppercase tracking-widest mb-2">{{ 'DASHBOARD.CONNECTED' | translate }}</p>
             <div class="flex items-baseline gap-1">
               <p class="text-3xl font-black text-text-main">{{ statistics.connectedStudents }}</p>
               <p class="text-text-muted text-sm font-bold">/{{ statistics.totalStudents }}</p>
@@ -21,7 +21,7 @@
 
         <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 flex items-center justify-between shadow-sm">
           <div>
-            <p class="text-text-muted text-[10px] font-bold uppercase tracking-widest mb-2">Focused</p>
+            <p class="text-text-muted text-[10px] font-bold uppercase tracking-widest mb-2">{{ 'DASHBOARD.FOCUSED' | translate }}</p>
             <p class="text-3xl font-black text-primary">{{ statistics.focusedStudents }}</p>
           </div>
           <div class="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
@@ -31,7 +31,7 @@
 
         <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 flex items-center justify-between shadow-sm">
           <div>
-            <p class="text-text-muted text-[10px] font-bold uppercase tracking-widest mb-2">Distracted</p>
+            <p class="text-text-muted text-[10px] font-bold uppercase tracking-widest mb-2">{{ 'DASHBOARD.DISTRACTED' | translate }}</p>
             <p class="text-3xl font-black text-amber-500">{{ statistics.distractedStudents }}</p>
           </div>
           <div class="h-14 w-14 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500">
@@ -41,7 +41,7 @@
 
         <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 flex items-center justify-between shadow-sm">
           <div>
-            <p class="text-text-muted text-[10px] font-bold uppercase tracking-widest mb-2">Avg. Attention</p>
+            <p class="text-text-muted text-[10px] font-bold uppercase tracking-widest mb-2">{{ 'DASHBOARD.AVG_ATTENTION' | translate }}</p>
             <p class="text-3xl font-black text-primary">{{ statistics.averageAttention }}%</p>
           </div>
           <div class="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
@@ -50,24 +50,23 @@
         </div>
       </div>
 
-      <!-- ===== TAB : MONITORING ===== -->
       <div>
         <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 sm:mb-8 gap-4">
           <div>
             <h2 class="text-xl sm:text-2xl font-black tracking-tight text-text-main flex items-center gap-3">
-              Live Engagement Monitor
-              <span class="text-[10px] bg-primary text-white px-3 py-1 rounded-full uppercase font-black tracking-wider">Live</span>
+              {{ 'DASHBOARD.LIVE_ENGAGEMENT_TITLE' | translate }}
+              <span class="text-[10px] bg-primary text-white px-3 py-1 rounded-full uppercase font-black tracking-wider">{{ 'DASHBOARD.LIVE' | translate }}</span>
             </h2>
-            <p class="text-text-muted text-xs sm:text-sm mt-1">Real-time AI telemetry from local agents and extensions</p>
+            <p class="text-text-muted text-xs sm:text-sm mt-1">{{ 'DASHBOARD.LIVE_HINT' | translate }}</p>
           </div>
           <div class="flex gap-2 sm:gap-3">
             <button class="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-white dark:bg-slate-800 text-text-main text-xs font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700 shadow-sm">
               <span class="material-symbols-outlined text-lg">filter_alt</span>
-              <span class="hidden sm:inline">Filter View</span>
+              <span class="hidden sm:inline">{{ 'DASHBOARD.FILTER_VIEW' | translate }}</span>
             </button>
             <button class="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-primary text-white text-xs font-black rounded-xl hover:bg-primary-dark transition-all shadow-md shadow-primary/10">
               <span class="material-symbols-outlined text-lg">sort</span>
-              <span class="hidden sm:inline">Sort: Engagement</span>
+              <span class="hidden sm:inline">{{ 'DASHBOARD.SORT_ENGAGEMENT' | translate }}</span>
             </button>
           </div>
         </div>
@@ -88,7 +87,7 @@
               <div class="flex flex-col items-end gap-2">
                 <span class="px-3 py-1.5 text-white text-[10px] font-black rounded-lg uppercase tracking-widest"
                   [ngClass]="getBadgeColor(getAlertBadgeType(student))">
-                  {{ getAlertBadgeType(student) }}
+                  {{ ('DASHBOARD.ALERT_BADGE_' + getAlertBadgeType(student)) | translate }}
                 </span>
                 <div class="flex items-center gap-1.5">
                   <span class="size-2 rounded-full" [ngClass]="{
@@ -97,7 +96,7 @@
                       }">
                   </span>
                   <span class="text-[10px] text-text-muted uppercase font-black tracking-tighter">
-                    {{ student.status === 'IN_PROGRESS' ? 'Connected' : 'Offline' }}
+                    {{ (student.status === 'IN_PROGRESS' ? 'DASHBOARD.CONNECTED' : 'DASHBOARD.OFFLINE') | translate }}
                   </span>
                 </div>
               </div>
@@ -111,7 +110,7 @@
                  'text-amber-600': getAlertBadgeType(student) === 'DISTRACTED',
                  'text-primary': getAlertBadgeType(student) === 'FOCUSED'
                }">
-                Activity: <span class="font-black">{{ getAlertMessage(student) }}</span>
+                {{ 'DASHBOARD.ACTIVITY' | translate }}: <span class="font-black">{{ ('DASHBOARD.STATUS_' + getStatusKey(student)) | translate }}</span>
               </p>
             </div>
 
@@ -134,17 +133,17 @@
         <div class="flex flex-wrap items-center justify-center gap-4 sm:gap-8">
           <div class="flex items-center gap-2.5">
             <div class="size-2 rounded-full bg-primary"></div>
-            <span>DecliTrack AI Engine: v4.2 stable</span>
+            <span>{{ 'DASHBOARD.FOOTER_ENGINE' | translate }}</span>
           </div>
           <div class="flex items-center gap-2.5">
             <div class="size-2 rounded-full bg-accent-teal"></div>
-            <span>Data Sync: 0.2ms Latency</span>
+            <span>{{ 'DASHBOARD.FOOTER_LATENCY' | translate }}</span>
           </div>
         </div>
         <div class="flex flex-wrap justify-center gap-4 sm:gap-8">
-          <a class="hover:text-primary transition-colors" href="#">Export Session Analytics</a>
-          <a class="hover:text-primary transition-colors" href="#">System Health</a>
-          <span>© 2024 DecliTrack. All rights reserved.</span>
+          <a class="hover:text-primary transition-colors" href="#">{{ 'DASHBOARD.FOOTER_EXPORT' | translate }}</a>
+          <a class="hover:text-primary transition-colors" href="#">{{ 'DASHBOARD.FOOTER_HEALTH' | translate }}</a>
+          <span>© 2026 DecliTrack. {{ 'COMMON.RIGHTS_RESERVED' | translate }}</span>
         </div>
       </footer>
     </main>

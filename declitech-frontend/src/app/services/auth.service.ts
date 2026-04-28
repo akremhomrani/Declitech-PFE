@@ -1,8 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
-import { environment } from '../../environments/environment';
+import { ApiPaths } from './api-paths';
+import { HTTP_WITH_CREDENTIALS } from './http-options';
+import { StorageKeys } from './storage-keys';
+import { LoggerService } from './logger.service';
 import { LoginResponse, UserPayload } from '../models/auth';
 
 interface ValidateTokenResponse {
@@ -10,26 +13,23 @@ interface ValidateTokenResponse {
   role?: string;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class AuthService {
-  private apiUrl = `${environment.apiUrl}/api/auth`;
-  private firstNameKey = 'user_first_name';
-  private lastNameKey = 'user_last_name';
-  private usernameKey = 'user_username';
-  private roleKey = 'user_role';
-  private readonly POPUP_POLL_INTERVAL_MS = 500;
-  private currentUserSubject = new BehaviorSubject<UserPayload | null>(null);
-  public currentUser$ = this.currentUserSubject.asObservable();
+  private readonly http = inject(HttpClient);
+  private readonly logger = inject(LoggerService);
 
-  constructor(private http: HttpClient) {
+  private readonly POPUP_POLL_INTERVAL_MS = 500;
+
+  private readonly currentUserSubject = new BehaviorSubject<UserPayload | null>(null);
+  readonly currentUser$ = this.currentUserSubject.asObservable();
+
+  constructor() {
     this.loadUserInfo();
   }
 
   initiateSsoLogin(userType: 'student' | 'staff'): Observable<LoginResponse> {
     return new Observable(observer => {
-      this.http.get<{ loginUrl: string }>(`${this.apiUrl}/sso/url`, {
+      this.http.get<{ loginUrl: string }>(ApiPaths.auth.ssoUrl, {
         params: { type: userType },
         withCredentials: true
       }).subscribe({
@@ -41,7 +41,7 @@ export class AuthService {
           );
 
           if (!popup) {
-            observer.error(new Error('Le popup a été bloqué par le navigateur. Autorisez les popups pour ce site.'));
+            observer.error(new Error('AUTH.ERROR_POPUP_BLOCKED'));
             return;
           }
 
@@ -58,12 +58,12 @@ export class AuthService {
             }
             if (event.data?.type === 'SSO_ERROR') {
               cleanup();
-              observer.error(new Error(event.data.error || 'Erreur SSO'));
+              observer.error(new Error(event.data.error || 'AUTH.ERROR_GENERIC'));
             }
           };
 
           const pollClosed = setInterval(() => {
-            if (popup.closed) { cleanup(); observer.error(new Error('Connexion annulée')); }
+            if (popup.closed) { cleanup(); observer.error(new Error('AUTH.ERROR_CANCELLED')); }
           }, this.POPUP_POLL_INTERVAL_MS);
 
           const cleanup = () => {
@@ -80,33 +80,27 @@ export class AuthService {
   }
 
   handleSsoCallback(code: string, state: string): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/sso/callback`, { code, state }, {
-      withCredentials: true
-    }).pipe(
+    return this.http.post<LoginResponse>(ApiPaths.auth.ssoCallback, { code, state }, HTTP_WITH_CREDENTIALS).pipe(
       tap(response => {
         this.storeUserInfo(response);
         this.setCurrentUser(response);
       }),
-      catchError(this.handleError)
+      catchError(err => this.handleError(err))
     );
   }
 
   loginWithIam(login: string, password: string, userType: 'staff' | 'student'): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/sso/login`, { login, password, userType }, {
-      withCredentials: true
-    }).pipe(
+    return this.http.post<LoginResponse>(ApiPaths.auth.ssoLogin, { login, password, userType }, HTTP_WITH_CREDENTIALS).pipe(
       tap(response => {
         this.storeUserInfo(response);
         this.setCurrentUser(response);
       }),
-      catchError(this.handleError)
+      catchError(err => this.handleError(err))
     );
   }
 
   refreshToken(): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/refresh`, {}, {
-      withCredentials: true
-    }).pipe(
+    return this.http.post<void>(ApiPaths.auth.refresh, {}, HTTP_WITH_CREDENTIALS).pipe(
       catchError(error => {
         this.logout();
         return throwError(() => error);
@@ -116,28 +110,18 @@ export class AuthService {
 
   logout(): void {
     this.clearUserData();
-    this.http.post(`${this.apiUrl}/logout`, {}, {
-      withCredentials: true
-    }).subscribe();
-  }
-
-  private clearUserData(): void {
-    localStorage.removeItem(this.firstNameKey);
-    localStorage.removeItem(this.lastNameKey);
-    localStorage.removeItem(this.usernameKey);
-    localStorage.removeItem(this.roleKey);
-    this.currentUserSubject.next(null);
+    this.http.post(ApiPaths.auth.logout, {}, HTTP_WITH_CREDENTIALS).subscribe({
+      next: () => { },
+      error: (err) => this.logger.warn('Logout request failed', { err })
+    });
   }
 
   isLoggedIn(): boolean {
-    const username = this.getUsername();
-    return username !== null;
+    return this.getUsername() !== null;
   }
 
   validateToken(): Observable<boolean> {
-    return this.http.get<ValidateTokenResponse>(`${this.apiUrl}/validate`, {
-      withCredentials: true
-    }).pipe(
+    return this.http.get<ValidateTokenResponse>(ApiPaths.auth.validate, HTTP_WITH_CREDENTIALS).pipe(
       map(response => response.valid === true),
       catchError(() => {
         this.clearUserData();
@@ -147,9 +131,7 @@ export class AuthService {
   }
 
   validateTokenWithRole(): Observable<{ valid: boolean; role: string | null }> {
-    return this.http.get<ValidateTokenResponse>(`${this.apiUrl}/validate`, {
-      withCredentials: true
-    }).pipe(
+    return this.http.get<ValidateTokenResponse>(ApiPaths.auth.validate, HTTP_WITH_CREDENTIALS).pipe(
       map(response => ({
         valid: response.valid === true,
         role: response.role || null
@@ -166,79 +148,74 @@ export class AuthService {
   }
 
   getFirstName(): string | null {
-    return localStorage.getItem(this.firstNameKey);
+    return localStorage.getItem(StorageKeys.user.firstName);
   }
 
   getLastName(): string | null {
-    return localStorage.getItem(this.lastNameKey);
+    return localStorage.getItem(StorageKeys.user.lastName);
   }
 
   getUsername(): string | null {
-    return localStorage.getItem(this.usernameKey);
+    return localStorage.getItem(StorageKeys.user.username);
   }
 
   getRole(): string | null {
-    return localStorage.getItem(this.roleKey);
+    return localStorage.getItem(StorageKeys.user.role);
+  }
+
+  private clearUserData(): void {
+    localStorage.removeItem(StorageKeys.user.firstName);
+    localStorage.removeItem(StorageKeys.user.lastName);
+    localStorage.removeItem(StorageKeys.user.username);
+    localStorage.removeItem(StorageKeys.user.role);
+    this.currentUserSubject.next(null);
   }
 
   private storeUserInfo(loginResponse: LoginResponse): void {
-    if (loginResponse.firstName) {
-      localStorage.setItem(this.firstNameKey, loginResponse.firstName);
-    }
-    if (loginResponse.lastName) {
-      localStorage.setItem(this.lastNameKey, loginResponse.lastName);
-    }
-    if (loginResponse.username) {
-      localStorage.setItem(this.usernameKey, loginResponse.username);
-    }
-    if (loginResponse.role) {
-      localStorage.setItem(this.roleKey, loginResponse.role);
-    }
+    if (loginResponse.firstName) localStorage.setItem(StorageKeys.user.firstName, loginResponse.firstName);
+    if (loginResponse.lastName) localStorage.setItem(StorageKeys.user.lastName, loginResponse.lastName);
+    if (loginResponse.username) localStorage.setItem(StorageKeys.user.username, loginResponse.username);
+    if (loginResponse.role) localStorage.setItem(StorageKeys.user.role, loginResponse.role);
   }
 
   private setCurrentUser(response: LoginResponse): void {
-    const user: UserPayload = {
+    this.currentUserSubject.next({
       sub: response.username,
       role: response.role,
       exp: 0
-    };
-    this.currentUserSubject.next(user);
+    });
   }
 
   private loadUserInfo(): void {
     const username = this.getUsername();
     const role = this.getRole();
     if (username && role) {
-      const user: UserPayload = {
-        sub: username,
-        role: role,
-        exp: 0
-      };
-      this.currentUserSubject.next(user);
+      this.currentUserSubject.next({ sub: username, role, exp: 0 });
     }
   }
 
-  private handleError(error: HttpErrorResponse) {
-    let errorMessage: string;
+  private handleError(error: HttpErrorResponse): Observable<never> {
+    let key: string;
 
     if (error.status === 0 || error.error instanceof ProgressEvent) {
-      errorMessage = 'Unable to reach the authentication server. Please try again later.';
+      key = 'AUTH.ERROR_UNREACHABLE';
     } else if (error.error instanceof ErrorEvent) {
-      errorMessage = 'A connection error occurred. Please check your network.';
+      key = 'AUTH.ERROR_CONNECTION';
     } else {
       switch (error.status) {
-        case 400: errorMessage = 'Invalid credentials.'; break;
-        case 401: errorMessage = 'Unauthorized. Please sign in again.'; break;
-        case 403: errorMessage = 'Access denied. Contact your administrator.'; break;
-        case 404: errorMessage = 'Authentication service unavailable.'; break;
-        case 429: errorMessage = 'Too many attempts. Please wait and try again.'; break;
+        case 400: key = 'AUTH.ERROR_INVALID'; break;
+        case 401: key = 'AUTH.ERROR_UNAUTHORIZED'; break;
+        case 403: key = 'AUTH.ERROR_FORBIDDEN'; break;
+        case 404: key = 'AUTH.ERROR_SERVICE_UNAVAILABLE'; break;
+        case 429: key = 'AUTH.ERROR_TOO_MANY'; break;
         case 500:
         case 502:
-        case 503: errorMessage = 'Server error. Please try again later.'; break;
-        default: errorMessage = error.error?.message || 'Authentication failed. Please try again.';
+        case 503: key = 'AUTH.ERROR_SERVER'; break;
+        default: key = 'AUTH.ERROR_GENERIC';
       }
     }
 
-    return throwError(() => new Error(errorMessage));
+    this.logger.error('Auth error', error, { status: error.status });
+    return throwError(() => new Error(error.error?.message || key));
   }
 }

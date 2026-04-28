@@ -3,6 +3,7 @@ package com.declitech.report.service;
 import com.declitech.report.dto.EmotionReportDTO;
 import com.declitech.report.model.EmotionReport;
 import com.declitech.report.repository.EmotionReportRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -76,7 +79,76 @@ public class EmotionReportService {
     }
 
     public List<EmotionReport> getReportsBySessionCode(String sessionCode) {
-        return reportRepository.findBySessionCode(sessionCode);
+        List<EmotionReport> reports = reportRepository.findBySessionCode(sessionCode);
+        reports.forEach(this::hydrateMeansFromRedisIfMissing);
+        return reports;
+    }
+
+    private static final List<String> EMOTION_KEYS =
+            List.of("angry", "disgust", "fear", "happy", "sad", "surprise", "neutral");
+
+    private void hydrateMeansFromRedisIfMissing(EmotionReport report) {
+        if (report.getEmotionMeans() != null && !report.getEmotionMeans().isEmpty()) {
+            return;
+        }
+        if (report.getSessionCode() == null || report.getStudentLoginIdentity() == null) {
+            return;
+        }
+
+        List<String> timeline = getLiveTimelineFromRedis(report.getSessionCode(), report.getStudentLoginIdentity());
+        if (timeline.isEmpty()) {
+            return;
+        }
+
+        Map<String, Double> means = aggregateMeansFromTimeline(timeline);
+        if (means.isEmpty()) {
+            return;
+        }
+
+        report.setEmotionMeans(means);
+        if (report.getDominantEmotion() == null) {
+            report.setDominantEmotion(
+                    means.entrySet().stream()
+                            .max(Map.Entry.comparingByValue())
+                            .map(Map.Entry::getKey)
+                            .orElse(null)
+            );
+        }
+    }
+
+    private Map<String, Double> aggregateMeansFromTimeline(List<String> timeline) {
+        Map<String, Double> sums = new LinkedHashMap<>();
+        EMOTION_KEYS.forEach(k -> sums.put(k, 0.0));
+        int validSamples = 0;
+
+        for (String raw : timeline) {
+            try {
+                Map<String, Object> event = objectMapper.readValue(raw, new TypeReference<Map<String, Object>>() {});
+                if (!"ok".equals(event.get("status"))) continue;
+                Object probs = event.get("probs");
+                if (!(probs instanceof Map<?, ?> probsMap)) continue;
+
+                for (String key : EMOTION_KEYS) {
+                    Object value = probsMap.get(key);
+                    if (value instanceof Number num) {
+                        sums.merge(key, num.doubleValue(), Double::sum);
+                    }
+                }
+                validSamples++;
+            } catch (Exception e) {
+                log.debug("Skipping malformed timeline entry: {}", e.getMessage());
+            }
+        }
+
+        if (validSamples == 0) {
+            return new HashMap<>();
+        }
+
+        Map<String, Double> means = new LinkedHashMap<>();
+        for (String key : EMOTION_KEYS) {
+            means.put(key, sums.get(key) / validSamples);
+        }
+        return means;
     }
 
     public Integer getReportCountBySessionId(Long sessionId) {

@@ -65,9 +65,15 @@ class SessionService:
         self.running = True
         self.last_error = None
 
+        interval_seconds = (
+            request.interval_sec
+            if request.interval_sec is not None
+            else request.interval_min * 60
+        )
+
         self.thread = threading.Thread(
             target=self._run_session,
-            args=(request.duration_min, request.interval_min),
+            args=(request.duration_min, interval_seconds),
             daemon=True,
         )
         self.thread.start()
@@ -93,7 +99,7 @@ class SessionService:
         except Exception as e:
             logger.warning("Failed to send report to Spring Boot: %s", e)
 
-    def _run_session(self, duration_min: int, interval_min: int) -> None:
+    def _run_session(self, duration_min: int, interval_seconds: int) -> None:
         dominants, probs_list = [], []
         no_face_count = 0
 
@@ -116,13 +122,17 @@ class SessionService:
         })
 
         total_seconds = duration_min * 60
-        interval_seconds = interval_min * 60
+        interval_seconds = max(1, int(interval_seconds))
         n_steps = max(1, int(total_seconds // interval_seconds))
+        logger.info(
+            "Session %s capture plan: duration=%ds, interval=%ds, steps=%d",
+            self.session_id, total_seconds, interval_seconds, n_steps,
+        )
 
         camera_available = self.camera_service.open()
         if not camera_available:
-            self.last_error = "Camera unavailable — running in screen-analysis-only mode"
-            logger.warning("Camera unavailable, session continues without emotion detection")
+            self.last_error = "Camera unavailable — emotion detection disabled"
+            logger.error("Camera unavailable for session %s — no emotion samples will be collected", self.session_id)
         else:
             self.camera_service.warmup()
 
@@ -185,8 +195,17 @@ class SessionService:
 
         summary_mean = self.report_service.aggregate_mean(probs_list)
         final_state = self.report_service.summarize_session(
-            dominants, probs_list, no_face_count, n_steps
+            dominants, probs_list, no_face_count, n_steps,
+            camera_available=camera_available,
         )
+
+        if summary_mean is None:
+            zero_probs = {e: 0.0 for e in settings.emotion_classes_list}
+            summary_mean = {
+                "mean_probs": zero_probs,
+                "dominant": None,
+                "n_samples": 0,
+            }
 
         final_report = {
             "sessionId": self.session_id,

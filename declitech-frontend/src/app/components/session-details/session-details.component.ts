@@ -12,11 +12,13 @@ import { EmotionReport, SessionAlert } from '../../models/emotion-report.model';
 import { SessionHistory, StudentReport } from '../../models/session';
 import { TrackReportService } from '../../services/track-report.service';
 import { TrackReport } from '../../models/track-report.model';
+import { Observation, TAG_INDEX, parseObservation, stringifyObservation } from '../../models/observation.model';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-session-details',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent, SidebarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent, SidebarComponent, TranslateModule],
   templateUrl: './session-details.component.html',
   styleUrls: ['./session-details.component.css']
 })
@@ -29,7 +31,7 @@ export class SessionDetailsComponent implements OnInit {
 
   classAvgFocus: number = 0;
   focusTrend: number = 0;
-  mostCommonEmotion: string = 'Loading...';
+  mostCommonEmotion: string = 'COMMON.LOADING';
   emotionPercentage: number = 0;
   criticalAlerts: number = 0;
   alertTrend: number = 0;
@@ -58,6 +60,10 @@ export class SessionDetailsComponent implements OnInit {
   noteText: string = '';
   isSavingNote: boolean = false;
   noteSaved: boolean = false;
+
+  parsedObservation: Observation | null = null;
+  hasStructuredObservation: boolean = false;
+  readonly tagIndex = TAG_INDEX;
 
   private readonly PDF_A4_WIDTH_MM = 210;
   private readonly PDF_A4_HEIGHT_MM = 297;
@@ -120,9 +126,7 @@ export class SessionDetailsComponent implements OnInit {
       next: (reports: TrackReport[]) => {
         this.trackReports = reports;
       },
-      error: (err) => {
-        console.error('Failed to load track reports', err);
-      }
+      error: () => { }
     });
   }
 
@@ -158,16 +162,16 @@ export class SessionDetailsComponent implements OnInit {
   }
 
   private mapEmotionToLabel(emotion: string): string {
-    const emotionMap: { [key: string]: string } = {
-      'happy': 'Focused',
-      'neutral': 'Steady',
-      'sad': 'Disengaged',
-      'angry': 'Stressed',
-      'fear': 'Anxious',
-      'surprise': 'Engaged',
-      'disgust': 'Distracted'
+    const keyMap: { [key: string]: string } = {
+      'happy': 'EMOTION.FOCUSED',
+      'neutral': 'EMOTION.STEADY',
+      'sad': 'EMOTION.DISENGAGED',
+      'angry': 'EMOTION.STRESSED',
+      'fear': 'EMOTION.ANXIOUS',
+      'surprise': 'EMOTION.ENGAGED',
+      'disgust': 'EMOTION.DISTRACTED'
     };
-    return emotionMap[emotion.toLowerCase()] || emotion;
+    return keyMap[emotion.toLowerCase()] || emotion;
   }
 
   private getEmotionColor(emotion: string): string {
@@ -218,7 +222,7 @@ export class SessionDetailsComponent implements OnInit {
   private calculateStatistics(reports: EmotionReport[]): void {
     if (reports.length === 0) {
       this.classAvgFocus = 0;
-      this.mostCommonEmotion = 'No data';
+      this.mostCommonEmotion = 'COMMON.NONE';
       this.criticalAlerts = 0;
       this.participationScore = 'N/A';
       return;
@@ -281,11 +285,10 @@ export class SessionDetailsComponent implements OnInit {
       this.selectedTrackReport = this.trackReports.find(t => (t.studentIdentity || '').trim().toLowerCase() === sName) || null;
       this.selectedEmotionReport = this.untransformedReports.find(r => r.studentLoginIdentity === this.selectedStudent?.name) || null;
       this.selectedStudentAlerts = [];
-      this.noteText = this.selectedEmotionReport?.instructorNote || '';
+      this.applyInstructorNote(this.selectedEmotionReport?.instructorNote || '');
       this.noteSaved = false;
       this.isReportModalOpen = true;
 
-      // sessionCode is always the clean code (e.g. "VU5ZGO"), never "SESSION-VU5ZGO" from legacy Python agent
       const sessionId = this.sessionCode || this.selectedEmotionReport?.sessionCode || '';
       const identity = this.selectedEmotionReport?.studentLoginIdentity
         || this.selectedStudent?.name
@@ -317,34 +320,76 @@ export class SessionDetailsComponent implements OnInit {
     this.noteText = '';
     this.noteSaved = false;
     this.isSavingNote = false;
+    this.parsedObservation = null;
+    this.hasStructuredObservation = false;
+  }
+
+  private applyInstructorNote(raw: string): void {
+    if (!raw) {
+      this.parsedObservation = null;
+      this.hasStructuredObservation = false;
+      this.noteText = '';
+      return;
+    }
+    const obs = parseObservation(raw);
+    const looksStructured = raw.trim().startsWith('{') && obs.tags.length > 0;
+    if (looksStructured) {
+      this.parsedObservation = obs;
+      this.hasStructuredObservation = true;
+      this.noteText = obs.comment || '';
+    } else {
+      this.parsedObservation = null;
+      this.hasStructuredObservation = false;
+      this.noteText = obs.comment || raw;
+    }
+  }
+
+  removeObservationTag(tagId: string): void {
+    if (!this.parsedObservation) return;
+    this.parsedObservation = {
+      ...this.parsedObservation,
+      tags: this.parsedObservation.tags.filter((t) => t !== tagId)
+    };
   }
 
   saveNote(): void {
     if (!this.selectedEmotionReport?.id || this.isSavingNote) return;
     this.isSavingNote = true;
     this.noteSaved = false;
-    this.emotionService.updateInstructorNote(this.selectedEmotionReport.id, this.noteText).subscribe({
-      next: (res) => {
-        if (this.selectedEmotionReport) this.selectedEmotionReport.instructorNote = this.noteText;
+
+    let payload: string;
+    if (this.hasStructuredObservation && this.parsedObservation) {
+      const updated: Observation = {
+        v: 1,
+        tags: this.parsedObservation.tags,
+        comment: this.noteText.trim(),
+        updatedAt: new Date().toISOString()
+      };
+      payload = stringifyObservation(updated);
+      this.parsedObservation = updated;
+    } else {
+      payload = this.noteText;
+    }
+
+    this.emotionService.updateInstructorNote(this.selectedEmotionReport.id, payload).subscribe({
+      next: () => {
+        if (this.selectedEmotionReport) this.selectedEmotionReport.instructorNote = payload;
         this.isSavingNote = false;
         this.noteSaved = true;
         setTimeout(() => { this.noteSaved = false; }, this.NOTE_SAVED_MS);
       },
-      error: (err) => {
-        console.error('[Note] error', err);
+      error: () => {
         this.isSavingNote = false;
       }
     });
   }
 
-  /** Only tab-switch type alerts (excludes ALERT_RESOLVED, MOUSE_INACTIVITY) */
   getTabSwitchAlerts(): SessionAlert[] {
     return this.selectedStudentAlerts.filter(a =>
       a.alertType === 'TAB_SWITCH' || a.alertType === 'MULTIPLE_SWITCHES' || a.alertType === 'OFF_PLATFORM'
     );
   }
 
-  /** Unique visited sites with count and first-seen time */
   getUniqueVisitedSites(): { name: string; url: string; count: number; firstSeen: string }[] {
     const map = new Map<string, { name: string; url: string; count: number; firstSeen: string }>();
     this.getTabSwitchAlerts().forEach(a => {
@@ -368,18 +413,8 @@ export class SessionDetailsComponent implements OnInit {
   }
 
   getAlertTypeLabel(alertType: string): string {
-    const labels: Record<string, string> = {
-      TAB_SWITCH: 'Tab Switch',
-      MULTIPLE_SWITCHES: 'Multiple Switches',
-      OFF_PLATFORM: 'Off Platform',
-      INACTIVITY: 'Inactivity',
-      MOUSE_INACTIVITY: 'No Mouse Movement',
-      FOCUS_LOSS: 'Focus Loss',
-      DISTRACTION: 'Distraction',
-      LOW_ENGAGEMENT: 'Low Engagement',
-      ALERT_RESOLVED: 'Returned to Platform'
-    };
-    return labels[alertType] || alertType;
+    const known = ['TAB_SWITCH', 'MULTIPLE_SWITCHES', 'OFF_PLATFORM', 'INACTIVITY', 'MOUSE_INACTIVITY', 'FOCUS_LOSS', 'DISTRACTION', 'LOW_ENGAGEMENT', 'ALERT_RESOLVED'];
+    return known.includes(alertType) ? `ALERT_TYPE.${alertType}` : alertType;
   }
 
   getAlertIcon(alertType: string): string {
@@ -427,10 +462,8 @@ export class SessionDetailsComponent implements OnInit {
     try {
       this.isExportingPdf = true;
 
-      // Angular change detection must flush before cloning DOM state
       await new Promise(resolve => setTimeout(resolve, this.PDF_RENDER_WAIT_MS));
 
-      // Clone the entire modal so we can expand it without affecting UI
       const clone = modalElement.cloneNode(true) as HTMLElement;
 
       const clonePrintHeaders = clone.querySelectorAll('.print-header');
@@ -444,7 +477,6 @@ export class SessionDetailsComponent implements OnInit {
       const ignoredEls = clone.querySelectorAll('[data-html2canvas-ignore]');
       ignoredEls.forEach(el => el.parentNode?.removeChild(el));
 
-      // Style the clone for full-height off-screen rendering
       clone.style.position = 'fixed';
       clone.style.top = '0';
       clone.style.left = '-9999px';
@@ -457,7 +489,6 @@ export class SessionDetailsComponent implements OnInit {
       clone.style.backgroundColor = '#ffffff';
       document.body.appendChild(clone);
 
-      // Small delay to ensure clone is fully rendered before capture
       await new Promise(resolve => setTimeout(resolve, this.PDF_CLONE_WAIT_MS));
 
       const canvas = await html2canvas(clone, {
@@ -496,8 +527,8 @@ export class SessionDetailsComponent implements OnInit {
       const dateStr = new Date().toISOString().split('T')[0];
       pdf.save(`Declitech_Report_${this.selectedStudent.name.replace(/\s+/g, '_')}_${dateStr}.pdf`);
 
-    } catch (error) {
-      console.error('Failed to export PDF:', error);
+    } catch {
+      return;
     } finally {
       this.isExportingPdf = false;
     }

@@ -7,6 +7,7 @@ import { SessionDetailsComponent } from './app/components/session-details/sessio
 import { NotFoundComponent } from './app/shared/not-found/not-found.component';
 import { SsoCallbackComponent } from './app/components/sso-callback/sso-callback.component';
 import { InstructorAnalyticsComponent } from './app/components/instructor-analytics/instructor-analytics.component';
+import { TeacherObservationComponent } from './app/components/teacher-observation/teacher-observation.component';
 import { AuthGuard } from './app/guards/auth.guard';
 
 export const routes: Routes = [
@@ -18,6 +19,7 @@ export const routes: Routes = [
   { path: 'session/history', component: SessionHistoryComponent, canActivate: [AuthGuard] },
   { path: 'session/details/:id', component: SessionDetailsComponent, canActivate: [AuthGuard] },
   { path: 'analytics', component: InstructorAnalyticsComponent, canActivate: [AuthGuard] },
+  { path: 'observe', component: TeacherObservationComponent, canActivate: [AuthGuard] },
   { path: 'not-found', component: NotFoundComponent },
   { path: '**', component: NotFoundComponent }
 ];

@@ -49,11 +49,15 @@ out/
 
 # JSON files
 *.json
+!declitech-frontend/src/assets/i18n/*.json
 
 # Claude directory
 .claude/
 .code-review-graph/
 .scripts/
+
+# Docs directory (local-only docs)
+docs/
 
 # Temporary files
 *.tmp

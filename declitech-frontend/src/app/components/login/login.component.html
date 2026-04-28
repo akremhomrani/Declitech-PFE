@@ -1,24 +1,19 @@
 <div class="login-container">
 
-  <!-- Mouse spotlight -->
   <div class="spotlight"></div>
 
-  <!-- Animated background particles -->
   <div class="particles">
     <span *ngFor="let p of particles" class="particle" [style.left.%]="p.x" [style.top.%]="p.y"
       [style.width.px]="p.size" [style.height.px]="p.size" [style.animation-delay.s]="p.delay"
       [style.animation-duration.s]="p.duration"></span>
   </div>
 
-  <!-- Glowing orbs in background -->
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
   <div class="orb orb-3"></div>
 
-  <!-- Main content -->
   <div class="content" [class.ready]="animationDone">
 
-    <!-- Logo + brand -->
     <div class="brand">
       <div class="logo-icon">
         <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
@@ -28,13 +23,10 @@
       <h1 class="brand-name">DecliTrack</h1>
     </div>
 
-    <!-- Tagline -->
-    <p class="tagline">AI-Powered Student Monitoring</p>
+    <p class="tagline">{{ 'AUTH.TAGLINE' | translate }}</p>
 
-    <!-- Divider line -->
     <div class="divider"></div>
 
-    <!-- Error message -->
     <div *ngIf="errorMessage" class="error-box">
       <svg viewBox="0 0 20 20" fill="currentColor">
         <path fill-rule="evenodd"
@@ -44,24 +36,22 @@
       <span>{{ errorMessage }}</span>
     </div>
 
-    <!-- Loading state -->
     <div *ngIf="isLoading" class="loading-state">
       <div class="spinner"></div>
-      <span>Authenticating…</span>
+      <span>{{ 'AUTH.LOGGING_IN' | translate }}</span>
     </div>
 
-    <!-- SSO Button -->
     <button *ngIf="!isLoading" type="button" class="sso-btn" (click)="loginWithIAM('staff')">
       <span class="sso-btn-glow"></span>
       <svg class="sso-icon" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
         <path d="M6 6H42L36 24L42 42H6L12 24L6 6Z" fill="currentColor"></path>
       </svg>
-      <span class="sso-label">Sign in with DecliIAM</span>
+      <span class="sso-label">{{ 'AUTH.LOGIN_AS_STAFF' | translate }}</span>
       <svg class="sso-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
       </svg>
     </button>
 
-    <p class="contact-hint">No account? <a href="#">Contact Administrator</a></p>
+    <p class="contact-hint">{{ 'AUTH.ERROR_ACCOUNT_LOCKED' | translate }}</p>
   </div>
 </div>

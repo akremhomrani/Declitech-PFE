@@ -7,16 +7,17 @@
     'hidden md:flex': !isMobileOpen
   }">
   <div class="flex flex-col gap-8">
-    <div *ngIf="sessionCode" class="flex flex-col gap-1.5 p-5 rounded-2xl bg-white dark:bg-slate-800 border border-border-light shadow-sm">
-      <p class="text-text-muted text-[10px] font-bold uppercase tracking-[0.2em]">Session Code</p>
-      <div class="flex items-end gap-2">
-        <h1 class="text-primary text-3xl font-black tracking-tighter">{{ sessionCode }}</h1>
+    <div *ngIf="sessionCode" class="flex flex-col gap-1.5 p-5 rounded-2xl bg-white dark:bg-slate-800 border border-border-light shadow-sm overflow-hidden">
+      <p class="text-text-muted text-[10px] font-bold uppercase tracking-[0.2em]">{{ 'SIDEBAR.SESSION_CODE' | translate }}</p>
+      <div class="flex items-end gap-2 min-w-0">
+        <h1 class="text-primary text-3xl font-black tracking-tighter truncate flex-1 min-w-0">{{ sessionCode }}</h1>
         <span
-          class="material-symbols-outlined text-slate-400 text-sm mb-1 cursor-pointer hover:text-primary transition-colors">content_copy</span>
+          class="material-symbols-outlined text-slate-400 text-sm mb-1 cursor-pointer hover:text-primary transition-colors flex-shrink-0">content_copy</span>
       </div>
-      <div class="flex items-center gap-2 mt-3 text-text-muted">
-        <span class="material-symbols-outlined text-lg">timer</span>
-        <p class="text-xs font-semibold">{{ elapsedTime }} elapsed</p>
+      <p *ngIf="sessionTitle" class="text-xs font-medium text-text-muted truncate" [title]="sessionTitle">{{ sessionTitle }}</p>
+      <div class="flex items-center gap-2 mt-3 text-text-muted min-w-0">
+        <span class="material-symbols-outlined text-lg flex-shrink-0">timer</span>
+        <p class="text-xs font-semibold truncate">{{ elapsedTime }} {{ 'SIDEBAR.ELAPSED_SUFFIX' | translate }}</p>
       </div>
     </div>
 
@@ -26,48 +27,48 @@
         routerLink="/dashboard" routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20"
         [routerLinkActiveOptions]="{exact: false}">
         <span class="material-symbols-outlined">dashboard</span>
-        <span class="text-sm">Dashboard</span>
+        <span class="text-sm truncate">{{ 'NAV.DASHBOARD' | translate }}</span>
       </a>
       <a *ngIf="isInstructor" (click)="layoutService.closeSidebar()"
         class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white dark:hover:bg-slate-800 hover:text-primary hover:shadow-sm transition-all font-semibold"
         routerLink="/session/create" routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20"
         [routerLinkActiveOptions]="{exact: false}">
         <span class="material-symbols-outlined">add_circle</span>
-        <span class="text-sm">Create Session</span>
+        <span class="text-sm truncate">{{ 'NAV.CREATE_SESSION' | translate }}</span>
       </a>
       <a (click)="layoutService.closeSidebar()"
         class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white dark:hover:bg-slate-800 hover:text-primary hover:shadow-sm transition-all font-semibold"
         routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20"
         [routerLinkActiveOptions]="{exact: false}">
         <span class="material-symbols-outlined">person_search</span>
-        <span class="text-sm">Student Directory</span>
+        <span class="text-sm truncate">{{ 'NAV.STUDENT_DIRECTORY' | translate }}</span>
       </a>
       <a *ngIf="isAdmin" (click)="layoutService.closeSidebar()"
         class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white dark:hover:bg-slate-800 hover:text-primary hover:shadow-sm transition-all font-semibold"
         routerLink="/users" routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20"
         [routerLinkActiveOptions]="{exact: false}">
         <span class="material-symbols-outlined">group</span>
-        <span class="text-sm">User Management</span>
+        <span class="text-sm truncate">{{ 'NAV.USER_MANAGEMENT' | translate }}</span>
       </a>
       <a (click)="layoutService.closeSidebar()"
         class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white dark:hover:bg-slate-800 hover:text-primary hover:shadow-sm transition-all font-semibold"
         routerLink="/analytics" routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20"
         [routerLinkActiveOptions]="{exact: false}">
         <span class="material-symbols-outlined">analytics</span>
-        <span class="text-sm">Insights & Analytics</span>
+        <span class="text-sm truncate">{{ 'NAV.ANALYTICS' | translate }}</span>
       </a>
       <a (click)="layoutService.closeSidebar()"
         class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white dark:hover:bg-slate-800 hover:text-primary hover:shadow-sm transition-all font-semibold"
         routerLink="/session/history" routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20"
         [routerLinkActiveOptions]="{exact: false}">
         <span class="material-symbols-outlined">history</span>
-        <span class="text-sm">Session History</span>
+        <span class="text-sm truncate">{{ 'NAV.SESSION_HISTORY' | translate }}</span>
       </a>
     </nav>
 
     <div *ngIf="sessionCode" class="mt-4">
       <div class="flex items-center justify-between mb-4 px-2">
-        <p class="text-[10px] font-bold uppercase tracking-[0.15em] text-text-muted">Real-time Alerts</p>
+        <p class="text-[10px] font-bold uppercase tracking-[0.15em] text-text-muted">{{ 'COMMON.ALERTS' | translate }}</p>
         <span *ngIf="recentAlerts.length > 0" class="flex h-2 w-2 rounded-full bg-red-500"></span>
       </div>
       <div class="space-y-3 px-1 overflow-y-auto max-h-64 custom-scrollbar">
@@ -90,7 +91,7 @@
                  'text-orange-600 dark:text-orange-400': getAlertColor(alert) === 'orange',
                  'text-amber-600 dark:text-amber-400': getAlertColor(alert) === 'amber'
                }">
-              {{ getAlertTitle(alert) }}
+              {{ getAlertTitleKey(alert) | translate }}
             </p>
           </div>
           <span class="text-[9px] font-bold" [ngClass]="{
@@ -98,13 +99,16 @@
                   'text-orange-400': getAlertColor(alert) === 'orange',
                   'text-amber-400': getAlertColor(alert) === 'amber'
                 }">
-            {{ getRelativeTime(alert.timestamp) }}
+            <ng-container *ngIf="getRelativeTime(alert.timestamp) as t">
+              <ng-container *ngIf="t.unit === 'now'">{{ 'TIME.NOW' | translate }}</ng-container>
+              <ng-container *ngIf="t.unit !== 'now'">{{ t.value }}{{ ('TIME.UNIT_' + t.unit) | translate }}</ng-container>
+            </ng-container>
           </span>
         </div>
 
         <div *ngIf="recentAlerts.length === 0" class="text-center py-8">
           <span class="material-symbols-outlined text-4xl text-slate-300 dark:text-slate-600 block mb-3">notifications_off</span>
-          <p class="text-xs text-slate-400 mt-2 font-semibold">No recent alerts</p>
+          <p class="text-xs text-slate-400 mt-2 font-semibold">{{ 'COMMON.NONE' | translate }}</p>
         </div>
       </div>
     </div>
@@ -113,7 +117,7 @@
   <button *ngIf="sessionCode" (click)="onEndSession()"
     class="w-full py-4 px-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 text-red-600 text-sm font-bold flex items-center justify-center gap-3 hover:bg-red-600 hover:text-white transition-all group">
     <span class="material-symbols-outlined text-xl group-hover:rotate-12 transition-transform">logout</span>
-    End Live Session
+    {{ 'SESSION_CREATE.END_SESSION' | translate }}
   </button>
 </aside>
 
@@ -129,21 +133,20 @@
         </svg>
       </div>
 
-      <h2 class="text-2xl font-bold text-text-main mb-2">Are you sure?</h2>
+      <h2 class="text-2xl font-bold text-text-main mb-2">{{ 'COMMON.CONFIRM' | translate }}</h2>
 
       <p class="text-text-muted mb-6">
-        The session <strong>{{ sessionCode }}</strong> will be permanently ended and all active connections will be
-        terminated.
+        <strong>{{ sessionCode }}</strong>
       </p>
 
       <div class="flex space-x-3 w-full">
         <button type="button" (click)="closeEndSessionModal()" [disabled]="endingSession"
           class="flex-1 px-4 py-2 text-sm font-medium text-text-main bg-white dark:bg-slate-700 border border-border-light rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-          Cancel
+          {{ 'COMMON.CANCEL' | translate }}
         </button>
         <button type="button" (click)="confirmEndSession()" [disabled]="endingSession"
           class="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-          <span *ngIf="!endingSession">Yes, end it</span>
+          <span *ngIf="!endingSession">{{ 'SESSION_CREATE.END_SESSION' | translate }}</span>
           <span *ngIf="endingSession" class="flex items-center justify-center">
             <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -151,7 +154,7 @@
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
               </path>
             </svg>
-            Ending...
+            {{ 'COMMON.LOADING' | translate }}
           </span>
         </button>
       </div>

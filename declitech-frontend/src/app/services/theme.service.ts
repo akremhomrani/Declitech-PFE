@@ -1,30 +1,28 @@
 import { Injectable, signal } from '@angular/core';
-
-const STORAGE_KEY = 'declitech-theme';
+import { StorageKeys } from './storage-keys';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
-
-  isDark = signal(false);
+  readonly isDark = signal(false);
 
   constructor() {
     this.init();
-  }
-
-  private init(): void {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const dark = stored ? stored === 'dark' : prefersDark;
-    this.apply(dark);
   }
 
   toggle(): void {
     this.apply(!this.isDark());
   }
 
+  private init(): void {
+    const stored = localStorage.getItem(StorageKeys.ui.theme);
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const dark = stored ? stored === 'dark' : prefersDark;
+    this.apply(dark);
+  }
+
   private apply(dark: boolean): void {
     this.isDark.set(dark);
     document.documentElement.classList.toggle('dark', dark);
-    localStorage.setItem(STORAGE_KEY, dark ? 'dark' : 'light');
+    localStorage.setItem(StorageKeys.ui.theme, dark ? 'dark' : 'light');
   }
 }

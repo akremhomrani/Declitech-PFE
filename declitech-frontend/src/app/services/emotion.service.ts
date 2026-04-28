@@ -1,63 +1,34 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../environments/environment';
+import { ApiPaths } from './api-paths';
+import { HTTP_WITH_CREDENTIALS } from './http-options';
 import { EmotionReport, SessionAlert } from '../models/emotion-report.model';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class EmotionService {
-  private apiUrl = `${environment.apiUrl}/api/emotions`;
-
-  constructor(private http: HttpClient) {}
-
-  getAllReports(): Observable<EmotionReport[]> {
-    return this.http.get<EmotionReport[]>(this.apiUrl);
-  }
-
-  getReportsByStudent(studentLoginIdentity: string): Observable<EmotionReport[]> {
-    return this.http.get<EmotionReport[]>(`${this.apiUrl}/student/${studentLoginIdentity}`);
-  }
-
-  getReportBySessionId(sessionId: string): Observable<EmotionReport> {
-    return this.http.get<EmotionReport>(`${this.apiUrl}/session/${sessionId}`);
-  }
+  private readonly http = inject(HttpClient);
 
   getReportsBySessionCode(sessionCode: string): Observable<EmotionReport[]> {
-    return this.http.get<EmotionReport[]>(`${this.apiUrl}/session-code/${sessionCode}`);
-  }
-
-  getReportsBySessionId(sessionId: number): Observable<EmotionReport[]> {
-    return this.http.get<EmotionReport[]>(`${this.apiUrl}/session/${sessionId}`);
+    return this.http.get<EmotionReport[]>(ApiPaths.emotions.bySessionCode(sessionCode), HTTP_WITH_CREDENTIALS);
   }
 
   getReportCountBySessionCode(sessionCode: string): Observable<number> {
-    return this.http.get<number>(`${this.apiUrl}/count?sessionCode=${sessionCode}`);
-  }
-
-  getActiveStudents(): Observable<EmotionReport[]> {
-    return this.http.get<EmotionReport[]>(this.apiUrl);
-  }
-
-  getReportsByDateRange(startDate: string, endDate: string): Observable<EmotionReport[]> {
-    const params = new HttpParams()
-      .set('startDate', startDate)
-      .set('endDate', endDate);
-    return this.http.get<EmotionReport[]>(`${this.apiUrl}/range`, { params });
+    return this.http.get<number>(ApiPaths.emotions.countBySessionCode(sessionCode), HTTP_WITH_CREDENTIALS);
   }
 
   updateInstructorNote(reportId: number, note: string): Observable<{ id: number; note: string }> {
     return this.http.patch<{ id: number; note: string }>(
-      `${environment.apiUrl}/api/emotions/${reportId}/note`,
-      { note }
+      ApiPaths.emotions.note(reportId),
+      { note },
+      HTTP_WITH_CREDENTIALS
     );
   }
 
   getAlertsBySessionAndStudent(sessionId: string, studentLoginIdentity: string): Observable<SessionAlert[]> {
-    const encoded = encodeURIComponent(studentLoginIdentity);
     return this.http.get<SessionAlert[]>(
-      `${environment.apiUrl}/api/alerts/session/${sessionId}/student/${encoded}`
+      ApiPaths.alerts.sessionStudent(sessionId, studentLoginIdentity),
+      HTTP_WITH_CREDENTIALS
     );
   }
 }

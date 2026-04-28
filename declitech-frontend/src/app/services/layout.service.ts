@@ -1,18 +1,23 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Injectable, signal } from '@angular/core';
+import { BehaviorSubject, Observable } from 'rxjs';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class LayoutService {
-  private sidebarOpenSubject = new BehaviorSubject<boolean>(false);
-  public sidebarOpen$ = this.sidebarOpenSubject.asObservable();
+  readonly sidebarOpen = signal(false);
+
+  private readonly sidebarOpenSubject = new BehaviorSubject<boolean>(false);
+  readonly sidebarOpen$: Observable<boolean> = this.sidebarOpenSubject.asObservable();
 
   toggleSidebar(): void {
-    this.sidebarOpenSubject.next(!this.sidebarOpenSubject.value);
+    this.setSidebarOpen(!this.sidebarOpen());
   }
 
   closeSidebar(): void {
-    this.sidebarOpenSubject.next(false);
+    this.setSidebarOpen(false);
+  }
+
+  private setSidebarOpen(open: boolean): void {
+    this.sidebarOpen.set(open);
+    this.sidebarOpenSubject.next(open);
   }
 }

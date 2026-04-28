@@ -7,7 +7,11 @@ class StartRequest(BaseModel):
     student_id: str = Field(..., description="Student ID")
     device_id: str = Field(..., description="Device/PC ID")
     duration_min: int = Field(30, ge=1, le=240, description="Session duration in minutes")
-    interval_min: int = Field(15, ge=1, le=60, description="Capture interval in minutes")
+    interval_min: int = Field(15, ge=1, le=60, description="Capture interval in minutes (legacy)")
+    interval_sec: Optional[int] = Field(
+        None, ge=2, le=3600,
+        description="Capture interval in seconds. When set, overrides interval_min.",
+    )
     login_identity: str = Field(..., description="Student login identity (username/email)")
 
 

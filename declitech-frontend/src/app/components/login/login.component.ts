@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../services/auth.service';
 
 interface Particle {
@@ -14,7 +15,7 @@ interface Particle {
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslateModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
@@ -42,7 +43,8 @@ export class LoginComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
-    private el: ElementRef
+    private el: ElementRef,
+    private translate: TranslateService
   ) {}
 
   @HostListener('mousemove', ['$event'])
@@ -84,7 +86,6 @@ export class LoginComponent implements OnInit, OnDestroy {
     const state = this.route.snapshot.queryParamMap.get('state');
     const error = this.route.snapshot.queryParamMap.get('error');
 
-    // Popup context: relay result to parent and close
     if (window.opener) {
       if (error) {
         window.opener.postMessage(
@@ -112,7 +113,7 @@ export class LoginComponent implements OnInit, OnDestroy {
         next: () => this.router.navigate(['/dashboard']),
         error: (err: Error) => {
           this.isLoading = false;
-          this.errorMessage = this.sanitizeError(err.message) || 'SSO authentication error.';
+          this.errorMessage = this.sanitizeError(err.message) || this.translate.instant('AUTH.ERROR_GENERIC');
         }
       });
       return;
@@ -133,8 +134,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       },
       error: (err: Error) => {
         this.isLoading = false;
-        const cancelled = err.message === 'Connexion annulée';
-        if (!cancelled) {
+        if (err.message !== 'AUTH.ERROR_CANCELLED') {
           this.errorMessage = this.sanitizeError(err.message);
         }
       }
@@ -142,19 +142,21 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   private sanitizeError(message: string): string {
-    // Never expose URLs or internal details to the user
     if (!message || /https?:\/\/|localhost|127\.0\.0\.1/.test(message)) {
-      return 'Unable to reach the authentication server. Please try again later.';
+      return this.translate.instant('AUTH.ERROR_UNREACHABLE');
+    }
+    if (message.startsWith('AUTH.')) {
+      return this.translate.instant(message);
     }
     return message;
   }
 
   private mapIamError(error: string): string {
     switch (error) {
-      case 'invalid_credentials': return 'Invalid credentials.';
-      case 'account_inactive':    return 'Account disabled. Contact administrator.';
-      case 'too_many_attempts':   return 'Too many attempts. Try again later.';
-      default:                    return 'Login error: ' + error;
+      case 'invalid_credentials': return this.translate.instant('AUTH.ERROR_INVALID');
+      case 'account_inactive':    return this.translate.instant('AUTH.ERROR_ACCOUNT_LOCKED');
+      case 'too_many_attempts':   return this.translate.instant('AUTH.ERROR_TOO_MANY');
+      default:                    return this.translate.instant('AUTH.ERROR_GENERIC');
     }
   }
 }

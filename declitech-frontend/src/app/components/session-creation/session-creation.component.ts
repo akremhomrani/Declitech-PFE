@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { TranslateModule } from '@ngx-translate/core';
 import { NavbarComponent } from '../../shared/navbar/navbar.component';
 import { SidebarComponent } from '../../shared/sidebar/sidebar.component';
 import { SessionService } from '../../services/session.service';
@@ -11,11 +12,12 @@ import { EmotionService } from '../../services/emotion.service';
 import { IamSite, IamModule } from '../../models/iam/iam-site.model';
 import { Subscription, interval } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
+import QRCode from 'qrcode';
 
 @Component({
   selector: 'app-session-creation',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent, SidebarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent, SidebarComponent, TranslateModule],
   templateUrl: './session-creation.component.html',
   styleUrls: ['./session-creation.component.css']
 })
@@ -35,6 +37,9 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
   modalTitle = '';
   modalDuration = 90;
   codeCopied = false;
+
+  qrDataUrl = '';
+  observeUrl = '';
 
   sites: IamSite[] = [];
   availableLocations: string[] = [];
@@ -72,9 +77,12 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
           this.sessionTitle = session.title;
           this.sessionDuration = session.duration;
           this.startPollingConnectedStudents();
+          this.generateQrForSession(session.code);
         } else {
           this.sessionGenerated = false;
           this.sessionCode = '';
+          this.qrDataUrl = '';
+          this.observeUrl = '';
           this.stopPollingConnectedStudents();
         }
       })
@@ -133,9 +141,7 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
         this.sites = sites;
         this.availableLocations = sites.map(s => s.name).sort();
       },
-      error: (error) => {
-        console.error('Error loading IAM sites:', error);
-      }
+      error: () => { }
     });
   }
 
@@ -191,5 +197,18 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
 
   getCodeArray(): string[] {
     return this.sessionCode.split('');
+  }
+
+  private generateQrForSession(code: string): void {
+    const url = `${window.location.origin}/observe?code=${encodeURIComponent(code)}`;
+    this.observeUrl = url;
+    QRCode.toDataURL(url, {
+      width: 280,
+      margin: 1,
+      errorCorrectionLevel: 'M',
+      color: { dark: '#0f172a', light: '#ffffff' }
+    })
+      .then(dataUrl => { this.qrDataUrl = dataUrl; })
+      .catch(() => { this.qrDataUrl = ''; });
   }
 }

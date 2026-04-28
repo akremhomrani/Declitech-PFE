@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslateModule } from '@ngx-translate/core';
 import { EmotionService } from '../../services/emotion.service';
 import { SessionService } from '../../services/session.service';
 import { AlertService } from '../../services/alert.service';
@@ -12,7 +13,7 @@ import { SidebarComponent } from '../../shared/sidebar/sidebar.component';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, NavbarComponent, SidebarComponent],
+  imports: [CommonModule, NavbarComponent, SidebarComponent, TranslateModule],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
@@ -115,7 +116,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.students = [...this.students];
         this.calculateStatistics();
       },
-      error: (err) => { console.error('[Dashboard] Alert stream error:', err); }
+      error: () => { }
     });
   }
 
@@ -134,12 +135,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   getStudentStatus(student: EmotionReport): string {
-    if (student.status === 'IN_PROGRESS') {
-      return 'Focused';
-    } else if (student.status === 'COMPLETED') {
-      return 'Completed';
-    }
-    return 'Offline';
+    if (student.status === 'IN_PROGRESS') return 'DASHBOARD.STATUS_FOCUSED';
+    if (student.status === 'COMPLETED') return 'COMMON.COMPLETED';
+    return 'DASHBOARD.OFFLINE';
   }
 
   hasTabSwitchAlert(student: EmotionReport): boolean {
@@ -192,18 +190,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   getAlertMessage(student: EmotionReport): string {
+    return 'DASHBOARD.STATUS_' + this.getStatusKey(student);
+  }
+
+  getStatusKey(student: EmotionReport): string {
     const identity = student.studentLoginIdentity;
     if (this.alertService.hasRecentAlert(identity, 'TAB_SWITCH') ||
       this.alertService.hasRecentAlert(identity, 'MULTIPLE_SWITCHES')) {
-      return 'Tab Switched';
+      return 'SECURITY';
     }
     if (this.alertService.hasRecentAlert(identity, 'MOUSE_INACTIVITY')) {
-      return 'No Movement';
+      return 'BLOCKED';
     }
     if (this.alertService.hasRecentAlert(identity)) {
-      return 'Distracted';
+      return 'DISTRACTED';
     }
-    return 'On Task';
+    return 'ON_TASK';
   }
 
   getBadgeColor(badgeType: string): string {

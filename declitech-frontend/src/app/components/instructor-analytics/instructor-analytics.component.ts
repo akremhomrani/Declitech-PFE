@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
+import { TranslateModule } from '@ngx-translate/core';
 import { interval, Subscription, switchMap, startWith } from 'rxjs';
 import { NavbarComponent } from '../../shared/navbar/navbar.component';
 import { SidebarComponent } from '../../shared/sidebar/sidebar.component';
@@ -39,7 +40,7 @@ type Range = 'week' | 'month' | 'year' | 'all';
 @Component({
   selector: 'app-instructor-analytics',
   standalone: true,
-  imports: [CommonModule, RouterLink, NavbarComponent, SidebarComponent],
+  imports: [CommonModule, RouterLink, NavbarComponent, SidebarComponent, TranslateModule],
   templateUrl: './instructor-analytics.component.html',
   styleUrls: ['./instructor-analytics.component.css']
 })
@@ -49,7 +50,6 @@ export class InstructorAnalyticsComponent implements OnInit, OnDestroy {
   instructorUsername = '';
   range: Range = 'all';
 
-  // ── Live refresh ───────────────────────────────────────
   lastUpdated: Date | null = null;
   isRefreshing = false;
   private pollSub?: Subscription;
@@ -59,10 +59,8 @@ export class InstructorAnalyticsComponent implements OnInit, OnDestroy {
   filteredSessions: SessionHistory[] = [];
   modules: IamModule[] = [];
 
-  // ── Active module filter ───────────────────────────────
   selectedModuleId: number | null | 'all' = 'all';
 
-  // ── Raw computed values ────────────────────────────────
   totalSessions   = 0;
   totalHours      = 0;
   totalStudents   = 0;
@@ -70,23 +68,19 @@ export class InstructorAnalyticsComponent implements OnInit, OnDestroy {
   avgParticipants = 0;
   completionRate  = 0;
 
-  // ── Animated display values (count-up) ────────────────
   displayedSessions = 0;
   displayedHours    = 0;
   displayedStudents = 0;
   displayedReports  = 0;
   displayedRate     = 0;
 
-  // ── Charts ────────────────────────────────────────────
   statusSlices: StatusSlice[] = [];
   monthBars: MonthBar[] = [];
   animatedDonutGradient = 'conic-gradient(#e2e8f0 0deg 360deg)';
   chartsVisible = false;
 
-  // ── Module stats ──────────────────────────────────────
   moduleStats: ModuleStat[] = [];
 
-  // ── Lists ─────────────────────────────────────────────
   recentSessions: SessionHistory[] = [];
   largestClass: SessionHistory | null = null;
 
@@ -112,21 +106,18 @@ export class InstructorAnalyticsComponent implements OnInit, OnDestroy {
     this.timeouts.forEach(t => clearTimeout(t));
   }
 
-  // ── Polling ────────────────────────────────────────────
-
   private startPolling(): void {
     const isInstructor = this.authService.getRole() === 'INSTRUCTOR';
     const filters: { instructorUsername?: string } = {};
     if (isInstructor) filters.instructorUsername = this.instructorUsername;
 
-    // Load modules from IAM once (they rarely change) then poll sessions
     this.iamService.getSites().subscribe({
       next: (sites) => {
         this.modules = sites.flatMap(s => s.salles.flatMap(sa => sa.modules));
 
         this.pollSub = interval(this.POLL_INTERVAL_MS).pipe(
-          startWith(0),                      // fire immediately on subscribe
-          switchMap(() => {                  // cancel in-flight if new tick arrives
+          startWith(0),
+          switchMap(() => {
             this.isRefreshing = !this.isLoading;
             return this.sessionService.filterSessionHistory(filters, 0, 200);
           })
@@ -140,11 +131,9 @@ export class InstructorAnalyticsComponent implements OnInit, OnDestroy {
             this.isRefreshing = false;
 
             if (this.isLoading) {
-              // First load — full render with animations
               this.isLoading = false;
               this.applyRange(this.range);
             } else if (changed) {
-              // Subsequent poll — only update if data actually changed
               this.applyRange(this.range);
             }
           },
@@ -158,15 +147,12 @@ export class InstructorAnalyticsComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Fingerprint comparison — avoids re-render on identical polls */
   private hasChanged(incoming: SessionHistory[]): boolean {
     if (incoming.length !== this.allSessions.length) return true;
     const sig = (s: SessionHistory[]) =>
       s.map(x => `${x.id}:${x.status}:${x.participantCount}`).join('|');
     return sig(incoming) !== sig(this.allSessions);
   }
-
-  // ── Range & module filters ─────────────────────────────
 
   setRange(r: string): void {
     this.range = r as Range;
@@ -222,8 +208,6 @@ export class InstructorAnalyticsComponent implements OnInit, OnDestroy {
 
     this.scheduleAnimations();
   }
-
-  // ── Chart builders ────────────────────────────────────
 
   private buildStatusChart(): void {
     const s     = this.effectiveSessions();
@@ -283,8 +267,6 @@ export class InstructorAnalyticsComponent implements OnInit, OnDestroy {
     stats.sort((a, b) => b.count - a.count);
     this.moduleStats = stats.slice(0, 6);
   }
-
-  // ── Animation orchestrator ────────────────────────────
 
   private scheduleAnimations(): void {
     this.rafHandles.forEach(h => cancelAnimationFrame(h));
@@ -365,8 +347,6 @@ export class InstructorAnalyticsComponent implements OnInit, OnDestroy {
     };
     this.rafHandles.push(requestAnimationFrame(tick));
   }
-
-  // ── Helpers ───────────────────────────────────────────
 
   fmtDuration(h: number): string {
     if (h < 1) return `${Math.round(h * 60)} min`;
