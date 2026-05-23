@@ -1,0 +1,117 @@
+services:
+  redis:
+    image: redis:7-alpine
+    expose:
+      - "6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  eureka-server:
+    build: ./eureka-server
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8761/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+
+  gateway-service:
+    build: ./gateway-service
+    ports:
+      - "8080:8080"
+    env_file: .env
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    environment:
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      AUTH_SERVICE_URL: http://auth-service:8083
+      SESSION_SERVICE_URL: http://session-service:8084
+      REPORT_SERVICE_URL: http://report-service:8081
+      AGENT_SERVICE_URL: http://agent-service:8765
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
+
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "8083:8083"
+    env_file: .env
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    environment:
+      EUREKA_URL: http://eureka-server:8761/eureka/
+
+  session-service:
+    build: ./session-service
+    ports:
+      - "8084:8084"
+    env_file: .env
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${DB_HOST}:5432/declitrack_sessions
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      REPORT_SERVICE_URL: http://report-service:8081
+
+  report-service:
+    build: ./report-service
+    ports:
+      - "8081:8081"
+    env_file: .env
+    depends_on:
+      redis:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${DB_HOST}:5432/declitrack_reports
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      SESSION_SERVICE_URL: http://session-service:8084
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      OPENROUTER_VISION_MODEL: ${OPENROUTER_VISION_MODEL:-qwen/qwen2.5-vl-72b-instruct:free}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openai/gpt-4o-mini}
+
+  # DEPRECATED: agent-service is being decommissioned.
+  # Browser extension v3.0.0+ talks directly to /api/agent/** on the gateway,
+  # which now routes to report-service. Keep this entry under the "legacy" profile
+  # only for emotion-capture sessions until in-browser onnxruntime-web port lands.
+  agent-service:
+    build: ./agent-service
+    ports:
+      - "8765:8765"
+    env_file: ./agent-service/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_BOOT_URL: http://report-service:8081
+      SESSION_SERVICE_URL: http://session-service:8084
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    profiles:
+      - legacy
+
+  frontend:
+    build:
+      context: ../declitech-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:8090:80"
+    depends_on:
+      - gateway-service
+    restart: unless-stopped
+

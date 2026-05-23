@@ -1,0 +1,170 @@
+<div *ngIf="isMobileOpen" (click)="layoutService.closeSidebar()" class="fixed inset-0 bg-black/50 z-40 md:hidden"></div>
+
+<aside
+  class="w-64 sm:w-72 lg:w-80 xl:w-72 min-h-screen h-full border-r border-border-light flex flex-col justify-between bg-sidebar-bg p-4 sm:p-6 sticky top-0 transition-transform duration-300 ease-in-out"
+  [ngClass]="{
+    'fixed z-50 translate-x-0': isMobileOpen,
+    'hidden md:flex': !isMobileOpen
+  }">
+  <div class="flex flex-col gap-8">
+    <div *ngIf="sessionCode" class="flex flex-col gap-1.5 p-5 rounded-2xl bg-white dark:bg-slate-800 border border-border-light shadow-sm overflow-hidden">
+      <p class="text-text-muted text-[10px] font-bold uppercase tracking-[0.2em]">{{ 'SIDEBAR.SESSION_CODE' | translate }}</p>
+      <div class="flex items-end gap-2 min-w-0">
+        <h1 class="text-primary text-3xl font-black tracking-tighter truncate flex-1 min-w-0">{{ sessionCode }}</h1>
+        <span
+          class="material-symbols-outlined text-slate-400 text-sm mb-1 cursor-pointer hover:text-primary transition-colors flex-shrink-0">content_copy</span>
+      </div>
+      <p *ngIf="sessionTitle" class="text-xs font-medium text-text-muted truncate" [title]="sessionTitle">{{ sessionTitle }}</p>
+      <div class="flex items-center gap-2 mt-3 text-text-muted min-w-0">
+        <span class="material-symbols-outlined text-lg flex-shrink-0">timer</span>
+        <p class="text-xs font-semibold truncate">{{ elapsedTime }} {{ 'SIDEBAR.ELAPSED_SUFFIX' | translate }}</p>
+      </div>
+    </div>
+
+    <nav class="flex flex-col gap-1.5">
+      <a *ngIf="isAdmin" (click)="layoutService.closeSidebar()"
+        class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white dark:hover:bg-slate-800 hover:text-primary hover:shadow-sm transition-all font-semibold"
+        routerLink="/admin/dashboard" routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20"
+        [routerLinkActiveOptions]="{exact: false}">
+        <span class="material-symbols-outlined">dashboard</span>
+        <span class="text-sm truncate">{{ 'NAV.DASHBOARD' | translate }}</span>
+      </a>
+      <a *ngIf="!isAdmin" (click)="layoutService.closeSidebar()"
+        class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white dark:hover:bg-slate-800 hover:text-primary hover:shadow-sm transition-all font-semibold"
+        routerLink="/dashboard" routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20"
+        [routerLinkActiveOptions]="{exact: false}">
+        <span class="material-symbols-outlined">dashboard</span>
+        <span class="text-sm truncate">{{ 'NAV.DASHBOARD' | translate }}</span>
+      </a>
+      <a *ngIf="isAdmin" (click)="layoutService.closeSidebar()"
+        class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white dark:hover:bg-slate-800 hover:text-primary hover:shadow-sm transition-all font-semibold"
+        routerLink="/admin/users" routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20"
+        [routerLinkActiveOptions]="{exact: false}">
+        <span class="material-symbols-outlined">group</span>
+        <span class="text-sm truncate">{{ 'NAV.USERS' | translate }}</span>
+      </a>
+      <a *ngIf="isAdmin" (click)="layoutService.closeSidebar()"
+        class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white dark:hover:bg-slate-800 hover:text-primary hover:shadow-sm transition-all font-semibold"
+        routerLink="/admin/modules" routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20"
+        [routerLinkActiveOptions]="{exact: false}">
+        <span class="material-symbols-outlined">apps</span>
+        <span class="text-sm truncate">{{ 'NAV.MODULES' | translate }}</span>
+      </a>
+      <a *ngIf="isInstructor" (click)="layoutService.closeSidebar()"
+        class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white dark:hover:bg-slate-800 hover:text-primary hover:shadow-sm transition-all font-semibold"
+        routerLink="/session/create" routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20"
+        [routerLinkActiveOptions]="{exact: false}">
+        <span class="material-symbols-outlined">add_circle</span>
+        <span class="text-sm truncate">{{ 'NAV.CREATE_SESSION' | translate }}</span>
+      </a>
+      <a *ngIf="isInstructor" (click)="layoutService.closeSidebar()"
+        class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white dark:hover:bg-slate-800 hover:text-primary hover:shadow-sm transition-all font-semibold"
+        routerLink="/analytics" routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20"
+        [routerLinkActiveOptions]="{exact: false}">
+        <span class="material-symbols-outlined">analytics</span>
+        <span class="text-sm truncate">{{ 'NAV.ANALYTICS' | translate }}</span>
+      </a>
+      <a (click)="layoutService.closeSidebar()"
+        class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white dark:hover:bg-slate-800 hover:text-primary hover:shadow-sm transition-all font-semibold"
+        routerLink="/session/history" routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20"
+        [routerLinkActiveOptions]="{exact: false}">
+        <span class="material-symbols-outlined">history</span>
+        <span class="text-sm truncate">{{ 'NAV.SESSION_HISTORY' | translate }}</span>
+      </a>
+    </nav>
+
+    <div *ngIf="sessionCode" class="mt-4">
+      <div class="flex items-center justify-between mb-4 px-2">
+        <p class="text-[10px] font-bold uppercase tracking-[0.15em] text-text-muted">{{ 'COMMON.ALERTS' | translate }}</p>
+        <span *ngIf="recentAlerts.length > 0" class="flex h-2 w-2 rounded-full bg-red-500"></span>
+      </div>
+      <div class="space-y-3 px-1 overflow-y-auto max-h-64 custom-scrollbar">
+        <div *ngFor="let alert of recentAlerts" class="flex gap-4 items-start border-l-4 p-3 rounded-r-xl shadow-sm"
+          [ngClass]="{
+               'border-red-500 bg-red-50 dark:bg-red-900/20': getAlertColor(alert) === 'red',
+               'border-orange-500 bg-orange-50 dark:bg-orange-900/20': getAlertColor(alert) === 'orange',
+               'border-amber-500 bg-amber-50 dark:bg-amber-900/20': getAlertColor(alert) === 'amber'
+             }">
+          <div class="flex-1">
+            <p class="text-xs font-bold" [ngClass]="{
+                 'text-red-900 dark:text-red-300': getAlertColor(alert) === 'red',
+                 'text-orange-900 dark:text-orange-300': getAlertColor(alert) === 'orange',
+                 'text-amber-900 dark:text-amber-300': getAlertColor(alert) === 'amber'
+               }">
+              {{ alert.studentLoginIdentity }}
+            </p>
+            <p class="text-[10px] font-semibold uppercase tracking-tight" [ngClass]="{
+                 'text-red-600 dark:text-red-400': getAlertColor(alert) === 'red',
+                 'text-orange-600 dark:text-orange-400': getAlertColor(alert) === 'orange',
+                 'text-amber-600 dark:text-amber-400': getAlertColor(alert) === 'amber'
+               }">
+              {{ getAlertTitleKey(alert) | translate }}
+            </p>
+          </div>
+          <span class="text-[9px] font-bold" [ngClass]="{
+                  'text-red-400': getAlertColor(alert) === 'red',
+                  'text-orange-400': getAlertColor(alert) === 'orange',
+                  'text-amber-400': getAlertColor(alert) === 'amber'
+                }">
+            <ng-container *ngIf="getRelativeTime(alert.timestamp) as t">
+              <ng-container *ngIf="t.unit === 'now'">{{ 'TIME.NOW' | translate }}</ng-container>
+              <ng-container *ngIf="t.unit !== 'now'">{{ t.value }}{{ ('TIME.UNIT_' + t.unit) | translate }}</ng-container>
+            </ng-container>
+          </span>
+        </div>
+
+        <div *ngIf="recentAlerts.length === 0" class="text-center py-8">
+          <span class="material-symbols-outlined text-4xl text-slate-300 dark:text-slate-600 block mb-3">notifications_off</span>
+          <p class="text-xs text-slate-400 mt-2 font-semibold">{{ 'COMMON.NONE' | translate }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button *ngIf="sessionCode" (click)="onEndSession()"
+    class="w-full py-4 px-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 text-red-600 text-sm font-bold flex items-center justify-center gap-3 hover:bg-red-600 hover:text-white transition-all group">
+    <span class="material-symbols-outlined text-xl group-hover:rotate-12 transition-transform">logout</span>
+    {{ 'SESSION_CREATE.END_SESSION' | translate }}
+  </button>
+</aside>
+
+<div *ngIf="showEndSessionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+  role="dialog" aria-modal="true">
+  <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6">
+    <div class="flex flex-col items-center text-center">
+      <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+
+      <h2 class="text-2xl font-bold text-text-main mb-2">{{ 'COMMON.CONFIRM' | translate }}</h2>
+
+      <p class="text-text-muted mb-6">
+        <strong>{{ sessionCode }}</strong>
+      </p>
+
+      <div class="flex space-x-3 w-full">
+        <button type="button" (click)="closeEndSessionModal()" [disabled]="endingSession"
+          class="flex-1 px-4 py-2 text-sm font-medium text-text-main bg-white dark:bg-slate-700 border border-border-light rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          {{ 'COMMON.CANCEL' | translate }}
+        </button>
+        <button type="button" (click)="confirmEndSession()" [disabled]="endingSession"
+          class="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          <span *ngIf="!endingSession">{{ 'SESSION_CREATE.END_SESSION' | translate }}</span>
+          <span *ngIf="endingSession" class="flex items-center justify-center">
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+              </path>
+            </svg>
+            {{ 'COMMON.LOADING' | translate }}
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

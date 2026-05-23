@@ -1,0 +1,62 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: session-service
+
+  datasource:
+    url: ${DB_SESSION_URL:jdbc:postgresql://localhost:5432/declitech_sessions}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD}
+  
+  jpa:
+    hibernate:
+      ddl-auto: ${DDL_AUTO:update}
+    show-sql: ${SHOW_SQL:false}
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: UTC
+
+  flyway:
+    enabled: ${FLYWAY_ENABLED:false}
+    baseline-on-migrate: ${FLYWAY_BASELINE:true}
+
+jwt:
+  # Internal HS256 secret used by SessionTokenService for short-lived join-session tokens.
+  # NOT used for IAM JWT verification (which is RS256 + JWKS — see iam.jwks-url below).
+  secret: ${JWT_SECRET:ZGVjbGl0ZWNoLXNlY3VyZS1rZXktZm9yLWp3dC10b2tlbi1nZW5lcmF0aW9uLTIwMjYtdmVyeS1zZWN1cmUtY2hhbmdlLWluLXByb2R1Y3Rpb24=}
+
+gateway:
+  secret: ${GATEWAY_SECRET:declitech-gateway-secret-dev-change-in-production}
+  require-header: true
+
+# Session Configuration
+declitech:
+  session:
+    duration-hours: 1.5
+    code-length: 6
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 30
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

@@ -1,0 +1,18 @@
+<div class="toast-stack">
+  <div *ngFor="let t of toasts()"
+       class="toast"
+       [class.toast-success]="t.type === 'success'"
+       [class.toast-error]="t.type === 'error'"
+       [style.--toast-duration]="t.durationMs + 'ms'">
+    <div class="toast-body">
+      <span class="material-symbols-outlined toast-icon">
+        {{ t.type === 'success' ? 'check_circle' : 'error' }}
+      </span>
+      <p class="toast-message">{{ t.message }}</p>
+      <button (click)="dismiss(t.id)" class="toast-close" type="button" aria-label="close">
+        <span class="material-symbols-outlined text-lg">close</span>
+      </button>
+    </div>
+    <span class="toast-progress" *ngIf="t.durationMs > 0"></span>
+  </div>
+</div>

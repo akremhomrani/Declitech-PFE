@@ -1,0 +1,56 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: auth-service
+
+gateway:
+  secret: ${GATEWAY_SECRET:declitech-gateway-secret-dev-change-in-production}
+  require-header: false
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    hostname: localhost
+    prefer-ip-address: true
+
+# Cookie security — false for local HTTP dev, true in production (HTTPS)
+cookie:
+  secure: ${COOKIE_SECURE:false}
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:ZGVjbGl0ZWNoLXNlY3VyZS1rZXktZm9yLWp3dC10b2tlbi1nZW5lcmF0aW9uLTIwMjYtdmVyeS1zZWN1cmUtY2hhbmdlLWluLXByb2R1Y3Rpb24=}
+  expiration: 86400000  # 24 hours in milliseconds
+  refresh-expiration: 604800000  # 7 days in milliseconds
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: ${ACTUATOR_SHOW_DETAILS:when-authorized}
+
+sso:
+  iam-base-url: http://localhost:8083
+  client-id: declilearn-staging
+  redirect-uri: http://localhost:4200
+  student-auth-path: /mock/sso/auth/student
+  staff-auth-path: /mock/sso/auth/staff
+  student-exchange-path: /mock/sso/exchange
+  staff-exchange-path: /mock/sso/staff/exchange
+  mock-submit-base-url: http://localhost:8083
+
+logging:
+  level:
+    com.declitech.auth: INFO
+    org.springframework.security: WARN
+    feign: WARN

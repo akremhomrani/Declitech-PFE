@@ -1,0 +1,39 @@
+<div *ngIf="isOpen"
+     class="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4 sm:p-6"
+     (click)="onBackdrop()">
+  <div class="bg-surface rounded-xl shadow-2xl w-full max-w-sm sm:max-w-md p-5 sm:p-6 border border-border-light"
+       (click)="$event.stopPropagation()">
+    <div class="flex flex-col items-center text-center">
+      <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mb-3 sm:mb-4"
+           [ngClass]="iconBgClass">
+        <span class="material-symbols-outlined text-2xl sm:text-3xl" [ngClass]="iconColorClass">{{ icon }}</span>
+      </div>
+
+      <h2 class="text-lg sm:text-2xl font-bold text-text-main mb-2 break-words">{{ title }}</h2>
+
+      <p class="text-text-muted text-sm sm:text-base mb-5 sm:mb-6 break-words">
+        {{ message }}
+        <span *ngIf="hint" class="block mt-1 text-xs sm:text-sm">{{ hint }}</span>
+      </p>
+
+      <div class="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 w-full">
+        <button type="button" (click)="onCancel()" [disabled]="loading"
+                class="flex-1 px-4 py-2 text-sm font-medium text-text-main bg-surface border border-border-light rounded-lg hover:bg-sidebar-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          {{ cancelLabel || ('COMMON.CANCEL' | translate) }}
+        </button>
+        <button type="button" (click)="onConfirm()" [disabled]="loading"
+                class="flex-1 px-4 py-2 text-sm font-medium text-white border border-transparent rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                [ngClass]="confirmBtnClass">
+          <span *ngIf="!loading">{{ confirmLabel || ('COMMON.CONFIRM' | translate) }}</span>
+          <span *ngIf="loading" class="flex items-center justify-center gap-2">
+            <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            {{ 'COMMON.LOADING' | translate }}
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

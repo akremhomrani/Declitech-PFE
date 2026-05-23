@@ -1,0 +1,277 @@
+<div class="min-h-screen flex flex-col bg-background-light">
+  <app-navbar></app-navbar>
+
+  <app-toasts></app-toasts>
+
+  <div class="flex flex-1 overflow-hidden">
+    <app-sidebar></app-sidebar>
+
+    <ng-container *ngIf="canTeach; else notAuthorized">
+    <main *ngIf="!modulesLoaded || hasModules; else noModulesAssigned" class="flex-1 overflow-y-auto custom-scrollbar">
+
+      <div class="p-4 sm:p-6 md:p-10 max-w-6xl mx-auto w-full">
+        <div class="mb-6 sm:mb-8 md:mb-12">
+          <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-2 sm:mb-3">{{ 'SESSION_CREATE.TITLE' | translate }}</h2>
+          <p class="text-slate-500 dark:text-slate-400 max-w-2xl leading-relaxed text-sm sm:text-base">
+            {{ 'SESSION_CREATE.SUBTITLE' | translate }}
+          </p>
+        </div>
+
+        <div class="grid grid-cols-12 gap-4 sm:gap-6 md:gap-8">
+
+          <div class="col-span-12 lg:col-span-8">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 glow-teal overflow-hidden transition-all flex flex-col min-h-[300px] sm:min-h-[400px] justify-center">
+              <div class="p-4 sm:p-6 md:p-10">
+
+                <div *ngIf="!sessionGenerated" class="flex flex-col items-center justify-center py-4 sm:py-6 text-center">
+                  <div class="mb-6 sm:mb-8 inline-flex items-center gap-2 sm:gap-2.5 px-4 sm:px-5 py-2 rounded-full bg-primary/5 border border-primary/10 text-primary">
+                    <span class="relative flex h-2.5 w-2.5">
+                      <span class="absolute inline-flex h-full w-full rounded-full bg-primary opacity-40"></span>
+                      <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+                    </span>
+                    <span class="text-xs font-bold tracking-widest uppercase">{{ 'SESSION_CREATE.AGENT_READY' | translate }}</span>
+                  </div>
+
+                  <div class="mb-6 sm:mb-10 max-w-sm w-full px-2 sm:px-0">
+                    <h3 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3 sm:mb-4">{{ 'SESSION_CREATE.READY_HEADING' | translate }}</h3>
+                    <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mb-6 sm:mb-8">{{ 'SESSION_CREATE.READY_HINT' | translate }}</p>
+
+                    <button
+                      (click)="openModal()"
+                      class="w-full bg-primary hover:bg-primary-hover text-white font-bold py-4 sm:py-6 px-6 sm:px-8 rounded-2xl flex items-center justify-center gap-2 sm:gap-3 transition-all shadow-xl shadow-primary/25 text-base sm:text-lg group">
+                      <span class="material-symbols-outlined text-xl sm:text-2xl group-hover:rotate-12 transition-transform">add_circle</span>
+                      <span>{{ 'SESSION_CREATE.GENERATE_NEW' | translate }}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div *ngIf="sessionGenerated" class="flex flex-col items-center justify-center py-4 sm:py-6 text-center">
+                  <div class="mb-6 sm:mb-8 inline-flex items-center gap-2 sm:gap-2.5 px-4 sm:px-5 py-2 rounded-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-600">
+                    <span class="relative flex h-2.5 w-2.5">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                    </span>
+                    <span class="text-xs font-bold tracking-widest uppercase">{{ 'SESSION_CREATE.AGENT_READY' | translate }}</span>
+                  </div>
+
+                  <p class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4 sm:mb-6">{{ 'SESSION_CREATE.ACCESS_CODE' | translate }}</p>
+
+                  <div class="flex items-center justify-center gap-1.5 sm:gap-3 mb-4 cursor-pointer group" (click)="copyCode()">
+                    <div *ngFor="let char of getCodeArray()"
+                         class="w-10 h-13 sm:w-14 sm:h-18 md:w-16 md:h-20 code-block rounded-lg sm:rounded-xl flex items-center justify-center border-2 border-primary/10 group-hover:border-primary/30 group-hover:shadow-md transition-all dark:bg-slate-700">
+                      <span class="text-2xl sm:text-3xl md:text-4xl font-black text-primary">{{ char }}</span>
+                    </div>
+                  </div>
+
+                  <p class="text-xs text-slate-400 font-semibold mb-6 sm:mb-8 flex items-center justify-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm">{{ codeCopied ? 'check_circle' : 'touch_app' }}</span>
+                    {{ (codeCopied ? 'SESSION_CREATE.CODE_COPIED' : 'SESSION_CREATE.CLICK_TO_COPY') | translate }}
+                  </p>
+
+                  <div class="flex flex-col sm:flex-row items-center justify-between px-3 sm:px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 max-w-xl mx-auto w-full gap-2 sm:gap-0">
+                    <div class="flex items-center gap-2 text-primary">
+                      <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                      </span>
+                      <span class="text-xs sm:text-sm font-semibold italic">{{ 'SESSION_CREATE.WAITING_STUDENTS' | translate }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">{{ 'SESSION_CREATE.CONNECTED_LABEL' | translate }}</span>
+                      <span class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ connectedStudents }}</span>
+                    </div>
+                  </div>
+
+                  <div *ngIf="qrDataUrl" class="mt-6 sm:mt-8 max-w-xl mx-auto w-full">
+                    <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600">
+                      <div class="shrink-0 p-2 bg-white rounded-xl border border-slate-100 shadow-sm">
+                        <img [src]="qrDataUrl" alt="Scan to join observation" class="w-32 h-32 sm:w-36 sm:h-36 block" />
+                      </div>
+                      <div class="flex-1 text-center sm:text-left">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Scan to observe</p>
+                        <h4 class="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 mb-1">Phone-only access</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                          Open the camera on your phone and scan the QR to access the live observation view. The dashboard browser does not open this view.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-span-12 lg:col-span-4 flex flex-col gap-4 sm:gap-6">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 sm:p-7 shadow-sm">
+              <h3 class="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-slate-100 mb-4 sm:mb-6 flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-xl">tune</span>
+                {{ 'SESSION_CREATE.CONFIGURATION' | translate }}
+              </h3>
+
+              <div class="space-y-4">
+                <div class="p-4 rounded-xl bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-600">
+                  <p class="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-wider">{{ 'SESSION_CREATE.TRACKING_MODE' | translate }}</p>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm font-bold text-slate-700 dark:text-slate-300">{{ 'SESSION_CREATE.AI_AGENT' | translate }}</span>
+                    <div class="size-5 rounded-full bg-primary/20 border border-primary flex items-center justify-center">
+                      <div class="size-2.5 rounded-full bg-primary"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="p-4 rounded-xl bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-600">
+                  <p class="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-wider">{{ 'SESSION_CREATE.EXTENSION_LOCK' | translate }}</p>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm font-bold text-slate-700 dark:text-slate-300">{{ 'SESSION_CREATE.STRICT_MONITORING' | translate }}</span>
+                    <button class="w-10 h-5 bg-primary rounded-full relative transition-colors">
+                      <div class="absolute right-1 top-1 size-3 bg-white rounded-full shadow-sm"></div>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="p-4 rounded-xl bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-600">
+                  <p class="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-wider">{{ 'SESSION_CREATE.DATA_PRIVACY' | translate }}</p>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm font-bold text-slate-700 dark:text-slate-300">{{ 'SESSION_CREATE.ANONYMIZED_FEED' | translate }}</span>
+                    <span class="material-symbols-outlined text-primary">verified_user</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-accent-teal/20 dark:bg-primary/10 border border-primary/10 rounded-2xl p-4 sm:p-6 relative overflow-hidden">
+              <h4 class="text-sm font-bold text-primary mb-3 flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">lightbulb</span>
+                {{ 'SESSION_CREATE.SETUP_GUIDE' | translate }}
+              </h4>
+              <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed relative z-10">
+                {{ 'SESSION_CREATE.SETUP_GUIDE_TEXT' | translate }}
+              </p>
+              <div class="absolute -right-2 -bottom-2 opacity-5">
+                <span class="material-symbols-outlined text-7xl text-primary">help_center</span>
+              </div>
+            </div>
+
+            <button
+              [disabled]="!sessionGenerated"
+              [class.cursor-not-allowed]="!sessionGenerated"
+              [class.cursor-pointer]="sessionGenerated"
+              [class.bg-slate-50]="!sessionGenerated"
+              [class.dark:bg-slate-700]="!sessionGenerated"
+              [class.bg-primary]="sessionGenerated"
+              [class.text-slate-400]="!sessionGenerated"
+              [class.text-white]="sessionGenerated"
+              class="w-full py-4 sm:py-5 px-4 sm:px-6 rounded-2xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 sm:gap-3 border-2 border-dashed transition-all"
+              [class.border-slate-200]="!sessionGenerated"
+              [class.dark:border-slate-600]="!sessionGenerated"
+              [class.border-primary]="sessionGenerated">
+              <span>{{ 'SESSION_CREATE.START_FEED' | translate }}</span>
+              <span class="material-symbols-outlined text-lg">rocket_launch</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+    </ng-container>
+  </div>
+</div>
+
+<div *ngIf="isModalOpen" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+  <div class="bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-md w-full p-5 sm:p-6 relative">
+    <button
+      (click)="closeModal()"
+      class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+      <span class="material-symbols-outlined text-xl">close</span>
+    </button>
+
+    <div class="w-8 h-1 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto mb-4 sm:hidden"></div>
+
+    <div class="mb-5">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/5 border border-primary/10 text-primary mb-3">
+        <span class="material-symbols-outlined text-base">settings</span>
+        <span class="text-xs font-bold tracking-widest uppercase">{{ 'SESSION_CREATE.MODAL_BANNER' | translate }}</span>
+      </div>
+      <h3 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mb-1">{{ 'SESSION_CREATE.MODAL_TITLE' | translate }}</h3>
+      <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm">{{ 'SESSION_CREATE.MODAL_SUBTITLE' | translate }}</p>
+
+      <div class="mt-3 flex items-center gap-2 px-3 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400">
+        <span class="material-symbols-outlined text-base">schedule</span>
+        <span class="text-xs font-semibold">{{ 'SESSION_CREATE.DURATION_FIXED' | translate }} <strong>{{ 'SESSION_CREATE.MINUTES_90' | translate }}</strong></span>
+      </div>
+    </div>
+
+    <div class="mb-6">
+
+      <div *ngIf="loadError === 'NO_MODULES'" class="text-center py-4">
+        <div class="bg-orange-100 dark:bg-orange-900/30 p-3 rounded-full w-14 h-14 mx-auto mb-3 flex items-center justify-center">
+          <span class="material-symbols-outlined text-orange-600 text-3xl">apps_outage</span>
+        </div>
+        <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-1">{{ 'SESSION_CREATE.NO_MODULES' | translate }}</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">{{ 'SESSION_CREATE.NO_MODULES_HINT' | translate }}</p>
+        <button (click)="closeModal()" class="py-2 px-5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-bold transition-all">
+          {{ 'COMMON.CANCEL' | translate }}
+        </button>
+      </div>
+
+      <div *ngIf="loadError !== 'NO_MODULES'">
+        <label class="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
+          {{ 'SESSION_CREATE.STEP_MODULE' | translate }}
+        </label>
+        <select
+          [(ngModel)]="selectedAssignmentKey"
+          class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium mb-4">
+          <option value="">{{ 'SESSION_CREATE.SELECT_MODULE' | translate }}</option>
+          <option *ngFor="let opt of assignmentOptions" [value]="opt.key">
+            {{ opt.moduleTitle }} · {{ opt.siteName }}
+          </option>
+        </select>
+
+        <div class="flex gap-3">
+          <button (click)="closeModal()" class="flex-1 py-3 px-5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-bold transition-all">
+            {{ 'COMMON.CANCEL' | translate }}
+          </button>
+          <button
+            (click)="generateSession()"
+            [disabled]="!selectedAssignmentKey"
+            [class.opacity-50]="!selectedAssignmentKey"
+            [class.cursor-not-allowed]="!selectedAssignmentKey"
+            class="flex-1 py-3 px-5 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold transition-all shadow-lg shadow-primary/25 flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-lg">check_circle</span>
+            <span>{{ 'SESSION_CREATE.GENERATE_CODE' | translate }}</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<ng-template #notAuthorized>
+  <main class="flex-1 flex items-center justify-center bg-background-light">
+    <div class="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-lg text-center max-w-md border border-slate-200 dark:border-slate-700">
+      <div class="bg-orange-100 dark:bg-orange-900/30 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+        <span class="material-symbols-outlined text-orange-600 text-4xl">lock</span>
+      </div>
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">{{ 'SESSION_CREATE.INSTRUCTORS_ONLY' | translate }}</h2>
+      <p class="text-slate-600 dark:text-slate-400 mb-6">{{ 'SESSION_CREATE.INSTRUCTORS_ONLY_HINT' | translate }}</p>
+      <a routerLink="/dashboard" class="inline-block bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg font-semibold transition-all">
+        {{ 'SESSION_CREATE.GO_DASHBOARD' | translate }}
+      </a>
+    </div>
+  </main>
+</ng-template>
+
+<ng-template #noModulesAssigned>
+  <main class="flex-1 flex items-center justify-center bg-background-light">
+    <div class="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-lg text-center max-w-md border border-slate-200 dark:border-slate-700">
+      <div class="bg-amber-100 dark:bg-amber-900/30 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+        <span class="material-symbols-outlined text-amber-600 text-4xl">apps_outage</span>
+      </div>
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">{{ 'SESSION_CREATE.NO_ASSIGNED_TITLE' | translate }}</h2>
+      <p class="text-slate-600 dark:text-slate-400 mb-6">{{ 'SESSION_CREATE.NO_ASSIGNED_HINT' | translate }}</p>
+      <a routerLink="/dashboard" class="inline-block bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg font-semibold transition-all">
+        {{ 'SESSION_CREATE.GO_DASHBOARD' | translate }}
+      </a>
+    </div>
+  </main>
+</ng-template>

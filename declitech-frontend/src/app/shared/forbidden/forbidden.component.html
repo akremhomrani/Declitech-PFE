@@ -1,0 +1,28 @@
+<div class="forbidden-shell">
+  <div class="forbidden-card">
+    <div class="mb-8">
+      <h1 class="forbidden-code">403</h1>
+    </div>
+    <h2 class="forbidden-title">{{ 'FORBIDDEN.TITLE' | translate }}</h2>
+    <p class="forbidden-subtitle">{{ 'FORBIDDEN.SUBTITLE' | translate }}</p>
+    <p class="forbidden-reason" *ngIf="reason === 'userType'">
+      {{ 'FORBIDDEN.REASON_USER_TYPE' | translate }}
+    </p>
+    <p class="forbidden-reason" *ngIf="reason === 'feature'">
+      {{ 'FORBIDDEN.REASON_FEATURE' | translate }}
+    </p>
+    <p class="forbidden-missing" *ngIf="missing">
+      {{ 'FORBIDDEN.MISSING_FEATURE' | translate: { feature: missing } }}
+    </p>
+    <div class="forbidden-actions">
+      <a routerLink="/dashboard" class="btn-primary">
+        <span class="material-symbols-outlined text-lg">arrow_back</span>
+        {{ 'FORBIDDEN.BACK_DASHBOARD' | translate }}
+      </a>
+      <button type="button" (click)="logout()" class="btn-secondary">
+        <span class="material-symbols-outlined text-lg">logout</span>
+        {{ 'FORBIDDEN.LOGOUT' | translate }}
+      </button>
+    </div>
+  </div>
+</div>

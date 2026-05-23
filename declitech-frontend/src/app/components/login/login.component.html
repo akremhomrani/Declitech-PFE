@@ -1,0 +1,58 @@
+<div class="login-container" (mousemove)="onCursorMove($event)">
+
+  <div class="cursor-light" [style.left.px]="cursorX" [style.top.px]="cursorY"></div>
+
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="content ready">
+
+    <div class="brand">
+      <img class="logo-icon" src="assets/img/logo-blanc-horizontal.png" alt="DecliTech" />
+    </div>
+
+    <p class="tagline">{{ 'AUTH.TAGLINE' | translate }}</p>
+
+    <div class="divider"></div>
+
+    <div *ngIf="errorMessage" class="error-box">
+      <svg viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd"
+          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+          clip-rule="evenodd" />
+      </svg>
+      <span>{{ errorMessage }}</span>
+    </div>
+
+    <button *ngIf="!showForm && !isLoading" type="button" class="sso-btn" (click)="revealForm()">
+      <span class="sso-btn-glow"></span>
+      <svg class="sso-icon" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <path d="M6 6H42L36 24L42 42H6L12 24L6 6Z" fill="currentColor"></path>
+      </svg>
+      <span class="sso-label">{{ 'AUTH.LOGIN' | translate }}</span>
+      <svg class="sso-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
+
+    <form *ngIf="showForm" class="login-form" (ngSubmit)="submit()" #f="ngForm">
+      <div class="field">
+        <label for="username">{{ 'AUTH.USERNAME' | translate }}</label>
+        <input id="username" name="username" type="text" required autocomplete="username"
+               [(ngModel)]="usernameOrEmail" [disabled]="isLoading" autofocus />
+      </div>
+      <div class="field">
+        <label for="password">{{ 'AUTH.PASSWORD' | translate }}</label>
+        <input id="password" name="password" type="password" required autocomplete="current-password"
+               [(ngModel)]="password" [disabled]="isLoading" />
+      </div>
+      <div class="actions">
+        <button type="submit" class="btn-primary" [disabled]="isLoading || !usernameOrEmail || !password">
+          <span *ngIf="!isLoading">{{ 'AUTH.SIGN_IN' | translate }}</span>
+          <span *ngIf="isLoading" class="spinner-inline"></span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

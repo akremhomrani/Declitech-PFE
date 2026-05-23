@@ -1,0 +1,65 @@
+
+@media (max-width: 768px) {
+  
+  table {
+    font-size: 0.875rem;
+  }
+
+  button {
+    min-height: 36px;
+    min-width: 36px;
+  }
+}
+
+* {
+  transition-property: padding, margin, font-size;
+  transition-duration: 0.2s;
+  transition-timing-function: ease-in-out;
+}
+
+.animate-spin {
+  will-change: transform;
+}
+
+@media (max-width: 640px) {
+  .truncate {
+    max-width: 120px;
+  }
+}
+
+@media (max-width: 380px) {
+  .flex.items-center.gap-2 button {
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .grid {
+    gap: 0.5rem;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  table td, table th {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+  height: 8px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

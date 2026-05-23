@@ -1,0 +1,556 @@
+<div class="min-h-screen flex flex-col">
+  <app-navbar></app-navbar>
+
+  <div class="flex flex-1 overflow-hidden">
+    <app-sidebar></app-sidebar>
+
+    <main class="flex-1 flex flex-col overflow-y-auto custom-scrollbar p-3 sm:p-4 md:p-6 lg:p-8 bg-background-light">
+
+      <div class="mb-6 sm:mb-8">
+        <div class="flex items-center gap-3 mb-2">
+          <a routerLink="/session/history" class="text-text-muted hover:text-primary transition-colors">
+            <span class="material-symbols-outlined">arrow_back</span>
+          </a>
+          <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+            Session Insights & Analytics</h2>
+        </div>
+        <p class="text-slate-500 dark:text-slate-400 max-w-2xl leading-relaxed text-sm sm:text-base pl-11">
+          Detailed analysis of student engagement, emotions, and behavioral metrics for this session.
+        </p>
+      </div>
+
+      <div *ngIf="isLoading" class="flex items-center justify-center py-16">
+        <div class="text-center">
+          <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent">
+          </div>
+          <p class="mt-4 text-slate-600 dark:text-slate-400 font-medium">{{ 'SESSION_DETAILS.LOADING_REPORTS' | translate }}</p>
+        </div>
+      </div>
+
+      <div *ngIf="!isLoading && students.length === 0" class="text-center py-16">
+        <span class="material-symbols-outlined text-6xl text-slate-300 dark:text-slate-600 mb-4 block">report_off</span>
+        <p class="text-slate-600 dark:text-slate-400 font-medium">{{ 'SESSION_DETAILS.EMPTY_TITLE' | translate }}</p>
+        <p class="text-sm text-slate-400 mt-1">{{ 'SESSION_DETAILS.EMPTY_HINT' | translate }}</p>
+      </div>
+
+      <div *ngIf="!isLoading && students.length > 0"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-10">
+        <div
+          class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:p-6 shadow-sm border-l-4 border-l-primary">
+          <div class="flex justify-between items-start mb-2">
+            <p class="text-text-muted text-[10px] font-bold uppercase tracking-widest">{{ 'SESSION_DETAILS.CLASS_AVG_FOCUS' | translate }}</p>
+            <span class="material-symbols-outlined text-primary">monitoring</span>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <p class="text-2xl sm:text-3xl font-black text-text-main">{{ classAvgFocus }}%</p>
+            <span class="text-emerald-500 text-[10px] font-bold">+{{ focusTrend }}%</span>
+          </div>
+          <div class="mt-4 w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+            <div class="bg-primary h-full rounded-full" [style.width.%]="classAvgFocus"></div>
+          </div>
+        </div>
+
+        <div
+          class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:p-6 shadow-sm border-l-4 border-l-primary">
+          <div class="flex justify-between items-start mb-2">
+            <p class="text-text-muted text-[10px] font-bold uppercase tracking-widest">{{ 'SESSION_DETAILS.MOST_COMMON_EMOTION' | translate }}</p>
+            <span class="material-symbols-outlined text-primary">sentiment_satisfied</span>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <p class="text-2xl sm:text-3xl font-black text-text-main">{{ mostCommonEmotion | translate }}</p>
+            <span class="text-text-muted text-[10px] font-bold">{{ emotionPercentage }}% {{ 'SESSION_DETAILS.OF_CLASS' | translate }}</span>
+          </div>
+          <p class="text-[10px] text-text-muted mt-4 font-semibold italic">{{ 'SESSION_DETAILS.DETECTED_ACROSS' | translate }}</p>
+        </div>
+
+        <div
+          class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:p-6 shadow-sm border-l-4 border-l-amber-400">
+          <div class="flex justify-between items-start mb-2">
+            <p class="text-text-muted text-[10px] font-bold uppercase tracking-widest">{{ 'SESSION_DETAILS.CRITICAL_ALERTS' | translate }}</p>
+            <span class="material-symbols-outlined text-amber-500">warning</span>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <p class="text-2xl sm:text-3xl font-black text-text-main">{{ criticalAlerts }}</p>
+            <span class="text-amber-500 text-[10px] font-bold">{{ alertTrend }}%</span>
+          </div>
+          <p class="text-[10px] text-text-muted mt-4 font-semibold italic">{{ 'SESSION_DETAILS.FOCUS_TRENDING_DOWN' | translate }}</p>
+        </div>
+
+        <div
+          class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:p-6 shadow-sm border-l-4 border-l-primary">
+          <div class="flex justify-between items-start mb-2">
+            <p class="text-text-muted text-[10px] font-bold uppercase tracking-widest">{{ 'SESSION_DETAILS.PARTICIPATION_SCORE' | translate }}</p>
+            <span class="material-symbols-outlined text-primary">stars</span>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <p class="text-2xl sm:text-3xl font-black text-text-main">{{ participationScore }}</p>
+            <span class="text-text-muted text-[10px] font-bold">{{ 'SESSION_DETAILS.TOP_PERCENT' | translate }}</span>
+          </div>
+          <p class="text-[10px] text-text-muted mt-4 font-semibold italic">{{ 'SESSION_DETAILS.VS_CAMPUS' | translate }}</p>
+        </div>
+      </div>
+
+      <div *ngIf="!isLoading && students.length > 0"
+        class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 mb-6 sm:mb-8 flex flex-col lg:flex-row gap-4 items-center shadow-sm">
+        <div class="relative w-full lg:w-1/3">
+          <span
+            class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">person_search</span>
+          <input [(ngModel)]="searchTerm"
+            class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary/30 outline-none text-text-main placeholder:text-slate-400 dark:text-slate-100"
+            [placeholder]="'SESSION_DETAILS.SEARCH_PLACEHOLDER' | translate" type="text" />
+        </div>
+
+        <div class="flex flex-1 w-full gap-4">
+          <div class="relative flex-1">
+            <span
+              class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">date_range</span>
+            <input [(ngModel)]="dateRange"
+              class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none text-text-main dark:text-slate-100"
+              [placeholder]="'SESSION_DETAILS.DATE_RANGE_PLACEHOLDER' | translate" type="text" />
+          </div>
+
+          <div class="relative flex-1">
+            <span
+              class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">notification_important</span>
+            <select [(ngModel)]="alertType"
+              class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none text-text-main dark:text-slate-100 appearance-none">
+              <option value="">{{ 'SESSION_DETAILS.FILTER_ALERT_TYPE_ALL' | translate }}</option>
+              <option value="focus">{{ 'SESSION_DETAILS.FILTER_FOCUS' | translate }}</option>
+              <option value="security">{{ 'SESSION_DETAILS.FILTER_SECURITY' | translate }}</option>
+              <option value="emotion">{{ 'SESSION_DETAILS.FILTER_EMOTION' | translate }}</option>
+            </select>
+          </div>
+        </div>
+
+        <button (click)="applyFilters()"
+          class="w-full lg:w-auto px-6 py-2.5 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-all flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-lg">filter_alt</span>
+          {{ 'SESSION_DETAILS.APPLY_FILTERS' | translate }}
+        </button>
+      </div>
+
+      <div *ngIf="!isLoading && students.length > 0"
+        class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden flex-1 flex flex-col mb-6">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                <th class="px-4 sm:px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-text-muted">{{ 'SESSION_DETAILS.COL_STUDENT_NAME' | translate }}</th>
+                <th class="px-4 sm:px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-text-muted">{{ 'SESSION_DETAILS.COL_LAST_SESSION' | translate }}</th>
+                <th class="px-4 sm:px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-text-muted">{{ 'SESSION_DETAILS.COL_AVG_FOCUS' | translate }}</th>
+                <th class="px-4 sm:px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-text-muted">{{ 'SESSION_DETAILS.COL_TOP_EMOTION' | translate }}</th>
+                <th class="px-4 sm:px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-text-muted text-center">{{ 'SESSION_DETAILS.COL_TOTAL_ALERTS' | translate }}</th>
+                <th class="px-4 sm:px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-text-muted text-right">{{ 'SESSION_DETAILS.COL_ACTIONS' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+              <tr *ngFor="let student of students"
+                class="hover:bg-slate-50/50 dark:hover:bg-slate-700/40 transition-colors">
+                <td class="px-4 sm:px-6 py-4">
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="size-10 rounded-[14px] bg-primary text-white flex items-center justify-center font-black text-[15px] shadow-sm ring-4 ring-primary/10">
+                      {{ getInitials(student.name) }}
+                    </div>
+                    <div>
+                      <p class="text-sm font-bold text-text-main">{{ student.name }}</p>
+                      <p class="text-[10px] text-text-muted">ID: {{ student.id }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-4 sm:px-6 py-4 text-sm text-text-muted font-medium">{{ student.lastSessionDate }}</td>
+                <td class="px-4 sm:px-6 py-4">
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-bold" [class.text-primary]="student.avgFocusScore >= 85"
+                      [class.text-amber-500]="student.avgFocusScore >= 70 && student.avgFocusScore < 85"
+                      [class.text-red-500]="student.avgFocusScore < 70">
+                      {{ student.avgFocusScore }}%
+                    </span>
+                    <div class="w-16 bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                      <div class="h-full rounded-full" [ngClass]="getFocusBarColor(student.avgFocusScore)"
+                        [style.width.%]="student.avgFocusScore"></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-4 sm:px-6 py-4">
+                  <span class="px-2.5 py-1 text-[10px] font-bold rounded-lg uppercase border"
+                    [ngClass]="getEmotionClass(student.emotionColor)">
+                    {{ student.topEmotion | translate }}
+                  </span>
+                </td>
+                <td class="px-4 sm:px-6 py-4 text-center">
+                  <span class="text-sm font-bold text-text-main">{{ student.totalAlerts }}</span>
+                </td>
+                <td class="px-4 sm:px-6 py-4 text-right">
+                  <button (click)="viewFullReport(student.id)"
+                    class="px-3 sm:px-4 py-1.5 bg-slate-100 dark:bg-slate-700 text-primary text-[11px] font-black rounded-lg hover:bg-primary hover:text-white transition-all uppercase tracking-wider border border-transparent hover:border-primary-dark">
+                    {{ 'SESSION_DETAILS.VIEW_FULL_REPORT' | translate }}
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div
+          class="mt-auto border-t border-slate-100 dark:border-slate-700 px-4 sm:px-6 py-4 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/30">
+          <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest">
+            {{ 'SESSION_DETAILS.SHOWING' | translate }} {{ (currentPage - 1) * resultsPerPage + 1 }}-{{ Math.min(currentPage * resultsPerPage, totalResults) }} {{ 'COMMON.OF' | translate }} {{ totalResults }} {{ 'SESSION_DETAILS.RESULTS' | translate }}
+          </p>
+          <div class="flex gap-2">
+            <button (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1"
+              class="size-8 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center text-text-muted hover:bg-white dark:hover:bg-slate-700 hover:text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+              <span class="material-symbols-outlined text-sm">chevron_left</span>
+            </button>
+            <button *ngFor="let page of pages" (click)="changePage(page)"
+              [ngClass]="currentPage === page ? 'bg-primary text-white shadow-sm border-primary' : 'border-slate-200 dark:border-slate-600 text-text-muted'"
+              class="size-8 rounded-lg flex items-center justify-center text-xs font-bold hover:bg-white dark:hover:bg-slate-700 hover:text-primary transition-all border">
+              {{ page }}
+            </button>
+            <button (click)="changePage(currentPage + 1)" [disabled]="currentPage === totalPages"
+              class="size-8 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center text-text-muted hover:bg-white dark:hover:bg-slate-700 hover:text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+              <span class="material-symbols-outlined text-sm">chevron_right</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button *ngIf="!isLoading && students.length > 0" (click)="exportReport()"
+        class="w-full sm:w-auto self-end px-6 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-text-muted text-sm font-bold flex items-center justify-center gap-3 hover:bg-primary hover:text-white transition-all group">
+        <span class="material-symbols-outlined text-xl">download</span>
+        {{ 'SESSION_DETAILS.EXPORT_REPORT' | translate }}
+      </button>
+
+    </main>
+
+    <div *ngIf="isReportModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" (click)="closeReportModal()"></div>
+
+      <div #fullReport id="full-report-content"
+        class="relative bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto custom-scrollbar flex flex-col z-10">
+
+        <div class="px-6 sm:px-8 pt-6 pb-6 border-b border-slate-100 dark:border-slate-700">
+          <div class="flex items-start gap-4">
+            <div
+              class="size-14 rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-white flex items-center justify-center font-black text-xl shadow-lg shadow-primary/20 flex-shrink-0">
+              {{ getInitials(selectedStudent?.name || '') }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="text-xl font-black text-slate-900 dark:text-slate-100 truncate">{{ selectedStudent?.name }}
+              </h3>
+              <div class="flex flex-wrap items-center gap-x-2 gap-y-1.5 mt-2">
+                <span
+                  class="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2.5 py-1 rounded-lg">
+                  <span class="material-symbols-outlined text-xs">key</span>{{ sessionCode }}
+                </span>
+                <span
+                  class="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2.5 py-1 rounded-lg">
+                  <span class="material-symbols-outlined text-xs">calendar_today</span>{{
+                  selectedStudent?.lastSessionDate }}
+                </span>
+                <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg"
+                  [ngClass]="getEmotionClass(selectedStudent?.emotionColor || 'slate')">
+                  {{ (selectedStudent?.topEmotion || '') | translate }}
+                </span>
+                <span
+                  class="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2.5 py-1 rounded-lg">
+                  <span class="material-symbols-outlined text-xs">analytics</span>
+                  {{ 'SESSION_DETAILS.FOCUS' | translate }} {{ selectedStudent?.avgFocusScore }}%
+                </span>
+                <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg"
+                  [class.bg-red-100]="getTabSwitchAlerts().length > 0"
+                  [class.text-red-600]="getTabSwitchAlerts().length > 0"
+                  [class.bg-emerald-100]="getTabSwitchAlerts().length === 0"
+                  [class.text-emerald-600]="getTabSwitchAlerts().length === 0">
+                  <span class="material-symbols-outlined text-xs">tab_unselected</span>
+                  {{ isLoadingAlerts ? '—' : getTabSwitchAlerts().length }} {{ (getTabSwitchAlerts().length !== 1 ? 'SESSION_DETAILS.SWITCHES' : 'SESSION_DETAILS.SWITCH') | translate }}
+                </span>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-2 flex-shrink-0" data-html2canvas-ignore>
+              <button (click)="exportModalToPDF()" [disabled]="isExportingPdf"
+                class="px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-wait text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm" *ngIf="!isExportingPdf">picture_as_pdf</span>
+                <div *ngIf="isExportingPdf"
+                  class="size-4 border-2 border-slate-300 border-t-primary rounded-full animate-spin"></div>
+                <span *ngIf="!isExportingPdf">{{ 'SESSION_DETAILS.EXPORT_PDF_BUTTON' | translate }}</span>
+                <span *ngIf="isExportingPdf">...</span>
+              </button>
+              <button (click)="closeReportModal()"
+                class="size-9 rounded-xl flex items-center justify-center bg-slate-100 dark:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                <span class="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 sm:p-8 flex flex-col gap-6">
+
+          <div
+            class="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-white dark:to-slate-800 overflow-hidden">
+            <div class="flex items-center gap-2 px-5 py-3.5 border-b border-primary/10 bg-primary/5">
+              <span class="material-symbols-outlined text-primary text-lg">auto_awesome</span>
+              <h4 class="text-xs font-black tracking-widest uppercase text-primary">{{ 'SESSION_DETAILS.AI_ANALYSIS_TITLE' | translate }}</h4>
+            </div>
+            <div class="px-5 py-4">
+              <div *ngIf="selectedTrackReport" class="flex flex-col gap-2.5">
+                <div
+                  class="flex items-center gap-2 w-fit px-3 py-1.5 bg-white dark:bg-slate-700 rounded-lg border border-primary/10 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  <span class="material-symbols-outlined text-sm">school</span>
+                  {{ 'SESSION_DETAILS.EXERCISE' | translate }}: <span class="text-slate-700 dark:text-slate-300 font-bold">{{
+                    selectedTrackReport.exerciseName }}</span>
+                </div>
+                <p class="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">{{ selectedTrackReport.conclusion
+                  }}</p>
+                <p class="text-[10px] text-slate-400 italic">{{ 'SESSION_DETAILS.GENERATED' | translate }} {{ formatDate(selectedTrackReport.createdAt) }}
+                </p>
+              </div>
+              <div *ngIf="!selectedTrackReport" class="flex items-start gap-3 text-slate-500">
+                <span class="material-symbols-outlined text-slate-300 dark:text-slate-600 mt-0.5">info</span>
+                <p class="text-sm">{{ 'SESSION_DETAILS.AI_NO_REPORT' | translate }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="selectedEmotionReport?.finalState"
+            class="rounded-2xl border border-indigo-100 dark:border-indigo-900/30 bg-gradient-to-br from-indigo-50 dark:from-indigo-900/20 to-white dark:to-slate-800 overflow-hidden">
+            <div
+              class="flex items-center gap-2 px-5 py-3.5 border-b border-indigo-100 dark:border-indigo-900/30 bg-indigo-50/80 dark:bg-indigo-900/20">
+              <span class="material-symbols-outlined text-indigo-500 text-lg">face_retouching_natural</span>
+              <h4 class="text-xs font-black tracking-widest uppercase text-indigo-700 dark:text-indigo-400">{{ 'SESSION_DETAILS.EMOTIONS_SYNTHESIS' | translate }}</h4>
+              <span
+                class="ml-auto px-2.5 py-1 bg-white dark:bg-slate-700 text-indigo-700 dark:text-indigo-400 text-[10px] font-black rounded-full border border-indigo-200 dark:border-indigo-800 capitalize">
+                {{ selectedEmotionReport?.dominantEmotion }}
+              </span>
+            </div>
+            <div class="px-5 py-4">
+              <p class="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">{{ selectedEmotionReport?.finalState
+                }}</p>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center gap-2 mb-4">
+              <span class="material-symbols-outlined text-slate-400 text-lg">monitoring</span>
+              <h4 class="text-xs font-black tracking-widest uppercase text-slate-500">{{ 'SESSION_DETAILS.EMOTIONAL_DISTRIBUTION' | translate }}</h4>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div
+                class="border border-emerald-100 dark:border-emerald-900/30 rounded-2xl p-5 bg-white dark:bg-slate-800">
+                <div class="flex items-center gap-2 text-emerald-600 font-bold text-sm mb-4">
+                  <span class="size-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-base">sentiment_very_satisfied</span>
+                  </span>
+                  {{ 'SESSION_DETAILS.ENGAGEMENT' | translate }}
+                </div>
+                <div class="space-y-3.5">
+                  <div *ngFor="let e of [
+                    {label: ('SESSION_DETAILS.FOCUSED_HAPPY' | translate), val: (selectedEmotionReport?.happyMean||0)*100, color:'bg-emerald-400', text:'text-emerald-600'},
+                    {label: ('SESSION_DETAILS.STEADY_NEUTRAL' | translate), val: (selectedEmotionReport?.neutralMean||0)*100, color:'bg-teal-400', text:'text-teal-600'},
+                    {label: ('SESSION_DETAILS.ENGAGED_SURPRISE' | translate), val: (selectedEmotionReport?.surpriseMean||0)*100, color:'bg-sky-400', text:'text-sky-600'}
+                  ]">
+                    <div class="flex justify-between text-xs font-bold mb-1">
+                      <span class="text-slate-600 dark:text-slate-400">{{ e.label }}</span>
+                      <span [ngClass]="e.text">{{ Math.round(e.val) }}%</span>
+                    </div>
+                    <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div class="h-full rounded-full transition-all" [ngClass]="e.color" [style.width.%]="e.val"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="border border-amber-100 dark:border-amber-900/30 rounded-2xl p-5 bg-white dark:bg-slate-800">
+                <div class="flex items-center gap-2 text-amber-600 font-bold text-sm mb-4">
+                  <span class="size-7 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-base">warning</span>
+                  </span>
+                  {{ 'SESSION_DETAILS.DISTRACTIONS_FRUSTRATION' | translate }}
+                </div>
+                <div class="space-y-3.5">
+                  <div *ngFor="let e of [
+                    {label: ('SESSION_DETAILS.STRESSED_ANGRY' | translate), val: (selectedEmotionReport?.angryMean||0)*100, color:'bg-red-400', text:'text-red-500'},
+                    {label: ('SESSION_DETAILS.DISENGAGED_SAD' | translate), val: (selectedEmotionReport?.sadMean||0)*100, color:'bg-slate-400', text:'text-slate-500'},
+                    {label: ('SESSION_DETAILS.ANXIOUS_FEAR' | translate), val: (selectedEmotionReport?.fearMean||0)*100, color:'bg-amber-400', text:'text-amber-500'}
+                  ]">
+                    <div class="flex justify-between text-xs font-bold mb-1">
+                      <span class="text-slate-600 dark:text-slate-400">{{ e.label }}</span>
+                      <span [ngClass]="e.text">{{ Math.round(e.val) }}%</span>
+                    </div>
+                    <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div class="h-full rounded-full transition-all" [ngClass]="e.color" [style.width.%]="e.val"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border overflow-hidden" [class.border-red-200]="getTabSwitchAlerts().length > 0"
+            [class.border-emerald-200]="getTabSwitchAlerts().length === 0">
+
+            <div class="flex items-center justify-between px-5 py-3.5"
+              [ngClass]="getTabSwitchAlerts().length > 0 ? 'bg-red-50 dark:bg-red-900/20' : 'bg-emerald-50 dark:bg-emerald-900/20'">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg" [class.text-red-500]="getTabSwitchAlerts().length > 0"
+                  [class.text-emerald-500]="getTabSwitchAlerts().length === 0">
+                  {{ getTabSwitchAlerts().length > 0 ? 'tab_unselected' : 'verified' }}
+                </span>
+                <h4 class="text-xs font-black tracking-widest uppercase"
+                  [ngClass]="getTabSwitchAlerts().length > 0 ? 'text-red-700 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'">
+                  {{ 'SESSION_DETAILS.BEHAVIORAL_ALERTS_TITLE' | translate }}
+                </h4>
+              </div>
+              <div *ngIf="isLoadingAlerts" class="flex items-center gap-2">
+                <div class="size-3.5 border-2 border-slate-300 border-t-primary rounded-full animate-spin"></div>
+                <span class="text-xs text-slate-400">{{ 'COMMON.LOADING' | translate }}</span>
+              </div>
+              <span *ngIf="!isLoadingAlerts && getTabSwitchAlerts().length > 0"
+                class="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[11px] font-black rounded-full">
+                {{ getTabSwitchAlerts().length }} {{ (getTabSwitchAlerts().length > 1 ? 'SESSION_DETAILS.SWITCHES' : 'SESSION_DETAILS.SWITCH') | translate }} {{ 'SESSION_DETAILS.DETECTED' | translate }}
+              </span>
+              <span *ngIf="!isLoadingAlerts && getTabSwitchAlerts().length === 0"
+                class="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[11px] font-black rounded-full">
+                {{ 'SESSION_DETAILS.NO_VIOLATIONS' | translate }}
+              </span>
+            </div>
+
+            <div *ngIf="!isLoadingAlerts && getTabSwitchAlerts().length === 0"
+              class="flex items-center gap-3 px-5 py-6 bg-white dark:bg-slate-800">
+              <div
+                class="size-10 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-emerald-500">check_circle</span>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-slate-700 dark:text-slate-300">{{ 'SESSION_DETAILS.STAYED_ON_TASK' | translate }}</p>
+                <p class="text-xs text-slate-400 mt-0.5">{{ 'SESSION_DETAILS.STAYED_ON_TASK_HINT' | translate }}</p>
+              </div>
+            </div>
+
+            <div *ngIf="!isLoadingAlerts && getTabSwitchAlerts().length > 0" class="bg-white dark:bg-slate-800">
+
+              <div
+                class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 dark:divide-slate-700 border-b border-slate-100 dark:border-slate-700">
+                <div class="py-4 text-center">
+                  <p class="text-2xl font-black text-red-500">{{ getTabSwitchAlerts().length }}</p>
+                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{{ 'SESSION_DETAILS.TAB_SWITCHES_LABEL' | translate }}</p>
+                </div>
+                <div class="py-4 text-center">
+                  <p class="text-2xl font-black text-slate-700 dark:text-slate-300">{{ getUniqueVisitedSites().length }}
+                  </p>
+                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{{ 'SESSION_DETAILS.UNIQUE_SITES_LABEL' | translate }}</p>
+                </div>
+                <div class="py-4 text-center">
+                  <p class="text-2xl font-black text-amber-500">{{ getAlertCountByType('MOUSE_INACTIVITY') }}</p>
+                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{{ 'SESSION_DETAILS.INACTIVITY' | translate }}</p>
+                </div>
+              </div>
+
+              <div class="p-5">
+                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">{{ 'SESSION_DETAILS.SITES_VISITED' | translate }}</p>
+                <div class="flex flex-col gap-2">
+                  <div *ngFor="let site of getUniqueVisitedSites(); let i = index"
+                    class="flex items-center gap-3 p-3 rounded-xl border transition-colors"
+                    [ngClass]="i > 0 ? 'border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700' : 'border-transparent'">
+                    <div class="size-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      [ngClass]="i > 0 ? 'bg-slate-200 dark:bg-slate-600' : 'bg-red-100'">
+                      <span class="material-symbols-outlined text-sm"
+                        [ngClass]="i > 0 ? 'text-slate-500' : 'text-red-500'">language</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <a [href]="site.url" target="_blank" rel="noopener noreferrer"
+                        class="text-sm font-bold truncate block hover:text-primary transition-colors"
+                        [ngClass]="i > 0 ? 'text-slate-700 dark:text-slate-300' : 'text-red-700'">
+                        {{ site.name }}
+                      </a>
+                      <p class="text-[10px] text-slate-400 mt-0.5">{{ 'SESSION_DETAILS.FIRST_SEEN' | translate }} {{ formatAlertTime(site.firstSeen) }}</p>
+                    </div>
+                    <span class="px-2.5 py-1 text-[11px] font-black rounded-full flex-shrink-0"
+                      [ngClass]="i === 0 ? 'bg-red-100 text-red-600' : 'bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300'">
+                      ×{{ site.count }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border overflow-hidden"
+            [ngClass]="selectedEmotionReport?.instructorNote ? 'border-amber-200' : 'border-slate-200 dark:border-slate-700'">
+            <div class="flex items-center gap-2 px-5 py-3.5 border-b"
+              [ngClass]="selectedEmotionReport?.instructorNote ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-100' : 'bg-slate-50 dark:bg-slate-900/30 border-slate-200 dark:border-slate-700'">
+              <span class="material-symbols-outlined text-lg"
+                [class.text-amber-500]="selectedEmotionReport?.instructorNote"
+                [class.text-slate-400]="!selectedEmotionReport?.instructorNote">edit_note</span>
+              <h4 class="text-xs font-black tracking-widest uppercase"
+                [ngClass]="selectedEmotionReport?.instructorNote ? 'text-amber-700 dark:text-amber-400' : 'text-slate-600 dark:text-slate-400'">{{ 'SESSION_DETAILS.INSTRUCTOR_NOTE_LABEL' | translate }}</h4>
+              <div class="ml-auto">
+                <span *ngIf="noteSaved"
+                  class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+                  <span class="material-symbols-outlined text-xs">check_circle</span> {{ 'SESSION_DETAILS.SAVED_BADGE' | translate }}
+                </span>
+                <span *ngIf="selectedEmotionReport?.instructorNote && !noteSaved"
+                  class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 bg-amber-100 dark:bg-amber-900/20 px-2.5 py-1 rounded-full">
+                  <span class="material-symbols-outlined text-xs">lock</span> {{ 'SESSION_DETAILS.PRIVATE_BADGE' | translate }}
+                </span>
+              </div>
+            </div>
+            <div class="p-5 bg-white dark:bg-slate-800 flex flex-col gap-4">
+
+              <!-- Structured observation: chips + comment -->
+              <div *ngIf="hasStructuredObservation && parsedObservation" class="flex flex-col gap-3">
+                <div *ngIf="parsedObservation.tags.length > 0" class="flex flex-wrap gap-2">
+                  <span
+                    *ngFor="let id of parsedObservation.tags"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border"
+                    [style.background]="tagIndex[id] ? tagIndex[id].color + '15' : '#f1f5f9'"
+                    [style.color]="tagIndex[id] ? tagIndex[id].color : '#475569'"
+                    [style.borderColor]="tagIndex[id] ? tagIndex[id].color + '40' : '#e2e8f0'">
+                    <span>{{ (tagIndex[id] && tagIndex[id].emoji) || '•' }}</span>
+                    <span>{{ (tagIndex[id] && tagIndex[id].label) || id }}</span>
+                    <button type="button" (click)="removeObservationTag(id)" class="ml-1 opacity-70 hover:opacity-100" [attr.aria-label]="'OBSERVATION.REMOVE_TAG' | translate">
+                      <span class="material-symbols-outlined text-[14px]">close</span>
+                    </button>
+                  </span>
+                </div>
+                <div *ngIf="parsedObservation.comment"
+                  class="flex gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-900/30">
+                  <span class="material-symbols-outlined text-amber-400 flex-shrink-0 mt-0.5">sticky_note_2</span>
+                  <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">{{ parsedObservation.comment }}</p>
+                </div>
+                <p *ngIf="parsedObservation.updatedAt" class="text-[11px] text-slate-400 italic">
+                  {{ 'SESSION_DETAILS.LAST_UPDATED' | translate }} {{ parsedObservation.updatedAt | date:'medium' }}
+                </p>
+              </div>
+
+              <!-- Legacy plain-text note -->
+              <div *ngIf="!hasStructuredObservation && selectedEmotionReport?.instructorNote"
+                class="flex gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-900/30">
+                <span class="material-symbols-outlined text-amber-400 flex-shrink-0 mt-0.5">sticky_note_2</span>
+                <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">{{ selectedEmotionReport?.instructorNote }}</p>
+              </div>
+
+              <textarea [(ngModel)]="noteText" rows="3"
+                [placeholder]="(hasStructuredObservation ? 'SESSION_DETAILS.NOTE_PLACEHOLDER_OBS' : (selectedEmotionReport?.instructorNote ? 'SESSION_DETAILS.NOTE_PLACEHOLDER_EDIT' : 'SESSION_DETAILS.NOTE_PLACEHOLDER_ADD')) | translate"
+                class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3.5 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all">
+              </textarea>
+              <div class="flex items-center justify-between">
+                <p class="text-[11px] text-slate-400 flex items-center gap-1">
+                  <span class="material-symbols-outlined text-xs">lock</span> {{ 'SESSION_DETAILS.VISIBLE_ONLY_YOU' | translate }}
+                </p>
+                <button (click)="saveNote()" [disabled]="isSavingNote || !selectedEmotionReport?.id || (!hasStructuredObservation && !noteText.trim())"
+                  class="px-5 py-2 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2">
+                  <div *ngIf="isSavingNote"
+                    class="size-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+                  <span class="material-symbols-outlined text-sm" *ngIf="!isSavingNote">save</span>
+                  {{ (isSavingNote ? 'SESSION_DETAILS.SAVING_NOTE' : (selectedEmotionReport?.instructorNote ? 'SESSION_DETAILS.UPDATE_NOTE' : 'SESSION_DETAILS.SAVE_NOTE')) | translate }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
