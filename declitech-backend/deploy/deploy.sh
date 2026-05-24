@@ -35,6 +35,11 @@ deploy_one() {
   local newjar="$dir/$VERSION.jar"
   local port="${PORTS[$s]:-}"
 
+  if [ "$(systemctl is-enabled "declitech@$s" 2>/dev/null)" = "disabled" ]; then
+    echo ">>> $s: skipped (service is disabled)"
+    return 0
+  fi
+
   if [ ! -f "$newjar" ]; then
     echo "::error:: $s — artifact $newjar not found"
     return 1
