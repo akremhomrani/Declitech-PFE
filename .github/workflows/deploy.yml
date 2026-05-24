@@ -1,0 +1,58 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [master]
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          command_timeout: 40m
+          script: |
+            set -e
+
+            cd /var/www/declitech
+            git fetch origin master
+            git reset --hard origin/master
+
+            cd declitech-frontend
+            npm install
+            npx ng build --configuration production
+
+            cd ../declitech-backend
+            for service in eureka-server gateway-service auth-service user-service module-service session-service report-service; do
+              echo "Building $service"
+              ( cd "$service" && mvn -q clean package -Dmaven.test.skip=true )
+            done
+
+            pkill -f 'java -jar' || true
+            sleep 5
+
+            start_service() {
+              name=$1
+              cd "/var/www/declitech/declitech-backend/$name"
+              if [ -f .env ]; then set -a && . ./.env && set +a; fi
+              nohup java -jar target/*.jar > "/var/log/$name.log" 2>&1 &
+            }
+
+            start_service eureka-server
+            sleep 20
+
+            for s in gateway-service auth-service user-service module-service session-service report-service; do
+              start_service "$s"
+            done
+
+            sudo nginx -t && sudo systemctl reload nginx
+            echo "Deployment complete"
