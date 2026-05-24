@@ -9,6 +9,9 @@ gateway:
   secret: ${GATEWAY_SECRET:declitech-gateway-secret-dev-change-in-production}
   require-header: false
 
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:${FRONTEND_URL:http://localhost:4200}}
+
 eureka:
   client:
     serviceUrl:
