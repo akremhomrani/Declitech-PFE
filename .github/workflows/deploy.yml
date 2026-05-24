@@ -9,63 +9,152 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.set.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend: 'declitech-frontend/**'
+            eureka-server: 'declitech-backend/eureka-server/**'
+            gateway-service: 'declitech-backend/gateway-service/**'
+            auth-service: 'declitech-backend/auth-service/**'
+            user-service: 'declitech-backend/user-service/**'
+            module-service: 'declitech-backend/module-service/**'
+            session-service: 'declitech-backend/session-service/**'
+            report-service: 'declitech-backend/report-service/**'
+      - id: set
+        run: echo "backend=$(echo '${{ steps.filter.outputs.changes }}' | jq -c 'map(select(. != "frontend"))')" >> "$GITHUB_OUTPUT"
+
+  build-backend:
+    needs: changes
+    if: needs.changes.outputs.backend != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        service: ${{ fromJSON(needs.changes.outputs.backend) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Build ${{ matrix.service }}
+        working-directory: declitech-backend/${{ matrix.service }}
+        run: mvn -B clean package -Dmaven.test.skip=true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jar-${{ matrix.service }}
+          path: declitech-backend/${{ matrix.service }}/target/*.jar
+          retention-days: 7
+
+  build-frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy over SSH
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: declitech-frontend/package-lock.json
+      - name: Build frontend
+        working-directory: declitech-frontend
+        run: |
+          npm ci
+          npx ng build --configuration production
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: declitech-frontend/dist/declitech-frontend/browser/
+          retention-days: 7
+
+  deploy:
+    needs: [changes, build-backend, build-frontend]
+    if: >-
+      always() &&
+      needs.build-backend.result != 'failure' &&
+      needs.build-frontend.result != 'failure' &&
+      (needs.build-backend.result == 'success' || needs.build-frontend.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Stage artifacts
+        run: |
+          VERSION="${{ github.run_number }}-${GITHUB_SHA:0:7}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          BACKEND=$(echo '${{ needs.changes.outputs.backend }}' | jq -r '.[]' | tr '\n' ' ')
+          echo "CHANGED=$BACKEND" >> "$GITHUB_ENV"
+          mkdir -p stage/backend stage/frontend
+          for d in artifacts/jar-*; do
+            [ -d "$d" ] || continue
+            s="$(basename "$d" | sed 's/^jar-//')"
+            mkdir -p "stage/backend/$s"
+            cp "$d"/*.jar "stage/backend/$s/$VERSION.jar"
+          done
+          if [ -d artifacts/frontend-dist ]; then
+            cp -r artifacts/frontend-dist/. stage/frontend/
+          fi
+      - name: Copy artifacts to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "stage/**"
+          target: "/home/hamdi/deploy-staging"
+          overwrite: true
+          strip_components: 1
+      - name: Release and restart
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          command_timeout: 40m
+          command_timeout: 15m
+          envs: VERSION,CHANGED
           script: |
             set -e
+            STAGE=/home/hamdi/deploy-staging
+            ROOT=/var/www/declitech
+            BROWSER=$ROOT/declitech-frontend/dist/declitech-frontend/browser
 
-            BACKEND=/var/www/declitech/declitech-backend
-            LOGS=/var/www/declitech/logs
-            JAR_PATTERN="$BACKEND/.*/target/.*\.jar"
-            mkdir -p "$LOGS"
-
-            cd /var/www/declitech
-            echo "=== Pulling master ==="
+            cd "$ROOT"
             git fetch origin master
             git reset --hard origin/master
+            chmod +x declitech-backend/deploy/*.sh
 
-            echo "=== Building frontend ==="
-            cd declitech-frontend
-            npm install
-            npx ng build --configuration production
+            if [ -d "$STAGE/backend" ]; then
+              for s in "$STAGE"/backend/*; do
+                [ -d "$s" ] || continue
+                name="$(basename "$s")"
+                mkdir -p "$ROOT/releases/$name"
+                mv "$s"/*.jar "$ROOT/releases/$name/"
+              done
+            fi
 
-            echo "=== Building backend ==="
-            cd "$BACKEND"
-            for service in eureka-server gateway-service auth-service user-service module-service session-service report-service; do
-              echo "--- Building $service ---"
-              ( cd "$service" && mvn clean package -Dmaven.test.skip=true -B )
-            done
+            if [ -d "$STAGE/frontend" ] && [ -n "$(ls -A "$STAGE/frontend" 2>/dev/null)" ]; then
+              mkdir -p "$BROWSER"
+              rm -rf "$BROWSER"/*
+              cp -r "$STAGE"/frontend/. "$BROWSER"/
+              sudo nginx -t && sudo systemctl reload nginx
+            fi
 
-            echo "=== Restarting services ==="
-            pkill -f "$JAR_PATTERN" || true
-            sleep 5
+            bash declitech-backend/deploy/deploy.sh "$VERSION" $CHANGED
 
-            start_service() {
-              name=$1
-              cd "$BACKEND/$name"
-              if [ -f .env ]; then set -a && . ./.env && set +a; fi
-              setsid java -jar target/*.jar < /dev/null > "$LOGS/$name.log" 2>&1 &
-              echo "started $name"
-            }
-
-            start_service eureka-server
-            sleep 20
-
-            for s in gateway-service auth-service user-service module-service session-service report-service; do
-              start_service "$s"
-            done
-
-            sudo nginx -t && sudo systemctl reload nginx
-
-            sleep 10
-            echo "=== Running java services: $(pgrep -fc 'java -jar') / 7 ==="
-            echo "Deployment complete"
+            rm -rf "$STAGE"
+            echo "Deployment complete: $VERSION"
