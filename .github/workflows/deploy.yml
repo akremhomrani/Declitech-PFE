@@ -44,7 +44,7 @@ jobs:
               name=$1
               cd "/var/www/declitech/declitech-backend/$name"
               if [ -f .env ]; then set -a && . ./.env && set +a; fi
-              nohup java -jar target/*.jar > "/var/log/$name.log" 2>&1 &
+              setsid java -jar target/*.jar < /dev/null > "/var/log/$name.log" 2>&1 &
             }
 
             start_service eureka-server
@@ -55,4 +55,7 @@ jobs:
             done
 
             sudo nginx -t && sudo systemctl reload nginx
+
+            sleep 10
+            echo "Running java services: $(pgrep -fc 'java -jar')"
             echo "Deployment complete"
