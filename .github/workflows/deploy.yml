@@ -23,28 +23,38 @@ jobs:
           script: |
             set -e
 
+            BACKEND=/var/www/declitech/declitech-backend
+            LOGS=/var/www/declitech/logs
+            JAR_PATTERN="$BACKEND/.*/target/.*\.jar"
+            mkdir -p "$LOGS"
+
             cd /var/www/declitech
+            echo "=== Pulling master ==="
             git fetch origin master
             git reset --hard origin/master
 
+            echo "=== Building frontend ==="
             cd declitech-frontend
             npm install
             npx ng build --configuration production
 
-            cd ../declitech-backend
+            echo "=== Building backend ==="
+            cd "$BACKEND"
             for service in eureka-server gateway-service auth-service user-service module-service session-service report-service; do
-              echo "Building $service"
-              ( cd "$service" && mvn -q clean package -Dmaven.test.skip=true )
+              echo "--- Building $service ---"
+              ( cd "$service" && mvn clean package -Dmaven.test.skip=true -B )
             done
 
-            pkill -f 'java -jar' || true
+            echo "=== Restarting services ==="
+            pkill -f "$JAR_PATTERN" || true
             sleep 5
 
             start_service() {
               name=$1
-              cd "/var/www/declitech/declitech-backend/$name"
+              cd "$BACKEND/$name"
               if [ -f .env ]; then set -a && . ./.env && set +a; fi
-              setsid java -jar target/*.jar < /dev/null > "/var/log/$name.log" 2>&1 &
+              setsid java -jar target/*.jar < /dev/null > "$LOGS/$name.log" 2>&1 &
+              echo "started $name"
             }
 
             start_service eureka-server
@@ -57,5 +67,5 @@ jobs:
             sudo nginx -t && sudo systemctl reload nginx
 
             sleep 10
-            echo "Running java services: $(pgrep -fc 'java -jar')"
+            echo "=== Running java services: $(pgrep -fc 'java -jar') / 7 ==="
             echo "Deployment complete"
