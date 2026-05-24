@@ -49,9 +49,13 @@ deploy_one() {
 
   echo ">>> $s: switching to $VERSION and restarting"
   ln -sfn "$newjar" "$dir/current.jar"
-  sudo systemctl restart "declitech@$s"
+  if ! sudo systemctl restart "declitech@$s"; then
+    echo "::error:: $s — systemctl restart failed"
+    [ -n "$prev" ] && [ -f "$prev" ] && ln -sfn "$prev" "$dir/current.jar"
+    return 1
+  fi
 
-  if wait_listening "$port"; then
+  if wait_listening "$port" && [ "$(systemctl is-active "declitech@$s")" = "active" ]; then
     echo ">>> $s: healthy on $port"
   else
     echo "::error:: $s did not come up on $port within ${HEALTH_TIMEOUT}s"
@@ -66,6 +70,8 @@ deploy_one() {
 
   ls -1t "$dir"/*.jar 2>/dev/null | grep -v '/current.jar$' | grep -v "$(basename "$prev")" | tail -n +"$((KEEP + 1))" | xargs -r rm -f
 }
+
+echo "Deploying version $VERSION; changed services: [$CHANGED]"
 
 failed=0
 for s in $ORDER; do
