@@ -88,10 +88,10 @@
                         <img [src]="qrDataUrl" alt="Scan to join observation" class="w-32 h-32 sm:w-36 sm:h-36 block" />
                       </div>
                       <div class="flex-1 text-center sm:text-left">
-                        <p class="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Scan to observe</p>
-                        <h4 class="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 mb-1">Phone-only access</h4>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-primary mb-1">{{ 'SESSION_CREATE.SCAN_TO_OBSERVE' | translate }}</p>
+                        <h4 class="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 mb-1">{{ 'SESSION_CREATE.PHONE_ONLY' | translate }}</h4>
                         <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                          Open the camera on your phone and scan the QR to access the live observation view. The dashboard browser does not open this view.
+                          {{ 'SESSION_CREATE.PHONE_ONLY_DESC' | translate }}
                         </p>
                       </div>
                     </div>

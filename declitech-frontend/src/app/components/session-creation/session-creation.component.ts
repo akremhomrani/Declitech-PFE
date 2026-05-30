@@ -22,7 +22,7 @@ interface AssignmentOption {
   moduleTitle: string;
 }
 import { Subscription, interval } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { switchMap, retry } from 'rxjs/operators';
 import QRCode from 'qrcode';
 
 @Component({
@@ -122,8 +122,8 @@ export class SessionCreationComponent implements OnInit, OnDestroy {
 
   private loadModules(): void {
     forkJoin({
-      modules: this.moduleService.myModules(),
-      me: this.userService.me()
+      modules: this.moduleService.myModules().pipe(retry(2)),
+      me: this.userService.me().pipe(retry(2))
     }).subscribe({
       next: ({ modules, me }) => {
         this.modules = modules.filter(m => m.status === 'ACTIVE');

@@ -72,7 +72,7 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
-          <div *ngFor="let student of students"
+          <div *ngFor="let student of students; trackBy: trackByStudent"
             class="group relative bg-white dark:bg-slate-800 rounded-2xl p-5 transition-all hover:-translate-y-1"
             [ngClass]="{
               'border-4 border-red-500 card-alert-red':    hasTabSwitchAlert(student),

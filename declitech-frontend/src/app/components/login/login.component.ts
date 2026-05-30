@@ -45,7 +45,7 @@ export class LoginComponent implements OnInit {
 
   submit(): void {
     if (!this.usernameOrEmail || !this.password) {
-      this.errorMessage = 'Username and password are required';
+      this.errorMessage = 'AUTH.ERROR_REQUIRED';
       return;
     }
     this.isLoading = true;
@@ -58,7 +58,7 @@ export class LoginComponent implements OnInit {
       },
       error: () => {
         this.isLoading = false;
-        this.errorMessage = 'Invalid credentials';
+        this.errorMessage = 'AUTH.ERROR_INVALID';
       }
     });
   }

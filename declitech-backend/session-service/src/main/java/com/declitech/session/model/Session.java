@@ -83,8 +83,4 @@ public class Session {
             expiresAt = createdAt.plusMinutes(90);
         }
     }
-
-    public boolean isExpired() {
-        return LocalDateTime.now().isAfter(expiresAt);
-    }
 }

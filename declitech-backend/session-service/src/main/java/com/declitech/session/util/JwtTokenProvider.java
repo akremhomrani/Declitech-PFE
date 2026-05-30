@@ -26,27 +26,6 @@ public class JwtTokenProvider {
         this.iamJwtVerifier = iamJwtVerifier;
     }
 
-    public Long extractUserIdFromToken(String token) {
-        JWTClaimsSet claims = verifyOrNull(token);
-        if (claims == null) return null;
-
-        Long fromClaim = parseLong(claims.getClaim("userId"));
-        if (fromClaim != null) return fromClaim;
-
-        fromClaim = parseLong(claims.getClaim("id"));
-        if (fromClaim != null) return fromClaim;
-
-        String sub = claims.getSubject();
-        if (sub != null && !sub.isEmpty()) {
-            try {
-                return Long.parseLong(sub);
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        }
-        return null;
-    }
-
     public String extractFirstName(String token) {
         return extractStringClaim(token, "firstName");
     }
@@ -83,10 +62,6 @@ public class JwtTokenProvider {
             if (f != null) result.add(f.toString());
         }
         return result;
-    }
-
-    public boolean hasFeature(String token, String appSlug, String feature) {
-        return extractAppFeatures(token, appSlug).contains(feature);
     }
 
     public boolean isStaff(String token) {

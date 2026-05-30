@@ -158,14 +158,8 @@ class AlertServiceTest {
     }
 
     // =========================================================
-    //  getActiveConnectionsForSession() / getTotalActiveConnections()
+    //  getTotalActiveConnections()
     // =========================================================
-
-    @Test
-    @DisplayName("getActiveConnectionsForSession - no emitters registered → returns 0")
-    void getActiveConnectionsForSession_NoEmitters_ShouldReturnZero() {
-        assertThat(alertService.getActiveConnectionsForSession("SESS-001")).isEqualTo(0);
-    }
 
     @Test
     @DisplayName("getTotalActiveConnections - no sessions → returns 0")

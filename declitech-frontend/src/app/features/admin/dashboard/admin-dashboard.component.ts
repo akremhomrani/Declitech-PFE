@@ -1,7 +1,8 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { NavbarComponent } from '../../../shared/navbar/navbar.component';
 import { SidebarComponent } from '../../../shared/sidebar/sidebar.component';
 import { UserService } from '../../../services/user.service';
@@ -93,10 +94,14 @@ export class AdminDashboardComponent implements OnInit {
     this.error = '';
 
     forkJoin({
-      users: this.userService.list(0, 1000),
-      modules: this.moduleService.list(),
-      active: this.sessionService.getAllActiveSessions(),
-      history: this.sessionService.getSessionHistory(0, 1000)
+      users: this.userService.list(0, 1000).pipe(
+        catchError(() => of({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 0 }))
+      ),
+      modules: this.moduleService.list().pipe(catchError(() => of([] as Module[]))),
+      active: this.sessionService.getAllActiveSessions().pipe(catchError(() => of([] as SessionHistory[]))),
+      history: this.sessionService.getSessionHistory(0, 1000).pipe(
+        catchError(() => of({ sessions: [], currentPage: 0, totalPages: 0, totalElements: 0, pageSize: 0, hasNext: false, hasPrevious: false }))
+      )
     }).subscribe({
       next: ({ users, modules, active, history }) => {
         this.userRoleByName = new Map(users.content.map(u => [u.username, u.role]));

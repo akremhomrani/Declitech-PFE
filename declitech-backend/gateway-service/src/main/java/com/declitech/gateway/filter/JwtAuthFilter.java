@@ -56,7 +56,14 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getPath().value();
 
-        if (request.getMethod() == HttpMethod.OPTIONS || isPublic(path)) {
+        if (request.getMethod() == HttpMethod.OPTIONS) {
+            return chain.filter(exchange);
+        }
+
+        if (isPublic(path)) {
+            if (path.startsWith("/api/sessions/join/")) {
+                log.info("Unauthenticated session join attempt path={} clientIp={}", path, clientIp(request));
+            }
             return chain.filter(exchange);
         }
 
@@ -93,6 +100,16 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             log.warn("JWT verification failed: {}", e.getMessage());
             return false;
         }
+    }
+
+    private String clientIp(ServerHttpRequest request) {
+        String forwarded = request.getHeaders().getFirst("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+        return request.getRemoteAddress() != null
+                ? request.getRemoteAddress().getAddress().getHostAddress()
+                : "unknown";
     }
 
     private boolean isPublic(String path) {

@@ -27,6 +27,7 @@ public class UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
+    @Transactional
     public UserDTO create(CreateUserRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new ConflictException("Username already taken");
@@ -118,6 +119,7 @@ public class UserService {
                 .build();
     }
 
+    @Transactional
     public UserDTO update(Long id, UpdateUserRequest request) {
         User user = getUserOrThrow(id);
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
@@ -139,11 +141,13 @@ public class UserService {
         return userMapper.toDTO(userRepository.save(user));
     }
 
+    @Transactional
     public void delete(Long id) {
         User user = getUserOrThrow(id);
         userRepository.delete(user);
     }
 
+    @Transactional
     public void changePassword(Long id, ChangePasswordRequest request) {
         User user = getUserOrThrow(id);
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));

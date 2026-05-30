@@ -90,6 +90,8 @@ export class SessionDetailsComponent implements OnInit {
   tabSwitchAlerts: SessionAlert[] = [];
   uniqueVisitedSites: VisitedSite[] = [];
 
+  private readonly studentAlertCache = new Map<string, SessionAlert[]>();
+
   parsedObservation: Observation | null = null;
   hasStructuredObservation = false;
   readonly tagIndex = TAG_INDEX;
@@ -119,7 +121,7 @@ export class SessionDetailsComponent implements OnInit {
         this.loadSessionReports();
       },
       error: (err) => {
-        this.logger.error('Failed to load session details', err, { sessionId: this.sessionId });
+        this.logger.error('Failed to load session details', err);
         this.isLoading = false;
       }
     });
@@ -139,7 +141,7 @@ export class SessionDetailsComponent implements OnInit {
         this.loadAlertCounts();
       },
       error: (err) => {
-        this.logger.error('Failed to load session reports', err, { sessionCode: this.sessionCode });
+        this.logger.error('Failed to load session reports', err);
         this.isLoading = false;
       }
     });
@@ -148,7 +150,7 @@ export class SessionDetailsComponent implements OnInit {
       next: (reports: TrackReport[]) => {
         this.trackReports = reports;
       },
-      error: (err) => this.logger.warn('Failed to load track reports', { err, sessionCode: this.sessionCode })
+      error: (err) => this.logger.warn('Failed to load track reports', { err })
     });
   }
 
@@ -228,7 +230,7 @@ export class SessionDetailsComponent implements OnInit {
         }));
         this.updateDisplayedStudents();
       },
-      error: (err) => this.logger.warn('Failed to load batch alert counts', { err, sessionCode: this.sessionCode })
+      error: (err) => this.logger.warn('Failed to load batch alert counts', { err })
     });
   }
 
@@ -305,9 +307,17 @@ export class SessionDetailsComponent implements OnInit {
     const identity = this.selectedEmotionReport?.studentLoginIdentity || this.selectedStudent.name || '';
     if (!sessionId || !identity) return;
 
+    const cacheKey = `${sessionId}::${identity}`;
+    const cached = this.studentAlertCache.get(cacheKey);
+    if (cached) {
+      this.setStudentAlerts(cached);
+      return;
+    }
+
     this.isLoadingAlerts = true;
     this.emotionService.getAlertsBySessionAndStudent(sessionId, identity).subscribe({
       next: (alerts) => {
+        this.studentAlertCache.set(cacheKey, alerts);
         this.setStudentAlerts(alerts);
         this.isLoadingAlerts = false;
       },
@@ -466,6 +476,22 @@ export class SessionDetailsComponent implements OnInit {
       this.currentPage = page;
       this.updateDisplayedStudents();
     }
+  }
+
+  trackByStudentId(_index: number, student: StudentReport): string {
+    return student.id;
+  }
+
+  trackByPage(_index: number, page: number): number {
+    return page;
+  }
+
+  trackBySiteUrl(_index: number, site: VisitedSite): string {
+    return site.url;
+  }
+
+  trackByTagId(_index: number, tagId: string): string {
+    return tagId;
   }
 
   get totalPages(): number {

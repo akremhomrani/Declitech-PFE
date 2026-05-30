@@ -91,6 +91,22 @@ export class InstructorAnalyticsComponent implements OnInit, OnDestroy {
     this.startPolling();
   }
 
+  trackByModuleStat(_index: number, stat: ModuleStat): number | string {
+    return stat.id ?? stat.name;
+  }
+
+  trackBySliceLabel(_index: number, slice: StatusSlice): string {
+    return slice.label;
+  }
+
+  trackByBarLabel(_index: number, bar: MonthBar): string {
+    return bar.label;
+  }
+
+  trackBySessionId(_index: number, session: SessionHistory): number {
+    return session.id;
+  }
+
   ngOnDestroy(): void {
     this.pollSub?.unsubscribe();
     this.cancelAnimations();

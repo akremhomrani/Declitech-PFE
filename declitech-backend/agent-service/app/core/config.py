@@ -1,7 +1,9 @@
 from pathlib import Path
 from pydantic_settings import BaseSettings
 
-BASE_DIR = Path(__file__).resolve().parents[2]  # declitech-backend/agent-service/
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+INSECURE_GATEWAY_SECRET = "change-in-production"
 
 
 class Settings(BaseSettings):
@@ -17,7 +19,7 @@ class Settings(BaseSettings):
     LOCAL_ONLY: bool = False
 
     # Security
-    GATEWAY_SECRET: str = "change-in-production"
+    GATEWAY_SECRET: str = ""
 
     # Redis
     REDIS_HOST: str = "localhost"
@@ -50,7 +52,7 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = (
         "http://localhost:4200,http://localhost:4300,"
         "http://localhost:8765,http://127.0.0.1:4200,"
-        "http://127.0.0.1:4300,chrome-extension://*"
+        "http://127.0.0.1:4300"
     )
 
     DEBUG: bool = False
@@ -72,6 +74,14 @@ class Settings(BaseSettings):
     def model_input_size(self) -> tuple[int, int]:
         parts = self.MODEL_INPUT_SIZE.split(",")
         return int(parts[0]), int(parts[1])
+
+    def model_post_init(self, __context) -> None:
+        if not self.DEBUG and not self.LOCAL_ONLY:
+            if not self.GATEWAY_SECRET or self.GATEWAY_SECRET == INSECURE_GATEWAY_SECRET:
+                raise ValueError(
+                    "GATEWAY_SECRET must be set to a secure value via environment "
+                    "variable in production (DEBUG and LOCAL_ONLY disabled)."
+                )
 
     model_config = {
         "env_file": str(BASE_DIR / ".env"),

@@ -3,6 +3,7 @@ package com.declitech.report.controller;
 import com.declitech.report.dto.EmotionReportDTO;
 import com.declitech.report.model.EmotionReport;
 import com.declitech.report.service.EmotionReportService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -36,7 +37,7 @@ public class EmotionReportController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createReport(@RequestBody EmotionReportDTO reportDTO) {
+    public ResponseEntity<?> createReport(@Valid @RequestBody EmotionReportDTO reportDTO) {
         try {
             EmotionReport report = reportService.saveReportFromDTO(reportDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(

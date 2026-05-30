@@ -51,6 +51,8 @@ class SessionService:
         if not settings.LOCAL_ONLY:
             valid, reason, _session = validate_session_code(request.code)
             if not valid:
+                if reason == "server_unreachable":
+                    raise RuntimeError("Session service unreachable; cannot validate session")
                 if reason in ("inactive", "expired"):
                     raise RuntimeError(f"Session is no longer active: {reason}")
                 self.session_id = f"LOCAL-{request.code}"
@@ -244,15 +246,22 @@ class SessionService:
             for obs_str in observations:
                 try:
                     obs = json.loads(obs_str)
-                    res = obs.get("analysis_result", {})
-                    ts = obs.get("timestamp", "").split("T")[-1]
+                    if not isinstance(obs, dict):
+                        logger.warning("Skipping malformed track observation: not an object")
+                        continue
+                    res = obs.get("analysis_result") or {}
+                    if not isinstance(res, dict):
+                        res = {}
+                    ts = str(obs.get("timestamp", "")).split("T")[-1]
                     if res.get("exercise_name") and res.get("exercise_name") != "Unknown":
                         exercise_name = res.get("exercise_name")
                     progress = res.get("progress_level", "")
                     text = res.get("observations", "")
                     timeline_texts.append(f"[{ts}] ({progress}): {text}")
-                except Exception:
-                    pass
+                except json.JSONDecodeError:
+                    logger.warning("Skipping malformed track observation: invalid JSON")
+                except Exception as e:
+                    logger.warning("Skipping track observation due to unexpected error: %s", e)
 
             if not timeline_texts:
                 return
@@ -284,7 +293,7 @@ class SessionService:
                 resp.raise_for_status()
                 conclusion = (resp.json()["choices"][0]["message"]["content"] or "").strip()
             except Exception as e:
-                logger.error("OpenRouter error: %s", e)
+                logger.error("OpenRouter request failed: %s", type(e).__name__)
                 successes = sum(1 for t in timeline_texts if "SUCCESS" in t)
                 errors = sum(1 for t in timeline_texts if "ERROR" in t or "mistake" in t.lower())
                 total = len(timeline_texts)

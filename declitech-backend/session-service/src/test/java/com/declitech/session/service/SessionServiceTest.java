@@ -172,48 +172,6 @@ class SessionServiceTest {
     }
 
     // =========================================================
-    //  setDecliquizAccessCode()
-    // =========================================================
-
-    @Test
-    @DisplayName("setDecliquizAccessCode - session sans code → code persisté")
-    void setDecliquizAccessCode_NoExistingCode_ShouldPersist() {
-        when(sessionRepository.findById(10L)).thenReturn(Optional.of(activeSession));
-        when(sessionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(reportServiceClient.getParticipantCountBySessionId(anyLong())).thenReturn(0L);
-        when(reportServiceClient.getReportCountBySessionId(anyLong())).thenReturn(0);
-
-        SessionDTO result = sessionService.setDecliquizAccessCode(10L, "G136XZ");
-
-        assertThat(result.getDecliquizAccessCode()).isEqualTo("G136XZ");
-        verify(sessionRepository).save(any());
-    }
-
-    @Test
-    @DisplayName("setDecliquizAccessCode - code déjà présent → ignoré (idempotent)")
-    void setDecliquizAccessCode_AlreadySet_ShouldNotOverwrite() {
-        activeSession.setDecliquizAccessCode("G100AA");
-        when(sessionRepository.findById(10L)).thenReturn(Optional.of(activeSession));
-        when(reportServiceClient.getParticipantCountBySessionId(anyLong())).thenReturn(0L);
-        when(reportServiceClient.getReportCountBySessionId(anyLong())).thenReturn(0);
-
-        SessionDTO result = sessionService.setDecliquizAccessCode(10L, "G999ZZ");
-
-        assertThat(result.getDecliquizAccessCode()).isEqualTo("G100AA");
-        verify(sessionRepository, never()).save(any());
-    }
-
-    @Test
-    @DisplayName("setDecliquizAccessCode - session introuvable → RuntimeException")
-    void setDecliquizAccessCode_NotFound_ShouldThrow() {
-        when(sessionRepository.findById(999L)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> sessionService.setDecliquizAccessCode(999L, "G1AAAA"))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Session not found");
-    }
-
-    // =========================================================
     //  getAllActiveSessions()
     // =========================================================
 

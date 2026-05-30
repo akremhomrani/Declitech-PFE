@@ -1,6 +1,9 @@
+import logging
 from typing import Tuple, Optional, Dict, Any
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 def validate_session_code(session_code: str) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
@@ -26,5 +29,5 @@ def validate_session_code(session_code: str) -> Tuple[bool, str, Optional[Dict[s
         return False, "inactive", data
 
     except Exception:
-        # Network failure — assume session is still valid to avoid disconnecting the student
-        return True, "server_unreachable", None
+        logger.error("Session validation failed: session service unreachable for code")
+        return False, "server_unreachable", None

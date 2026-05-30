@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { BehaviorSubject, Observable, tap, take } from 'rxjs';
 import { AuthProfile, LoginResponse } from '../models/auth.model';
 import { UserRole } from '../models/user.model';
 import { ApiPaths } from './api-paths';
@@ -21,7 +21,7 @@ export class AuthService {
   }
 
   logout(): void {
-    this.http.post(ApiPaths.auth.logout, {}, HTTP_WITH_CREDENTIALS).subscribe({
+    this.http.post(ApiPaths.auth.logout, {}, HTTP_WITH_CREDENTIALS).pipe(take(1)).subscribe({
       error: () => {}
     });
     sessionStorage.removeItem(StorageKeys.auth.token);
@@ -97,7 +97,7 @@ export class AuthService {
       role: res.role
     };
     this.persistProfile(profile);
-    this.fetchMe().subscribe({ error: () => {} });
+    this.fetchMe().pipe(take(1)).subscribe({ error: () => {} });
   }
 
   private persistProfile(profile: AuthProfile): void {

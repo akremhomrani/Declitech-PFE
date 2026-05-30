@@ -238,7 +238,7 @@ public class SessionService {
             actualReportCount = reportServiceClient.getReportCountBySessionId(session.getId());
             actualReportCount = actualReportCount != null ? actualReportCount : 0;
         } catch (Exception e) {
-            // report-service may be unavailable — counts default to 0
+            log.warn("Report service unavailable for session {}: {}", session.getId(), e.getMessage());
         }
 
         return SessionDTO.builder()

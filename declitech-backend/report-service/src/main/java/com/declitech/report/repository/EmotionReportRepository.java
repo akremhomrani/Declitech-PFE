@@ -1,7 +1,6 @@
 package com.declitech.report.repository;
 
 import com.declitech.report.model.EmotionReport;
-import com.declitech.report.model.EmotionReportStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -40,14 +39,4 @@ public interface EmotionReportRepository extends JpaRepository<EmotionReport, Lo
         LocalDateTime start,
         LocalDateTime end
     );
-
-    List<EmotionReport> findBySessionIdAndGeneratedAtBetween(
-        Long sessionId,
-        LocalDateTime start,
-        LocalDateTime end
-    );
-
-    boolean existsBySessionId(Long sessionId);
-
-    List<EmotionReport> findByStatusOrderByCreatedAtDesc(EmotionReportStatus status);
 }

@@ -1,8 +1,12 @@
+import logging
+
 from fastapi import APIRouter, HTTPException
 
 from app.models.schemas import StartRequest, StatusResponse, AgentControlResponse
 from app.services.session_service import SessionService
 from app.utils.validators import validate_session_code
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Agent Control"])
 
@@ -49,8 +53,9 @@ def start_session(request: StartRequest):
         return AgentControlResponse(status="STARTED", session_id=session_service.session_id)
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Failed to start session")
+        raise HTTPException(status_code=400, detail="Failed to start session")
 
 
 @router.post("/stop", response_model=AgentControlResponse)

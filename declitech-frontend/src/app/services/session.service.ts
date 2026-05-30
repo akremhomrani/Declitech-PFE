@@ -114,14 +114,14 @@ export class SessionService {
       if (currentSession.id) {
         this.http.post(ApiPaths.sessions.end(currentSession.id), {}, HTTP_WITH_CREDENTIALS).subscribe({
           next: () => { },
-          error: (err) => this.logger.warn('Failed to end session on backend', { err, sessionId: currentSession.id })
+          error: (err) => this.logger.warn('Failed to end session on backend', { err })
         });
       }
     }
 
     this.sessionDataSubject.next(null);
     this.elapsedTimeSubject.next('0m 0s');
-    localStorage.removeItem(StorageKeys.session.active);
+    sessionStorage.removeItem(StorageKeys.session.active);
   }
 
   getCurrentSession(): SessionData | null {
@@ -198,11 +198,11 @@ export class SessionService {
   }
 
   private saveSessionToStorage(sessionData: SessionData): void {
-    localStorage.setItem(StorageKeys.session.active, JSON.stringify(sessionData));
+    sessionStorage.setItem(StorageKeys.session.active, JSON.stringify(sessionData));
   }
 
   private loadSessionFromStorage(): void {
-    const stored = localStorage.getItem(StorageKeys.session.active);
+    const stored = sessionStorage.getItem(StorageKeys.session.active);
     if (!stored) return;
 
     try {
@@ -213,7 +213,7 @@ export class SessionService {
       const elapsedMs = Date.now() - sessionData.startTime.getTime();
 
       if (elapsedMs >= durationMs) {
-        localStorage.removeItem(StorageKeys.session.active);
+        sessionStorage.removeItem(StorageKeys.session.active);
         return;
       }
 
@@ -222,7 +222,7 @@ export class SessionService {
       this.startSessionExpirationTimer(sessionData);
     } catch (err) {
       this.logger.warn('Failed to restore stored session', { err });
-      localStorage.removeItem(StorageKeys.session.active);
+      sessionStorage.removeItem(StorageKeys.session.active);
     }
   }
 }

@@ -30,8 +30,9 @@ public class AlertService {
 
     private static final String REDIS_ALERT_PREFIX   = "session:alerts:";
     private static final String REDIS_DEDUP_PREFIX   = "alert:dedup:";
-    private static final long   DEDUP_WINDOW_SECONDS = 10;
+    private static final long   DEDUP_WINDOW_SECONDS = 30;
     private static final long   REDIS_TTL_HOURS      = 24;
+    private static final int    SCAN_BATCH_SIZE      = 256;
 
     private final StringRedisTemplate redisTemplate;
     private final SessionAlertRepository alertRepository;
@@ -146,22 +147,14 @@ public class AlertService {
     }
 
     /**
-     * Single-shot fetch of every alert for a session — used by the frontend to
-     * aggregate per-student counts without paying N HTTP requests (cf. audit H2).
-     */
-    public List<SessionAlert> getAlertsBySession(String sessionKey) {
-        return alertRepository.findBySessionIdOrderByTimestampAsc(sessionKey);
-    }
-
-    /**
      * Live-session fetch — merges DB-persisted alerts with Redis-buffered alerts
      * (read-only, no flush). Powers the dashboard polling fallback when SSE is
      * unavailable so cards still color and the sidebar still lists alerts.
      */
     public List<SessionAlert> getLiveAlertsBySession(String sessionKey) {
         List<SessionAlert> dbAlerts = alertRepository.findBySessionIdOrderByTimestampAsc(sessionKey);
-        java.util.Set<String> redisKeys = redisTemplate.keys(REDIS_ALERT_PREFIX + sessionKey + ":*");
-        if (redisKeys == null || redisKeys.isEmpty()) {
+        java.util.Set<String> redisKeys = scanKeys(REDIS_ALERT_PREFIX + sessionKey + ":*");
+        if (redisKeys.isEmpty()) {
             return dbAlerts;
         }
         java.util.List<SessionAlert> merged = new java.util.ArrayList<>(dbAlerts);
@@ -191,14 +184,27 @@ public class AlertService {
         return sessionEmitters.values().stream().mapToInt(CopyOnWriteArrayList::size).sum();
     }
 
-    public int getActiveConnectionsForSession(String sessionId) {
-        CopyOnWriteArrayList<SseEmitter> emitters = sessionEmitters.get(sessionId);
-        return emitters != null ? emitters.size() : 0;
-    }
-
     // =========================================================
     //  Private helpers
     // =========================================================
+
+    private java.util.Set<String> scanKeys(String pattern) {
+        java.util.Set<String> keys = new java.util.HashSet<>();
+        org.springframework.data.redis.core.ScanOptions options =
+                org.springframework.data.redis.core.ScanOptions.scanOptions()
+                        .match(pattern)
+                        .count(SCAN_BATCH_SIZE)
+                        .build();
+        redisTemplate.execute((org.springframework.data.redis.core.RedisCallback<Void>) connection -> {
+            try (org.springframework.data.redis.core.Cursor<byte[]> cursor = connection.keyCommands().scan(options)) {
+                while (cursor.hasNext()) {
+                    keys.add(new String(cursor.next(), java.nio.charset.StandardCharsets.UTF_8));
+                }
+            }
+            return null;
+        });
+        return keys;
+    }
 
     private SessionAlert toEntity(AlertEvent event) {
         String tabUrl   = null;

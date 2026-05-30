@@ -19,8 +19,6 @@ public interface SessionRepository extends JpaRepository<Session, Long>, JpaSpec
 
     List<Session> findByInstructorUsername(String username);
 
-    List<Session> findByInstructorUsernameAndStatus(String username, SessionStatus status);
-
     List<Session> findByStatus(SessionStatus status);
 
     List<Session> findByModuleId(Long moduleId);

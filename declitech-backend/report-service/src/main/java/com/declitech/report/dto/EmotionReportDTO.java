@@ -2,6 +2,8 @@ package com.declitech.report.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,12 +17,18 @@ import java.util.Map;
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class EmotionReportDTO {
+    @Size(max = 128)
     private String sessionId;
+    @Size(max = 128)
     private String sessionCode;
     private LocalDateTime generatedAt;
+    @NotBlank
+    @Size(max = 256)
     private String studentLoginIdentity;
+    @Size(max = 64)
     private String modelVersion;
     private List<String> classLabels;
+    @Size(max = 32)
     private String status;
 
     private SummaryMean summaryMean;

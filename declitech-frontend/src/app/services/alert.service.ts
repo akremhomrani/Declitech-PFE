@@ -39,7 +39,7 @@ export class AlertService {
 
     connectToSession(sessionCode: string): void {
         if (!SESSION_CODE_PATTERN.test(sessionCode)) {
-            this.logger.warn('Invalid sessionCode, refusing SSE', { sessionCode });
+            this.logger.warn('Invalid sessionCode, refusing SSE');
             return;
         }
         this.disconnect();
@@ -70,7 +70,7 @@ export class AlertService {
         this.eventSource.addEventListener('heartbeat', () => { });
 
         this.eventSource.onerror = (err) => {
-            this.logger.warn('SSE alert stream error', { err: String(err), sessionCode });
+            this.logger.warn('SSE alert stream error', { err: String(err) });
             this.ngZone.run(() => this.connectionStatusSubject.next(false));
             this.scheduleReconnect();
         };
