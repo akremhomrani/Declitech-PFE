@@ -1,6 +1,7 @@
 package com.declitech.session.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -31,10 +33,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntime(
             RuntimeException ex, HttpServletRequest request) {
-        String message = ex.getMessage();
-        HttpStatus status = (message != null && message.contains("not found"))
-                ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
-        return error(status, status.getReasonPhrase(), message, request);
+        String rawMessage = ex.getMessage();
+        boolean notFound = rawMessage != null && rawMessage.toLowerCase().contains("not found");
+        if (notFound) {
+            log.warn("Resource not found at {}: {}", request.getRequestURI(), rawMessage);
+            return error(HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.getReasonPhrase(),
+                    "Resource not found", request);
+        }
+        log.error("Unhandled runtime exception at {}", request.getRequestURI(), ex);
+        return error(HttpStatus.INTERNAL_SERVER_ERROR,
+                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
+                "An unexpected error occurred", request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

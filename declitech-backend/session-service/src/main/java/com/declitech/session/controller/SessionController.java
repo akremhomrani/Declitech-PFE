@@ -7,6 +7,7 @@ import com.declitech.session.dto.PagedSessionResponse;
 import com.declitech.session.dto.SessionDTO;
 import com.declitech.session.dto.SessionFilterRequest;
 import com.declitech.session.dto.SiteModuleDto;
+import com.declitech.session.model.SessionStatus;
 import com.declitech.session.service.SessionService;
 import com.declitech.session.util.JwtTokenProvider;
 import jakarta.validation.Valid;
@@ -117,10 +118,12 @@ public class SessionController {
             @RequestParam(name = "search", required = false) String search,
             @RequestParam(name = "instructorUsername", required = false) String instructorUsername) {
 
+        String normalizedStatus = validateStatus(status);
+
         SessionFilterRequest filter = SessionFilterRequest.builder()
                 .title(title)
                 .sessionCode(sessionCode)
-                .status(status)
+                .status(normalizedStatus)
                 .search(search)
                 .instructorUsername(instructorUsername)
                 .build();
@@ -129,6 +132,18 @@ public class SessionController {
                 filter, page, size, sortBy, sortDirection);
 
         return ResponseEntity.ok(response);
+    }
+
+    private String validateStatus(String status) {
+        if (status == null || status.trim().isEmpty()) {
+            return null;
+        }
+        String normalized = status.trim().toUpperCase();
+        try {
+            return SessionStatus.valueOf(normalized).name();
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid status. Allowed values: ACTIVE, ENDED, EXPIRED, CANCELLED");
+        }
     }
 
     @GetMapping("/instructor/username/{username}")

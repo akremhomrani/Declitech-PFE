@@ -9,11 +9,7 @@ import java.util.List;
 @Repository
 public interface TrackReportRepository extends JpaRepository<TrackReport, Long> {
 
-    List<TrackReport> findBySessionId(String sessionId);
-
     List<TrackReport> findBySessionCode(String sessionCode);
 
     List<TrackReport> findByStudentIdentity(String studentIdentity);
-
-    List<TrackReport> findBySessionIdAndStudentIdentity(String sessionId, String studentIdentity);
 }

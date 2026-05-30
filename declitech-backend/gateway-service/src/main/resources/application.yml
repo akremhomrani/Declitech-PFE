@@ -102,7 +102,10 @@ spring:
               - DELETE
               - PATCH
               - OPTIONS
-            allowedHeaders: "*"
+            allowedHeaders:
+              - Authorization
+              - Content-Type
+              - X-Requested-With
             allowCredentials: true
             exposedHeaders:
               - Authorization
@@ -114,7 +117,7 @@ jwt:
   secret: ${JWT_SECRET}
 
 gateway:
-  secret: ${GATEWAY_SECRET:declitech-gateway-secret-dev-change-in-production}
+  secret: ${GATEWAY_SECRET}
 
 eureka:
   client:

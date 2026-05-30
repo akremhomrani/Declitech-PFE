@@ -32,6 +32,9 @@ spring:
 jwt:
   secret: ${JWT_SECRET}
 
+gateway:
+  secret: ${GATEWAY_SECRET}
+
 eureka:
   client:
     service-url:

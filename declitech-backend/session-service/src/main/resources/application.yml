@@ -31,12 +31,10 @@ spring:
     baseline-on-migrate: ${FLYWAY_BASELINE:true}
 
 jwt:
-  # Internal HS256 secret used by SessionTokenService for short-lived join-session tokens.
-  # NOT used for IAM JWT verification (which is RS256 + JWKS — see iam.jwks-url below).
   secret: ${JWT_SECRET}
 
 gateway:
-  secret: ${GATEWAY_SECRET:declitech-gateway-secret-dev-change-in-production}
+  secret: ${GATEWAY_SECRET}
   require-header: true
 
 # Session Configuration

@@ -32,10 +32,14 @@ spring:
 jwt:
   secret: ${JWT_SECRET}
 
+gateway:
+  secret: ${GATEWAY_SECRET}
+  require-header: ${GATEWAY_REQUIRE_HEADER:true}
+
 admin:
-  username: ${ADMIN_USERNAME:admin}
-  email: ${ADMIN_EMAIL:admin@declitech.local}
-  password: ${ADMIN_PASSWORD:admin123}
+  username: ${ADMIN_USERNAME}
+  email: ${ADMIN_EMAIL}
+  password: ${ADMIN_PASSWORD}
   firstName: ${ADMIN_FIRSTNAME:Super}
   lastName: ${ADMIN_LASTNAME:Admin}
 

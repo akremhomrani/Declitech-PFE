@@ -4,6 +4,8 @@ import com.declitech.auth.dto.LoginRequest;
 import com.declitech.auth.dto.LoginResponse;
 import com.declitech.auth.dto.TokenResponse;
 import com.declitech.auth.exception.InvalidTokenException;
+import com.declitech.auth.exception.TooManyAttemptsException;
+import com.declitech.auth.security.LoginAttemptService;
 import com.declitech.auth.service.AuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,13 +25,30 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final LoginAttemptService loginAttemptService;
 
     @Value("${cookie.secure:false}")
     private boolean cookieSecure;
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
-        LoginResponse loginResponse = authService.login(request);
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request,
+                                               HttpServletRequest httpRequest,
+                                               HttpServletResponse response) {
+        String clientIp = resolveClientIp(httpRequest);
+        String attemptKey = request.getUsernameOrEmail() + "|" + clientIp;
+
+        if (loginAttemptService.isBlocked(attemptKey)) {
+            throw new TooManyAttemptsException("Too many failed login attempts. Please try again later.");
+        }
+
+        LoginResponse loginResponse;
+        try {
+            loginResponse = authService.login(request);
+        } catch (RuntimeException e) {
+            loginAttemptService.recordFailure(attemptKey, clientIp);
+            throw e;
+        }
+        loginAttemptService.recordSuccess(attemptKey);
 
         Cookie accessTokenCookie = new Cookie("accessToken", loginResponse.getAccessToken());
         accessTokenCookie.setHttpOnly(true);
@@ -140,6 +159,14 @@ public class AuthController {
         }
 
         return ResponseEntity.ok(response);
+    }
+
+    private String resolveClientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 
     @GetMapping("/health")

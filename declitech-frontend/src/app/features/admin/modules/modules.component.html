@@ -93,7 +93,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-border-light">
-              <tr *ngFor="let m of filteredModules" class="hover:bg-sidebar-bg transition-colors">
+              <tr *ngFor="let m of filteredModules; trackBy: trackByModuleId" class="hover:bg-sidebar-bg transition-colors">
                 <td class="py-3 sm:py-4 px-4 sm:px-6">
                   <div class="flex items-center gap-3">
                     <div class="size-9 sm:size-10 rounded-full bg-gradient-to-br from-primary to-cyan-600 flex items-center justify-center text-white font-bold text-sm">
@@ -110,7 +110,7 @@
                 </td>
                 <td class="py-3 sm:py-4 px-4 sm:px-6">
                   <div class="flex flex-wrap gap-1.5">
-                    <span *ngFor="let site of m.sites" [ngClass]="getSiteBadgeClass(m.id, site)">
+                    <span *ngFor="let site of m.sites; trackBy: trackBySite" [ngClass]="getSiteBadgeClass(m.id, site)">
                       <span class="w-1.5 h-1.5 rounded-full bg-current" [class.animate-pulse]="isSiteLit(m.id, site)"></span>
                       {{ site }}
                     </span>
@@ -170,7 +170,7 @@
 
             <div class="flex gap-1">
               <button
-                *ngFor="let page of pageArray.slice(Math.max(0, currentPage - 2), Math.min(totalPages, currentPage + 3))"
+                *ngFor="let page of pageArray.slice(Math.max(0, currentPage - 2), Math.min(totalPages, currentPage + 3)); trackBy: trackByPage"
                 (click)="goToPage(page)"
                 [class.bg-primary]="page === currentPage"
                 [class.text-white]="page === currentPage"
@@ -290,7 +290,7 @@
             <div *ngIf="form.sites.length > 0" class="space-y-2">
               <p class="text-sm font-medium text-text-main mb-2">{{ 'ADMIN.MODULES.SELECTED_SITES' | translate }}</p>
               <div class="flex flex-wrap gap-2">
-                <div *ngFor="let site of form.sites" class="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 px-3 py-2 rounded-lg">
+                <div *ngFor="let site of form.sites; trackBy: trackBySite" class="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 px-3 py-2 rounded-lg">
                   <span class="material-symbols-outlined text-blue-600 dark:text-blue-300 text-sm">location_on</span>
                   <span class="text-sm font-medium text-blue-800 dark:text-blue-200">{{ site }}</span>
                   <button

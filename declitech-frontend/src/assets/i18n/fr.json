@@ -10,6 +10,7 @@
     "CONFIRM": "Confirmer",
     "LOADING": "Chargement...",
     "SEARCH": "Rechercher",
+    "TOGGLE_MENU": "Afficher le menu de navigation",
     "FILTER": "Filtrer",
     "FILTERS": "Filtres",
     "SHOWING": "Affichage",
@@ -73,6 +74,7 @@
     "EMAIL_PLACEHOLDER": "Votre adresse e-mail",
     "PASSWORD_PLACEHOLDER": "Votre mot de passe",
     "ERROR_INVALID": "Email ou mot de passe incorrect.",
+    "ERROR_REQUIRED": "Le nom d'utilisateur et le mot de passe sont requis.",
     "ERROR_ACCOUNT_LOCKED": "Compte désactivé. Contactez l'administrateur.",
     "ERROR_TOO_MANY": "Trop de tentatives. Veuillez réessayer plus tard.",
     "ERROR_GENERIC": "Erreur d'authentification. Veuillez réessayer.",
@@ -347,7 +349,10 @@
     "END_SESSION": "Terminer la session",
     "INSTRUCTORS_ONLY": "Réservé aux instructeurs",
     "INSTRUCTORS_ONLY_HINT": "Vous n'avez pas l'autorisation d'accéder à cette page. Cette section est réservée aux instructeurs.",
-    "GO_DASHBOARD": "Aller au tableau de bord"
+    "GO_DASHBOARD": "Aller au tableau de bord",
+    "SCAN_TO_OBSERVE": "Scanner pour observer",
+    "PHONE_ONLY": "Accès mobile uniquement",
+    "PHONE_ONLY_DESC": "Ouvrez l'appareil photo de votre téléphone et scannez le QR code pour accéder à la vue d'observation en direct. Cette vue ne s'ouvre pas dans le navigateur du tableau de bord."
   },
   "SESSION_HISTORY": {
     "TITLE": "Historique des sessions",

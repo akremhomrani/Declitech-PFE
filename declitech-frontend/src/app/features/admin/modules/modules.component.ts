@@ -73,6 +73,18 @@ export class AdminModulesComponent implements OnInit {
     return Array.from({ length: this.totalPages }, (_, i) => i);
   }
 
+  trackByModuleId(_index: number, module: Module): number {
+    return module.id;
+  }
+
+  trackBySite(_index: number, site: string): string {
+    return site;
+  }
+
+  trackByPage(_index: number, page: number): number {
+    return page;
+  }
+
   refresh(): void {
     this.isLoading = true;
     this.error = '';

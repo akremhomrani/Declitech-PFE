@@ -13,6 +13,4 @@ public interface SessionAlertRepository extends JpaRepository<SessionAlert, Long
             String sessionId, String studentLoginIdentity);
 
     List<SessionAlert> findBySessionIdOrderByTimestampAsc(String sessionId);
-
-    void deleteBySessionId(String sessionId);
 }

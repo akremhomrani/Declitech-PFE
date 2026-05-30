@@ -55,10 +55,6 @@ export class AdminUsersComponent implements OnInit {
   isLoading = false;
   error = '';
   searchTerm = '';
-  roleFilter: UserRole | 'ALL' = 'ALL';
-  statusFilter: UserStatus | 'ALL' = 'ALL';
-  viewMode: 'rows' | 'grid' = 'rows';
-  readonly roleOrder: UserRole[] = ['ADMIN', 'INSTRUCTEUR', 'FREELANCER'];
 
   currentPage = 0;
   pageSize = 10;
@@ -175,50 +171,16 @@ export class AdminUsersComponent implements OnInit {
 
   private applySearch(): void {
     const q = this.searchTerm.trim().toLowerCase();
-    this.filteredUsers = this.users.filter(u => {
-      if (this.roleFilter !== 'ALL' && u.role !== this.roleFilter) return false;
-      if (this.statusFilter !== 'ALL' && u.status !== this.statusFilter) return false;
-      if (!q) return true;
-      return (
-        u.username.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
-        `${u.firstName ?? ''} ${u.lastName ?? ''}`.toLowerCase().includes(q) ||
-        u.role.toLowerCase().includes(q)
-      );
-    });
-  }
-
-  setRoleFilter(role: UserRole | 'ALL'): void {
-    this.roleFilter = role;
-    this.applySearch();
-  }
-
-  setStatusFilter(status: UserStatus | 'ALL'): void {
-    this.statusFilter = status;
-    this.applySearch();
-  }
-
-  setView(mode: 'rows' | 'grid'): void {
-    this.viewMode = mode;
-  }
-
-  roleCount(role: UserRole): number {
-    return this.users.filter(u => u.role === role).length;
-  }
-
-  assignmentCount(user: User): number {
-    return user.moduleAssignments?.length ?? 0;
-  }
-
-  hasActiveFilters(): boolean {
-    return this.roleFilter !== 'ALL' || this.statusFilter !== 'ALL' || this.searchTerm.trim().length > 0;
-  }
-
-  clearFilters(): void {
-    this.searchTerm = '';
-    this.roleFilter = 'ALL';
-    this.statusFilter = 'ALL';
-    this.applySearch();
+    if (!q) {
+      this.filteredUsers = [...this.users];
+      return;
+    }
+    this.filteredUsers = this.users.filter(u =>
+      u.username.toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q) ||
+      `${u.firstName ?? ''} ${u.lastName ?? ''}`.toLowerCase().includes(q) ||
+      u.role.toLowerCase().includes(q)
+    );
   }
 
   getInitials(first?: string | null, last?: string | null): string {

@@ -38,12 +38,6 @@ public class TrackReportService {
     }
 
     @Transactional(readOnly = true)
-    public List<TrackReportDTO> getTrackReportsBySessionId(String sessionId) {
-        return trackReportRepository.findBySessionId(sessionId)
-                .stream().map(this::convertToDTO).collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
     public List<TrackReportDTO> getTrackReportsBySessionCode(String sessionCode) {
         return trackReportRepository.findBySessionCode(sessionCode)
                 .stream().map(this::convertToDTO).collect(Collectors.toList());

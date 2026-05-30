@@ -85,7 +85,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.students = reports;
         this.calculateStatistics();
       },
-      error: err => this.logger.warn('Failed to load students', { err, sessionCode: this.activeSessionCode })
+      error: err => this.logger.warn('Failed to load students', { err })
     });
   }
 
@@ -129,7 +129,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.students = [...this.students];
         this.calculateStatistics();
       },
-      error: err => this.logger.warn('Alert polling failed', { err, sessionCode: this.activeSessionCode })
+      error: err => this.logger.warn('Alert polling failed', { err })
     });
   }
 
@@ -157,6 +157,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (this.statistics.connectedStudents > 0) {
       this.statistics.averageAttention = Math.floor((this.statistics.focusedStudents / this.statistics.connectedStudents) * 100);
     }
+  }
+
+  trackByStudent(_index: number, student: EmotionReport): string {
+    return student.studentLoginIdentity ?? String(student.id ?? _index);
   }
 
   getStudentStatus(student: EmotionReport): string {

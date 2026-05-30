@@ -10,6 +10,7 @@
     "CONFIRM": "Confirm",
     "LOADING": "Loading...",
     "SEARCH": "Search",
+    "TOGGLE_MENU": "Toggle navigation menu",
     "FILTER": "Filter",
     "FILTERS": "Filters",
     "SHOWING": "Showing",
@@ -73,6 +74,7 @@
     "EMAIL_PLACEHOLDER": "Your email address",
     "PASSWORD_PLACEHOLDER": "Your password",
     "ERROR_INVALID": "Invalid email or password.",
+    "ERROR_REQUIRED": "Username and password are required.",
     "ERROR_ACCOUNT_LOCKED": "Account disabled. Contact administrator.",
     "ERROR_TOO_MANY": "Too many attempts. Please try again later.",
     "ERROR_GENERIC": "Authentication error. Please try again.",
@@ -347,7 +349,10 @@
     "END_SESSION": "End Live Session",
     "INSTRUCTORS_ONLY": "Instructors Only",
     "INSTRUCTORS_ONLY_HINT": "You do not have permission to access this page. This section is only available to instructors.",
-    "GO_DASHBOARD": "Go to Dashboard"
+    "GO_DASHBOARD": "Go to Dashboard",
+    "SCAN_TO_OBSERVE": "Scan to observe",
+    "PHONE_ONLY": "Phone-only access",
+    "PHONE_ONLY_DESC": "Open the camera on your phone and scan the QR to access the live observation view. The dashboard browser does not open this view."
   },
   "SESSION_HISTORY": {
     "TITLE": "Session History",
