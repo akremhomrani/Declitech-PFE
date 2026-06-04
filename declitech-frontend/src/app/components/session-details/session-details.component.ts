@@ -7,6 +7,7 @@ import { SidebarComponent } from '../../shared/sidebar/sidebar.component';
 import { EmotionService } from '../../services/emotion.service';
 import { SessionService } from '../../services/session.service';
 import { EmotionReport, SessionAlert } from '../../models/emotion-report.model';
+import { StudentActivityReport } from '../../models/student-activity-report.model';
 import { SessionHistory, StudentReport } from '../../models/session';
 import { TrackReportService } from '../../services/track-report.service';
 import { TrackReport } from '../../models/track-report.model';
@@ -80,6 +81,9 @@ export class SessionDetailsComponent implements OnInit {
   selectedTrackReport: TrackReport | null = null;
   selectedEmotionReport: EmotionReport | null = null;
   selectedStudentAlerts: SessionAlert[] = [];
+  selectedStudentReport: StudentActivityReport | null = null;
+  reportActivities: { activity: string; note?: unknown }[] = [];
+  isLoadingReport = false;
   isLoadingAlerts = false;
   isReportModalOpen = false;
   isExportingPdf = false;
@@ -307,6 +311,8 @@ export class SessionDetailsComponent implements OnInit {
     const identity = this.selectedEmotionReport?.studentLoginIdentity || this.selectedStudent.name || '';
     if (!sessionId || !identity) return;
 
+    this.fetchStudentReport(sessionId, identity);
+
     const cacheKey = `${sessionId}::${identity}`;
     const cached = this.studentAlertCache.get(cacheKey);
     if (cached) {
@@ -329,11 +335,55 @@ export class SessionDetailsComponent implements OnInit {
     });
   }
 
+  private fetchStudentReport(sessionId: string, identity: string): void {
+    this.selectedStudentReport = null;
+    this.reportActivities = [];
+    this.isLoadingReport = true;
+    this.emotionService.getStudentActivityReport(sessionId, identity).subscribe({
+      next: (report) => {
+        this.selectedStudentReport = report;
+        this.reportActivities = this.parseReportActivities(report.details);
+        this.isLoadingReport = false;
+      },
+      error: () => {
+        this.selectedStudentReport = null;
+        this.reportActivities = [];
+        this.isLoadingReport = false;
+      }
+    });
+  }
+
+  private parseReportActivities(details: string): { activity: string; note?: unknown }[] {
+    try {
+      const parsed = JSON.parse(details || '[]');
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .filter((a) => a && typeof a.activity === 'string' && a.activity.trim())
+        .map((a) => ({ activity: a.activity, note: a.note }));
+    } catch {
+      return [];
+    }
+  }
+
+  difficultyClass(difficulty: string): string {
+    const value = (difficulty || '').toLowerCase();
+    if (value.includes('élev') || value.includes('eleve') || value.includes('high')) {
+      return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+    }
+    if (value.includes('moy') || value.includes('medium')) {
+      return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
+    }
+    return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
+  }
+
   closeReportModal(): void {
     this.isReportModalOpen = false;
     this.selectedStudent = null;
     this.selectedTrackReport = null;
     this.selectedEmotionReport = null;
+    this.selectedStudentReport = null;
+    this.reportActivities = [];
+    this.isLoadingReport = false;
     this.setStudentAlerts([]);
     this.isLoadingAlerts = false;
     this.isExportingPdf = false;

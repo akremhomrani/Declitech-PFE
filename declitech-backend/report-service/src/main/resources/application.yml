@@ -48,6 +48,17 @@ gateway:
 session-service:
   url: ${SESSION_SERVICE_URL:http://localhost:8084}
 
+openrouter:
+  api-key: ${OPENROUTER_API_KEY:}
+  base-url: ${OPENROUTER_BASE_URL:https://openrouter.ai/api/v1}
+  model: ${OPENROUTER_MODEL:qwen/qwen-2.5-vl-72b-instruct}
+  referer: ${OPENROUTER_REFERER:https://learn.decli.tech}
+  title: ${OPENROUTER_TITLE:DecliTrack}
+
+analysis:
+  storage:
+    dir: ${ANALYSIS_STORAGE_DIR:data/analysis}
+
 eureka:
   client:
     service-url:
