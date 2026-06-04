@@ -4,10 +4,18 @@ import { Observable } from 'rxjs';
 import { ApiPaths } from './api-paths';
 import { HTTP_WITH_CREDENTIALS } from './http-options';
 import { EmotionReport, SessionAlert } from '../models/emotion-report.model';
+import { StudentActivityReport } from '../models/student-activity-report.model';
 
 @Injectable({ providedIn: 'root' })
 export class EmotionService {
   private readonly http = inject(HttpClient);
+
+  getStudentActivityReport(sessionCode: string, identity: string): Observable<StudentActivityReport> {
+    return this.http.get<StudentActivityReport>(
+      ApiPaths.agent.sessionReport(sessionCode, identity),
+      HTTP_WITH_CREDENTIALS
+    );
+  }
 
   getReportsBySessionCode(sessionCode: string): Observable<EmotionReport[]> {
     return this.http.get<EmotionReport[]>(ApiPaths.emotions.bySessionCode(sessionCode), HTTP_WITH_CREDENTIALS);

@@ -40,5 +40,9 @@ export const ApiPaths = {
   },
   reports: {
     trackBySessionCode: (code: string): string => `${base}/api/reports/track/session/${code}`
+  },
+  agent: {
+    sessionReport: (sessionCode: string, identity: string): string =>
+      `${base}/api/agent/session-report/${encodeURIComponent(sessionCode)}/${encodeURIComponent(identity)}`
   }
 } as const;
