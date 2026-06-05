@@ -57,6 +57,11 @@ export const routes: Routes = [
     loadComponent: () => import('./app/features/admin/modules/modules.component').then(m => m.AdminModulesComponent),
     canActivate: [authGuard, roleGuard('ADMIN')]
   },
+  {
+    path: 'admin/recommendations',
+    loadComponent: () => import('./app/features/admin/recommendations/recommendations.component').then(m => m.AdminRecommendationsComponent),
+    canActivate: [authGuard, roleGuard('ADMIN')]
+  },
 
   {
     path: 'not-found',

@@ -111,7 +111,8 @@
     "THEME_DARK": "Switch to dark mode",
     "STUDENT_DIRECTORY": "Student Directory",
     "USER_MANAGEMENT": "User Management",
-    "OBSERVE": "Observation"
+    "OBSERVE": "Observation",
+    "RECOMMENDATIONS": "Recommendations"
   },
   "ROLE": {
     "ADMIN": "Admin",
@@ -278,6 +279,36 @@
       "BTN_SAVE": "Save Changes",
       "STAT_CURRENT_PAGE": "Current Page",
       "STAT_TOTAL_PAGES": "Total Pages"
+    },
+    "RECOMMENDATIONS": {
+      "TITLE": "Instructor Recommendations",
+      "SUBTITLE": "Best-fit instructors per module, based on real student outcomes",
+      "LAST_COMPUTED": "Last computed",
+      "RECOMPUTE": "Recompute",
+      "RECOMPUTED_OK": "Recommendations recomputed — {{count}} scores",
+      "ERROR_LOAD": "Failed to load recommendations",
+      "ERROR_RECOMPUTE": "Recompute failed",
+      "KPI_COVERAGE": "Modules covered",
+      "KPI_INSTRUCTORS": "Active instructors",
+      "KPI_WORKED_WELL": "Avg. worked-well rate",
+      "KPI_ATTENTION": "Modules needing attention",
+      "STRONG_FIT": "with strong fit",
+      "FILTER_ALL": "All modules",
+      "FILTER_UNASSIGNED": "Unassigned",
+      "FILTER_STRONG": "Strong fit",
+      "SEARCH": "Search module...",
+      "STUDENTS": "students",
+      "UNASSIGNED": "Unassigned",
+      "COLD_START_SHORT": "Not enough data",
+      "COLD_START_TITLE": "Not enough data yet",
+      "COLD_START_HINT": "This module needs more sessions before a reliable recommendation can be made.",
+      "BADGE_EVIDENCE": "Evidence",
+      "BADGE_SIMILARITY": "Suggested",
+      "BADGE_ASSIGNED": "Assigned",
+      "FIT": "fit",
+      "ASSIGN": "Assign",
+      "ASSIGNED": "Assigned",
+      "EMPTY": "No module matches the current filters"
     }
   },
   "DASHBOARD": {

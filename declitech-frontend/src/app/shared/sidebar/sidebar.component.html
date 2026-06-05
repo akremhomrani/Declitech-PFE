@@ -50,6 +50,13 @@
         <span class="material-symbols-outlined">apps</span>
         <span class="text-sm truncate">{{ 'NAV.MODULES' | translate }}</span>
       </a>
+      <a *ngIf="isAdmin" (click)="layoutService.closeSidebar()"
+        class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white dark:hover:bg-slate-800 hover:text-primary hover:shadow-sm transition-all font-semibold"
+        routerLink="/admin/recommendations" routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20"
+        [routerLinkActiveOptions]="{exact: false}">
+        <span class="material-symbols-outlined">recommend</span>
+        <span class="text-sm truncate">{{ 'NAV.RECOMMENDATIONS' | translate }}</span>
+      </a>
       <a *ngIf="isInstructor" (click)="layoutService.closeSidebar()"
         class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-text-muted hover:bg-white dark:hover:bg-slate-800 hover:text-primary hover:shadow-sm transition-all font-semibold"
         routerLink="/session/create" routerLinkActive="bg-primary text-white font-bold shadow-md shadow-primary/20"
