@@ -111,7 +111,8 @@
     "THEME_DARK": "Passer en mode sombre",
     "STUDENT_DIRECTORY": "Annuaire des élèves",
     "USER_MANAGEMENT": "Gestion des utilisateurs",
-    "OBSERVE": "Observation"
+    "OBSERVE": "Observation",
+    "RECOMMENDATIONS": "Recommandations"
   },
   "ROLE": {
     "ADMIN": "Administrateur",
@@ -278,6 +279,36 @@
       "BTN_SAVE": "Enregistrer",
       "STAT_CURRENT_PAGE": "Page actuelle",
       "STAT_TOTAL_PAGES": "Total pages"
+    },
+    "RECOMMENDATIONS": {
+      "TITLE": "Recommandations d'instructeurs",
+      "SUBTITLE": "Les instructeurs les plus adaptés par module, selon les résultats réels des élèves",
+      "LAST_COMPUTED": "Dernier calcul",
+      "RECOMPUTE": "Recalculer",
+      "RECOMPUTED_OK": "Recommandations recalculées — {{count}} scores",
+      "ERROR_LOAD": "Échec du chargement des recommandations",
+      "ERROR_RECOMPUTE": "Échec du recalcul",
+      "KPI_COVERAGE": "Modules couverts",
+      "KPI_INSTRUCTORS": "Instructeurs actifs",
+      "KPI_WORKED_WELL": "Taux moyen de bon travail",
+      "KPI_ATTENTION": "Modules à surveiller",
+      "STRONG_FIT": "très adaptés",
+      "FILTER_ALL": "Tous les modules",
+      "FILTER_UNASSIGNED": "Non assignés",
+      "FILTER_STRONG": "Très adaptés",
+      "SEARCH": "Rechercher un module...",
+      "STUDENTS": "élèves",
+      "UNASSIGNED": "Non assigné",
+      "COLD_START_SHORT": "Données insuffisantes",
+      "COLD_START_TITLE": "Données encore insuffisantes",
+      "COLD_START_HINT": "Ce module nécessite davantage de sessions avant de pouvoir établir une recommandation fiable.",
+      "BADGE_EVIDENCE": "Preuve",
+      "BADGE_SIMILARITY": "Suggéré",
+      "BADGE_ASSIGNED": "Assigné",
+      "FIT": "adéquation",
+      "ASSIGN": "Assigner",
+      "ASSIGNED": "Assigné",
+      "EMPTY": "Aucun module ne correspond aux filtres"
     }
   },
   "DASHBOARD": {
