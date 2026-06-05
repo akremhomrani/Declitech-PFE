@@ -129,9 +129,13 @@ public class OpenRouterClient {
             return null;
         }
         String system = "Tu es un assistant pédagogique. À partir des données d'une session de code d'un élève "
-                + "(code et sorties console par activité), produis un petit rapport en français. Réponds UNIQUEMENT "
+                + "(code et sorties console par activité), produis un rapport détaillé en français. Réponds UNIQUEMENT "
                 + "en JSON avec les clés: workedWell (boolean), difficulty (\"faible\"|\"moyenne\"|\"élevée\"), "
-                + "errorsCount (number), summary (string, 2 à 4 phrases), activities (tableau de {activity, note}).";
+                + "errorsCount (number), summary (string), activities (tableau de {activity, note}). "
+                + "Le champ summary doit être un paragraphe développé de 6 à 9 phrases qui: décrit la progression "
+                + "globale de l'élève, les concepts maîtrisés et ceux encore fragiles, la nature des erreurs "
+                + "rencontrées et comment l'élève y a réagi, son niveau d'autonomie et d'engagement, puis se "
+                + "termine par une recommandation pédagogique concrète pour la suite. Reste factuel et bienveillant.";
 
         List<Map<String, Object>> messages = List.of(
                 Map.of("role", "system", "content", system),
@@ -142,7 +146,7 @@ public class OpenRouterClient {
         body.put("model", model);
         body.put("messages", messages);
         body.put("temperature", 0.2);
-        body.put("max_tokens", 700);
+        body.put("max_tokens", 1200);
         body.put("response_format", Map.of("type", "json_object"));
 
         try {

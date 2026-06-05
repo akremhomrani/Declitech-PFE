@@ -100,7 +100,8 @@ public class EmotionTimelineService {
 
         EmotionReportDTO.FinalState finalState = new EmotionReportDTO.FinalState();
         finalState.setState(dominant);
-        finalState.setFinalSentence(narrative.narrative(confidence, dominant, dominantFreq));
+        finalState.setFinalSentence(narrative.narrative(confidence, dominant, dominantFreq,
+                agg.engagement(), agg.meanStability));
         finalState.setFreq(agg.dominantFrequency);
         finalState.setMeanProbs(agg.weightedMean);
         dto.setFinalState(finalState);
