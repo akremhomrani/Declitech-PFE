@@ -288,74 +288,83 @@
         <div class="p-6 sm:p-8 flex flex-col gap-6">
 
           <div
-            class="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-white dark:to-slate-800 overflow-hidden">
-            <div class="flex items-center gap-2 px-5 py-3.5 border-b border-primary/10 bg-primary/5">
-              <span class="material-symbols-outlined text-primary text-lg">auto_awesome</span>
-              <h4 class="text-xs font-black tracking-widest uppercase text-primary">{{ 'SESSION_DETAILS.AI_ANALYSIS_TITLE' | translate }}</h4>
+            class="rounded-2xl border border-primary/15 bg-white dark:bg-slate-800/60 shadow-sm overflow-hidden">
+            <div
+              class="flex items-center gap-3 px-5 py-4 border-b border-primary/10 bg-gradient-to-r from-primary/10 to-transparent">
+              <span class="size-9 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-xl">auto_awesome</span>
+              </span>
+              <div class="flex flex-col min-w-0">
+                <h4 class="text-sm font-black tracking-wide text-primary leading-tight">{{ 'SESSION_DETAILS.AI_ANALYSIS_TITLE' | translate }}</h4>
+                <span *ngIf="selectedTrackReport" class="text-[11px] text-slate-400 truncate">{{ 'SESSION_DETAILS.GENERATED' | translate }} {{ formatDate(selectedTrackReport.createdAt) }}</span>
+              </div>
+              <div class="ml-auto shrink-0">
+                <div *ngIf="isLoadingReport" class="flex items-center gap-2">
+                  <div class="size-3.5 border-2 border-slate-300 border-t-primary rounded-full animate-spin"></div>
+                  <span class="text-xs text-slate-400">{{ 'COMMON.LOADING' | translate }}</span>
+                </div>
+                <span *ngIf="!isLoadingReport && selectedStudentReport"
+                  class="inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-black rounded-full"
+                  [ngClass]="selectedStudentReport.workedWell ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'">
+                  <span class="material-symbols-outlined text-sm">{{ selectedStudentReport.workedWell ? 'check_circle' : 'info' }}</span>
+                  {{ (selectedStudentReport.workedWell ? 'SESSION_DETAILS.WORKED_WELL' : 'SESSION_DETAILS.NEEDS_HELP') | translate }}
+                </span>
+              </div>
             </div>
-            <div class="px-5 py-4">
+
+            <div class="p-5 flex flex-col gap-5">
               <div *ngIf="selectedTrackReport" class="flex flex-col gap-2.5">
                 <div
-                  class="flex items-center gap-2 w-fit px-3 py-1.5 bg-white dark:bg-slate-700 rounded-lg border border-primary/10 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  <span class="material-symbols-outlined text-sm">school</span>
-                  {{ 'SESSION_DETAILS.EXERCISE' | translate }}: <span class="text-slate-700 dark:text-slate-300 font-bold">{{
-                    selectedTrackReport.exerciseName }}</span>
+                  class="inline-flex items-center gap-2 w-fit px-3 py-1.5 bg-slate-50 dark:bg-slate-700/60 rounded-lg border border-primary/10 text-xs font-semibold text-slate-500 dark:text-slate-300">
+                  <span class="material-symbols-outlined text-sm text-primary">school</span>
+                  {{ 'SESSION_DETAILS.EXERCISE' | translate }}: <span class="text-slate-700 dark:text-slate-100 font-bold">{{ selectedTrackReport.exerciseName }}</span>
                 </div>
-                <p class="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">{{ selectedTrackReport.conclusion
-                  }}</p>
-                <p class="text-[10px] text-slate-400 italic">{{ 'SESSION_DETAILS.GENERATED' | translate }} {{ formatDate(selectedTrackReport.createdAt) }}
-                </p>
+                <p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">{{ selectedTrackReport.conclusion }}</p>
               </div>
-              <div *ngIf="isLoadingReport || selectedStudentReport"
-                class="mt-4 pt-4 border-t border-primary/10">
-                <div class="flex items-center gap-2 mb-3">
-                  <div *ngIf="isLoadingReport" class="ml-auto flex items-center gap-2">
-                    <div class="size-3.5 border-2 border-slate-300 border-t-primary rounded-full animate-spin"></div>
-                    <span class="text-xs text-slate-400">{{ 'COMMON.LOADING' | translate }}</span>
+
+              <div *ngIf="!isLoadingReport && selectedStudentReport" class="flex flex-col gap-5">
+                <div class="grid grid-cols-3 gap-3">
+                  <div class="rounded-xl bg-slate-50 dark:bg-slate-700/60 border border-slate-100 dark:border-slate-700 p-3.5 flex flex-col items-center gap-1">
+                    <span class="material-symbols-outlined text-lg text-primary/70">checklist</span>
+                    <p class="text-2xl font-black text-slate-800 dark:text-slate-100 leading-none">{{ selectedStudentReport.activitiesCount }}</p>
+                    <p class="text-[10px] uppercase tracking-wide text-slate-400">{{ 'SESSION_DETAILS.ACTIVITIES' | translate }}</p>
                   </div>
-                  <span *ngIf="!isLoadingReport && selectedStudentReport"
-                    class="ml-auto px-3 py-1 text-[11px] font-black rounded-full"
-                    [ngClass]="selectedStudentReport.workedWell ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'">
-                    {{ (selectedStudentReport.workedWell ? 'SESSION_DETAILS.WORKED_WELL' : 'SESSION_DETAILS.NEEDS_HELP') | translate }}
-                  </span>
+                  <div class="rounded-xl bg-slate-50 dark:bg-slate-700/60 border border-slate-100 dark:border-slate-700 p-3.5 flex flex-col items-center gap-1">
+                    <span class="material-symbols-outlined text-lg text-primary/70">play_circle</span>
+                    <p class="text-2xl font-black text-slate-800 dark:text-slate-100 leading-none">{{ selectedStudentReport.totalExecutions }}</p>
+                    <p class="text-[10px] uppercase tracking-wide text-slate-400">{{ 'SESSION_DETAILS.EXECUTIONS' | translate }}</p>
+                  </div>
+                  <div class="rounded-xl p-3.5 flex flex-col items-center gap-1 border"
+                    [ngClass]="selectedStudentReport.totalErrors > 0 ? 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-900/30' : 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-900/30'">
+                    <span class="material-symbols-outlined text-lg" [ngClass]="selectedStudentReport.totalErrors > 0 ? 'text-red-500' : 'text-emerald-500'">{{ selectedStudentReport.totalErrors > 0 ? 'error' : 'task_alt' }}</span>
+                    <p class="text-2xl font-black leading-none" [ngClass]="selectedStudentReport.totalErrors > 0 ? 'text-red-600' : 'text-emerald-600'">{{ selectedStudentReport.totalErrors }}</p>
+                    <p class="text-[10px] uppercase tracking-wide text-slate-400">{{ 'SESSION_DETAILS.ERRORS' | translate }}</p>
+                  </div>
                 </div>
 
-                <div *ngIf="!isLoadingReport && selectedStudentReport" class="flex flex-col gap-3">
-                  <div class="grid grid-cols-3 gap-3">
-                    <div class="rounded-xl bg-white dark:bg-slate-700 border border-primary/10 p-3 text-center">
-                      <p class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ selectedStudentReport.activitiesCount }}</p>
-                      <p class="text-[11px] uppercase tracking-wide text-slate-500">{{ 'SESSION_DETAILS.ACTIVITIES' | translate }}</p>
-                    </div>
-                    <div class="rounded-xl bg-white dark:bg-slate-700 border border-primary/10 p-3 text-center">
-                      <p class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ selectedStudentReport.totalExecutions }}</p>
-                      <p class="text-[11px] uppercase tracking-wide text-slate-500">{{ 'SESSION_DETAILS.EXECUTIONS' | translate }}</p>
-                    </div>
-                    <div class="rounded-xl p-3 text-center border"
-                      [ngClass]="selectedStudentReport.totalErrors > 0 ? 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-900/30' : 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-900/30'">
-                      <p class="text-2xl font-black" [ngClass]="selectedStudentReport.totalErrors > 0 ? 'text-red-600' : 'text-emerald-600'">{{ selectedStudentReport.totalErrors }}</p>
-                      <p class="text-[11px] uppercase tracking-wide text-slate-500">{{ 'SESSION_DETAILS.ERRORS' | translate }}</p>
-                    </div>
-                  </div>
+                <div class="relative rounded-xl bg-primary/[0.04] dark:bg-primary/10 border border-primary/10 p-4 pl-5">
+                  <span class="absolute left-0 top-4 bottom-4 w-1 rounded-full bg-primary/40"></span>
+                  <p class="text-slate-700 dark:text-slate-200 text-base leading-7 whitespace-pre-wrap">{{ selectedStudentReport.summary }}</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-x-5 gap-y-3 pt-1 border-t border-slate-100 dark:border-slate-700">
                   <div class="flex items-center gap-2">
-                    <span class="text-[11px] uppercase tracking-wide text-slate-500">{{ 'SESSION_DETAILS.DIFFICULTY' | translate }}:</span>
+                    <span class="text-[11px] uppercase tracking-wide text-slate-400">{{ 'SESSION_DETAILS.DIFFICULTY' | translate }}</span>
                     <span class="px-2.5 py-0.5 text-xs font-bold rounded-full capitalize" [ngClass]="difficultyClass(selectedStudentReport.difficulty)">{{ selectedStudentReport.difficulty }}</span>
                   </div>
-                  <div *ngIf="reportActivities.length" class="flex flex-col gap-1.5">
-                    <span class="text-[11px] uppercase tracking-wide text-slate-500">{{ 'SESSION_DETAILS.ACTIVITIES_DONE' | translate }}</span>
-                    <div class="flex flex-wrap gap-2">
-                      <span *ngFor="let a of reportActivities"
-                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-white dark:bg-slate-700 border border-primary/10 text-slate-700 dark:text-slate-300">
-                        <span class="material-symbols-outlined text-sm text-indigo-400">description</span>{{ a.activity }}
-                      </span>
-                    </div>
+                  <div *ngIf="reportActivities.length" class="flex items-center gap-2 flex-wrap">
+                    <span class="text-[11px] uppercase tracking-wide text-slate-400">{{ 'SESSION_DETAILS.ACTIVITIES_DONE' | translate }}</span>
+                    <span *ngFor="let a of reportActivities"
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-50 dark:bg-slate-700/60 border border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-300">
+                      <span class="material-symbols-outlined text-sm text-indigo-400">description</span>{{ a.activity }}
+                    </span>
                   </div>
-                  <p class="text-slate-700 dark:text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">{{ selectedStudentReport.summary }}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div *ngIf="selectedEmotionReport?.finalState"
+          <div *ngIf="selectedEmotionReport?.finalSentence || selectedEmotionReport?.finalState"
             class="rounded-2xl border border-indigo-100 dark:border-indigo-900/30 bg-gradient-to-br from-indigo-50 dark:from-indigo-900/20 to-white dark:to-slate-800 overflow-hidden">
             <div
               class="flex items-center gap-2 px-5 py-3.5 border-b border-indigo-100 dark:border-indigo-900/30 bg-indigo-50/80 dark:bg-indigo-900/20">
@@ -367,8 +376,7 @@
               </span>
             </div>
             <div class="px-5 py-4">
-              <p class="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">{{ selectedEmotionReport?.finalState
-                }}</p>
+              <p class="text-slate-700 dark:text-slate-200 text-base leading-7 whitespace-pre-wrap">{{ selectedEmotionReport?.finalSentence || selectedEmotionReport?.finalState }}</p>
             </div>
           </div>
 
