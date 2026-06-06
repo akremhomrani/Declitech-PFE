@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -55,6 +56,7 @@ export class AdminDashboardComponent implements OnInit {
   private readonly moduleService = inject(ModuleService);
   private readonly sessionService = inject(SessionService);
   private readonly t = inject(TranslateService);
+  private readonly router = inject(Router);
 
   isLoading = false;
   error = '';
@@ -173,6 +175,10 @@ export class AdminDashboardComponent implements OnInit {
     const sorted = [...byInstructor.values()].sort((a, b) => b.total - a.total);
     this.topInstructors = sorted.filter(x => x.role === 'INSTRUCTEUR').slice(0, 5);
     this.topFreelancers = sorted.filter(x => x.role === 'FREELANCER').slice(0, 5);
+  }
+
+  viewPerformance(username: string): void {
+    this.router.navigate(['/analytics'], { queryParams: { username } });
   }
 
   rolePercentage(role: UserRole): number {

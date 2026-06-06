@@ -1,6 +1,6 @@
 import { Component, NgZone, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { interval, startWith, Subscription, switchMap } from 'rxjs';
 import { NavbarComponent } from '../../shared/navbar/navbar.component';
@@ -42,11 +42,13 @@ export class InstructorAnalyticsComponent implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly moduleService = inject(ModuleService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly zone = inject(NgZone);
   private readonly logger = inject(LoggerService);
 
   isLoading = true;
   instructorUsername = '';
+  isAdminView = false;
   range: Range = 'all';
 
   lastUpdated: Date | null = null;
@@ -87,7 +89,13 @@ export class InstructorAnalyticsComponent implements OnInit, OnDestroy {
   private timeouts: ReturnType<typeof setTimeout>[] = [];
 
   ngOnInit(): void {
-    this.instructorUsername = this.authService.getUsername() || 'Instructor';
+    const targetUsername = this.route.snapshot.queryParamMap.get('username');
+    if (targetUsername && this.authService.isAdmin()) {
+      this.isAdminView = true;
+      this.instructorUsername = targetUsername;
+    } else {
+      this.instructorUsername = this.authService.getUsername() || 'Instructor';
+    }
     this.startPolling();
   }
 
@@ -113,11 +121,15 @@ export class InstructorAnalyticsComponent implements OnInit, OnDestroy {
   }
 
   private startPolling(): void {
-    const isInstructor = this.authService.isInstructor();
     const filters: { instructorUsername?: string } = {};
-    if (isInstructor) filters.instructorUsername = this.instructorUsername;
+    if (this.isAdminView) {
+      filters.instructorUsername = this.instructorUsername;
+    } else if (this.authService.isInstructor()) {
+      filters.instructorUsername = this.instructorUsername;
+    }
 
-    this.moduleService.myModules().subscribe({
+    const modules$ = this.isAdminView ? this.moduleService.list() : this.moduleService.myModules();
+    modules$.subscribe({
       next: list => (this.modules = list),
       error: () => (this.modules = [])
     });
@@ -354,6 +366,10 @@ export class InstructorAnalyticsComponent implements OnInit, OnDestroy {
 
   viewSession(id: number): void {
     this.router.navigate(['/session/details', id]);
+  }
+
+  goBack(): void {
+    this.router.navigate(['/admin/users']);
   }
 
   get initials(): string {

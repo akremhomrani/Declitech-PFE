@@ -8,13 +8,20 @@
 
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div class="flex items-center gap-4">
+          <button *ngIf="isAdminView" (click)="goBack()" [title]="'COMMON.BACK' | translate"
+            class="shrink-0 p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            <span class="material-symbols-outlined text-slate-600 dark:text-slate-300">arrow_back</span>
+          </button>
           <div class="analytics-avatar">
             <span class="text-xl font-black text-white">{{ initials }}</span>
           </div>
           <div>
             <h1 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{{ 'ANALYTICS.TITLE' | translate }}</h1>
-            <p class="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{{ 'ANALYTICS.WELCOME_BACK' | translate }}
+            <p *ngIf="!isAdminView" class="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{{ 'ANALYTICS.WELCOME_BACK' | translate }}
               <span class="font-bold text-primary">{{ instructorUsername }}</span> — {{ 'ANALYTICS.WELCOME_HINT' | translate }}
+            </p>
+            <p *ngIf="isAdminView" class="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{{ 'ANALYTICS.VIEWING_PERFORMANCE' | translate }}
+              <span class="font-bold text-primary">&#64;{{ instructorUsername }}</span>
             </p>
           </div>
         </div>
