@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { NavbarComponent } from '../../../shared/navbar/navbar.component';
 import { SidebarComponent } from '../../../shared/sidebar/sidebar.component';
@@ -46,6 +47,7 @@ export class AdminUsersComponent implements OnInit {
   private readonly moduleService = inject(ModuleService);
   private readonly t = inject(TranslateService);
   private readonly toast = inject(ToastService);
+  private readonly router = inject(Router);
 
   readonly Math = Math;
 
@@ -375,6 +377,10 @@ export class AdminUsersComponent implements OnInit {
   viewDetails(user: User): void {
     this.detailsUserId = user.id;
     this.detailsOpen = true;
+  }
+
+  viewPerformance(user: User): void {
+    this.router.navigate(['/analytics'], { queryParams: { username: user.username } });
   }
 
   closeDetails(): void {

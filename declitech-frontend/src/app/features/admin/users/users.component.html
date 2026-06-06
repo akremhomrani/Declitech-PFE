@@ -124,6 +124,9 @@
                     <button (click)="viewDetails(user)" class="p-2 hover:bg-sidebar-bg rounded-lg transition-colors group" [title]="'ADMIN.USERS.VIEW_DETAILS' | translate">
                       <span class="material-symbols-outlined text-text-main text-xl group-hover:scale-110 transition-transform">visibility</span>
                     </button>
+                    <button *ngIf="user.role !== 'ADMIN'" (click)="viewPerformance(user)" class="p-2 hover:bg-sidebar-bg rounded-lg transition-colors group" [title]="'ADMIN.USERS.VIEW_PERFORMANCE' | translate">
+                      <span class="material-symbols-outlined text-blue-500 text-xl group-hover:scale-110 transition-transform">monitoring</span>
+                    </button>
                     <button (click)="openEdit(user)" class="p-2 hover:bg-sidebar-bg rounded-lg transition-colors group" [title]="'ADMIN.USERS.EDIT_TITLE' | translate">
                       <span class="material-symbols-outlined text-text-main text-xl group-hover:scale-110 transition-transform">edit</span>
                     </button>

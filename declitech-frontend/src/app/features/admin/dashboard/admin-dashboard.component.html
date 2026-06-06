@@ -137,37 +137,6 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <div class="bg-surface rounded-xl border border-border-light shadow-sm p-6">
           <h3 class="text-lg font-semibold text-text-main mb-5 flex items-center gap-2">
-            <span class="material-symbols-outlined text-primary">leaderboard</span>
-            {{ 'ADMIN.DASHBOARD.TOP_MODULES' | translate }}
-          </h3>
-          <div class="space-y-4">
-            <div *ngFor="let m of topModules" class="space-y-1.5">
-              <div class="flex items-center justify-between gap-3">
-                <div class="flex items-center gap-2 min-w-0">
-                  <div class="size-7 shrink-0 rounded-full bg-gradient-to-br from-primary to-cyan-600 flex items-center justify-center text-white font-bold text-xs">
-                    {{ getInitials(m.title) }}
-                  </div>
-                  <p class="font-medium text-text-main text-sm truncate">{{ m.title }}</p>
-                </div>
-                <div class="flex items-center gap-2 shrink-0">
-                  <span *ngIf="m.active > 0" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
-                    <span class="w-1 h-1 rounded-full bg-green-500 animate-pulse"></span>
-                    {{ m.active }}
-                  </span>
-                  <span class="text-text-main font-semibold tabular-nums text-sm">{{ m.total }}</span>
-                </div>
-              </div>
-              <div class="h-2.5 w-full bg-sidebar-bg rounded-full overflow-hidden">
-                <div class="h-full bg-gradient-to-r from-primary to-cyan-400 rounded-full transition-all duration-500"
-                     [style.width.%]="barWidth(m.total, topModuleMax)"></div>
-              </div>
-            </div>
-            <div *ngIf="topModules.length === 0 && !isLoading" class="p-8 text-center text-text-muted">{{ 'ADMIN.DASHBOARD.NO_DATA' | translate }}</div>
-          </div>
-        </div>
-
-        <div class="bg-surface rounded-xl border border-border-light shadow-sm p-6">
-          <h3 class="text-lg font-semibold text-text-main mb-5 flex items-center gap-2">
             <span class="material-symbols-outlined text-blue-500">cast_for_education</span>
             {{ 'ADMIN.DASHBOARD.TOP_INSTRUCTORS' | translate }}
           </h3>
@@ -183,9 +152,12 @@
                     <p *ngIf="i.active > 0" class="text-[10px] text-green-600 dark:text-green-400">{{ i.active }} {{ 'ADMIN.DASHBOARD.LIVE_NOW' | translate }}</p>
                   </div>
                 </div>
-                <div class="flex items-center gap-3 shrink-0 text-sm">
+                <div class="flex items-center gap-2 shrink-0 text-sm">
                   <span class="text-text-muted">{{ i.reports }} {{ 'ADMIN.DASHBOARD.REPORTS' | translate }}</span>
                   <span class="text-text-main font-semibold tabular-nums">{{ i.total }}</span>
+                  <button (click)="viewPerformance(i.username)" class="p-1.5 hover:bg-sidebar-bg rounded-lg transition-colors group" [title]="'ADMIN.USERS.VIEW_PERFORMANCE' | translate">
+                    <span class="material-symbols-outlined text-blue-500 text-lg group-hover:scale-110 transition-transform">monitoring</span>
+                  </button>
                 </div>
               </div>
               <div class="h-2.5 w-full bg-sidebar-bg rounded-full overflow-hidden">
@@ -196,36 +168,70 @@
             <div *ngIf="topInstructors.length === 0 && !isLoading" class="p-8 text-center text-text-muted">{{ 'ADMIN.DASHBOARD.NO_DATA' | translate }}</div>
           </div>
         </div>
+
+        <div class="bg-surface rounded-xl border border-border-light shadow-sm p-6">
+          <h3 class="text-lg font-semibold text-text-main mb-5 flex items-center gap-2">
+            <span class="material-symbols-outlined text-purple-500">work</span>
+            {{ 'ADMIN.DASHBOARD.TOP_FREELANCERS' | translate }}
+          </h3>
+          <div class="space-y-4">
+            <div *ngFor="let f of topFreelancers" class="space-y-1.5">
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2 min-w-0">
+                  <div class="size-7 shrink-0 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xs">
+                    {{ getInitials(f.username) }}
+                  </div>
+                  <div class="min-w-0">
+                    <p class="font-medium text-text-main text-sm truncate">&#64;{{ f.username }}</p>
+                    <p *ngIf="f.active > 0" class="text-[10px] text-green-600 dark:text-green-400">{{ f.active }} {{ 'ADMIN.DASHBOARD.LIVE_NOW' | translate }}</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0 text-sm">
+                  <span class="text-text-muted">{{ f.reports }} {{ 'ADMIN.DASHBOARD.REPORTS' | translate }}</span>
+                  <span class="text-text-main font-semibold tabular-nums">{{ f.total }}</span>
+                  <button (click)="viewPerformance(f.username)" class="p-1.5 hover:bg-sidebar-bg rounded-lg transition-colors group" [title]="'ADMIN.USERS.VIEW_PERFORMANCE' | translate">
+                    <span class="material-symbols-outlined text-purple-500 text-lg group-hover:scale-110 transition-transform">monitoring</span>
+                  </button>
+                </div>
+              </div>
+              <div class="h-2.5 w-full bg-sidebar-bg rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-500"
+                     [style.width.%]="barWidth(f.total, topFreelancerMax)"></div>
+              </div>
+            </div>
+            <div *ngIf="topFreelancers.length === 0 && !isLoading" class="p-8 text-center text-text-muted">{{ 'ADMIN.DASHBOARD.NO_FREELANCERS' | translate }}</div>
+          </div>
+        </div>
       </div>
 
       <div class="bg-surface rounded-xl border border-border-light shadow-sm p-6 mb-6 sm:mb-8">
         <h3 class="text-lg font-semibold text-text-main mb-5 flex items-center gap-2">
-          <span class="material-symbols-outlined text-purple-500">work</span>
-          {{ 'ADMIN.DASHBOARD.TOP_FREELANCERS' | translate }}
+          <span class="material-symbols-outlined text-primary">leaderboard</span>
+          {{ 'ADMIN.DASHBOARD.TOP_MODULES' | translate }}
         </h3>
         <div class="space-y-4">
-          <div *ngFor="let f of topFreelancers" class="space-y-1.5">
+          <div *ngFor="let m of topModules" class="space-y-1.5">
             <div class="flex items-center justify-between gap-3">
               <div class="flex items-center gap-2 min-w-0">
-                <div class="size-7 shrink-0 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xs">
-                  {{ getInitials(f.username) }}
+                <div class="size-7 shrink-0 rounded-full bg-gradient-to-br from-primary to-cyan-600 flex items-center justify-center text-white font-bold text-xs">
+                  {{ getInitials(m.title) }}
                 </div>
-                <div class="min-w-0">
-                  <p class="font-medium text-text-main text-sm truncate">&#64;{{ f.username }}</p>
-                  <p *ngIf="f.active > 0" class="text-[10px] text-green-600 dark:text-green-400">{{ f.active }} {{ 'ADMIN.DASHBOARD.LIVE_NOW' | translate }}</p>
-                </div>
+                <p class="font-medium text-text-main text-sm truncate">{{ m.title }}</p>
               </div>
-              <div class="flex items-center gap-3 shrink-0 text-sm">
-                <span class="text-text-muted">{{ f.reports }} {{ 'ADMIN.DASHBOARD.REPORTS' | translate }}</span>
-                <span class="text-text-main font-semibold tabular-nums">{{ f.total }}</span>
+              <div class="flex items-center gap-2 shrink-0">
+                <span *ngIf="m.active > 0" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                  <span class="w-1 h-1 rounded-full bg-green-500 animate-pulse"></span>
+                  {{ m.active }}
+                </span>
+                <span class="text-text-main font-semibold tabular-nums text-sm">{{ m.total }}</span>
               </div>
             </div>
             <div class="h-2.5 w-full bg-sidebar-bg rounded-full overflow-hidden">
-              <div class="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-500"
-                   [style.width.%]="barWidth(f.total, topFreelancerMax)"></div>
+              <div class="h-full bg-gradient-to-r from-primary to-cyan-400 rounded-full transition-all duration-500"
+                   [style.width.%]="barWidth(m.total, topModuleMax)"></div>
             </div>
           </div>
-          <div *ngIf="topFreelancers.length === 0 && !isLoading" class="p-8 text-center text-text-muted">{{ 'ADMIN.DASHBOARD.NO_FREELANCERS' | translate }}</div>
+          <div *ngIf="topModules.length === 0 && !isLoading" class="p-8 text-center text-text-muted">{{ 'ADMIN.DASHBOARD.NO_DATA' | translate }}</div>
         </div>
       </div>
 
