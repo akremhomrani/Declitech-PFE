@@ -1,0 +1,130 @@
+# Root workspace .gitignore
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.iml
+*.iws
+.history/
+.project
+.classpath
+.factorypath
+.settings/
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+declitech-extension/env.js
+
+# Redis data snapshots (may contain student data)
+*.rdb
+*.aof
+
+# Build outputs
+dist/
+build/
+target/
+out/
+
+# Archives
+*.zip
+*.rar
+
+# Markdown files
+*.md
+
+# JSON files
+*.json
+!declitech-frontend/src/assets/i18n/*.json
+!declitech-frontend/package.json
+!declitech-frontend/package-lock.json
+!declitech-frontend/angular.json
+!declitech-frontend/tsconfig.json
+!declitech-frontend/tsconfig.app.json
+!declitech-extension/manifest.json
+
+# Claude directory
+.claude/
+.code-review-graph/
+.scripts/
+scripts/*
+!scripts/staging-seed/
+!scripts/download-models.ps1
+!scripts/download-models.sh
+
+# ML model weights — fetched via scripts/download-models (not committed)
+*.onnx
+*.tflite
+*.ort
+
+# Docs directory (local-only docs)
+docs/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Python compiled
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Angular cache
+.angular/
+
+# Redis dump
+Redis/dump.rdb
+dump.rdb
+*.rdb
+
+# Windows binaries (should not live in source)
+*.exe
+*.pdb
+*.dll
+
+# Embedded DB files
+*.h2.db
+*.mv.db
+*.trace.db
+
+# Keep .env.example even though *.env would catch it
+!.env.example
+
+# Maven wrapper jar (keep properties file)
+.mvn/wrapper/maven-wrapper.jar
+
+# Docker override (local only)
+docker-compose.override.yml
+
+# stray junk file
+null
+
+# DB init scripts (local-only)
+declitech-backend/init-dbs/
