@@ -10,7 +10,7 @@ gateway:
   require-header: ${GATEWAY_REQUIRE_HEADER:true}
 
 cors:
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:${FRONTEND_URL:http://localhost:4200}}
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,http://54.39.97.174:8000}
 
 eureka:
   client:

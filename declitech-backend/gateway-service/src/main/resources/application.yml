@@ -97,6 +97,7 @@ spring:
           '[/**]':
             allowedOriginPatterns:
               - ${FRONTEND_URL:http://localhost:4200}
+              - http://54.39.97.174:8000
               - https://app.decli.tech
               - https://learn.decli.tech
               - chrome-extension://*
