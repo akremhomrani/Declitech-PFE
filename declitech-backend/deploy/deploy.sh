@@ -17,7 +17,7 @@ declare -A PORTS=(
 )
 ORDER="eureka-server gateway-service auth-service user-service module-service session-service report-service"
 KEEP=5
-HEALTH_TIMEOUT=90
+HEALTH_TIMEOUT=150
 
 wait_listening() {
   local port=$1 waited=0
