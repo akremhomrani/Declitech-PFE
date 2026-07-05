@@ -31,6 +31,7 @@ interface VisitedSite {
 }
 
 const TAB_SWITCH_TYPES = new Set(['TAB_SWITCH', 'MULTIPLE_SWITCHES', 'OFF_PLATFORM']);
+const FOCUS_ALERT_TYPES = new Set(['INACTIVITY', 'MOUSE_INACTIVITY', 'LOW_ENGAGEMENT', 'FOCUS_LOSS', 'DISTRACTION']);
 
 @Component({
   selector: 'app-session-details',
@@ -70,6 +71,7 @@ export class SessionDetailsComponent implements OnInit {
 
   students: StudentReport[] = [];
   allStudents: StudentReport[] = [];
+  filteredStudents: StudentReport[] = [];
 
   currentPage = 1;
   totalResults = 0;
@@ -95,6 +97,7 @@ export class SessionDetailsComponent implements OnInit {
   uniqueVisitedSites: VisitedSite[] = [];
 
   private readonly studentAlertCache = new Map<string, SessionAlert[]>();
+  private readonly studentAlertsByName = new Map<string, SessionAlert[]>();
 
   parsedObservation: Observation | null = null;
   hasStructuredObservation = false;
@@ -138,6 +141,7 @@ export class SessionDetailsComponent implements OnInit {
       next: (reports: EmotionReport[]) => {
         this.untransformedReports = reports;
         this.allStudents = this.transformReportsToStudents(reports);
+        this.filteredStudents = this.allStudents;
         this.totalResults = this.allStudents.length;
         this.updateDisplayedStudents();
         this.calculateStatistics(reports);
@@ -224,7 +228,12 @@ export class SessionDetailsComponent implements OnInit {
     this.emotionService.getAllSessionAlerts(this.sessionCode).subscribe({
       next: (alerts) => {
         const countByIdentity = new Map<string, number>();
+        this.studentAlertsByName.clear();
         alerts.forEach((a) => {
+          const byStudent = this.studentAlertsByName.get(a.studentLoginIdentity) || [];
+          byStudent.push(a);
+          this.studentAlertsByName.set(a.studentLoginIdentity, byStudent);
+
           if (!TAB_SWITCH_TYPES.has(a.alertType)) return;
           countByIdentity.set(a.studentLoginIdentity, (countByIdentity.get(a.studentLoginIdentity) || 0) + 1);
         });
@@ -232,7 +241,7 @@ export class SessionDetailsComponent implements OnInit {
           ...s,
           totalAlerts: countByIdentity.get(s.name) ?? s.totalAlerts
         }));
-        this.updateDisplayedStudents();
+        this.applyFilters();
       },
       error: (err) => this.logger.warn('Failed to load batch alert counts', { err })
     });
@@ -270,7 +279,7 @@ export class SessionDetailsComponent implements OnInit {
 
   private updateDisplayedStudents(): void {
     const startIndex = (this.currentPage - 1) * this.resultsPerPage;
-    this.students = this.allStudents.slice(startIndex, startIndex + this.resultsPerPage);
+    this.students = this.filteredStudents.slice(startIndex, startIndex + this.resultsPerPage);
   }
 
   getEmotionClass(color: string): string {
@@ -290,7 +299,28 @@ export class SessionDetailsComponent implements OnInit {
   }
 
   applyFilters(): void {
+    const term = this.searchTerm.trim().toLowerCase();
+    const range = this.dateRange.trim().toLowerCase();
+
+    this.filteredStudents = this.allStudents.filter((s) => {
+      if (term && !s.name.toLowerCase().includes(term)) return false;
+      if (range && !s.lastSessionDate.toLowerCase().includes(range)) return false;
+      if (this.alertType && !this.matchesAlertTypeFilter(s)) return false;
+      return true;
+    });
+
+    this.totalResults = this.filteredStudents.length;
+    this.currentPage = 1;
     this.updateDisplayedStudents();
+  }
+
+  private matchesAlertTypeFilter(student: StudentReport): boolean {
+    if (this.alertType === 'emotion') {
+      return student.emotionColor === 'red' || student.emotionColor === 'amber';
+    }
+    const categories = this.alertType === 'security' ? TAB_SWITCH_TYPES : FOCUS_ALERT_TYPES;
+    const alerts = this.studentAlertsByName.get(student.name) || [];
+    return alerts.some((a) => categories.has(a.alertType));
   }
 
   viewFullReport(studentId: string): void {
