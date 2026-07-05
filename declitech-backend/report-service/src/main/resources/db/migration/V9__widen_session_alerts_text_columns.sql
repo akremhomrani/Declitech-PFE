@@ -1,0 +1,3 @@
+ALTER TABLE session_alerts ALTER COLUMN message TYPE VARCHAR(2000);
+ALTER TABLE session_alerts ALTER COLUMN tab_title TYPE VARCHAR(1000);
+ALTER TABLE session_alerts ALTER COLUMN tab_url TYPE VARCHAR(2000);

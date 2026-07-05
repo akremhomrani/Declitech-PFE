@@ -36,16 +36,16 @@ public class SessionAlert {
     @Column(name = "severity")
     private AlertSeverity severity;
 
-    @Column(name = "message", length = 500)
+    @Column(name = "message", length = 2000)
     private String message;
 
     @Column(name = "alert_timestamp")
     private LocalDateTime timestamp;
 
-    @Column(name = "tab_url", length = 1000)
+    @Column(name = "tab_url", length = 2000)
     private String tabUrl;
 
-    @Column(name = "tab_title", length = 500)
+    @Column(name = "tab_title", length = 1000)
     private String tabTitle;
 
     @Column(name = "switch_count")

@@ -33,6 +33,9 @@ public class AlertService {
     private static final long   DEDUP_WINDOW_SECONDS = 30;
     private static final long   REDIS_TTL_HOURS      = 24;
     private static final int    SCAN_BATCH_SIZE      = 256;
+    private static final int    MAX_MESSAGE_LENGTH   = 2000;
+    private static final int    MAX_TAB_TITLE_LENGTH = 1000;
+    private static final int    MAX_TAB_URL_LENGTH   = 2000;
 
     private final StringRedisTemplate redisTemplate;
     private final SessionAlertRepository alertRepository;
@@ -223,12 +226,17 @@ public class AlertService {
                 .studentLoginIdentity(event.getStudentLoginIdentity())
                 .alertType(event.getAlertType())
                 .severity(event.getSeverity())
-                .message(event.getMessage())
+                .message(truncate(event.getMessage(), MAX_MESSAGE_LENGTH))
                 .timestamp(event.getTimestamp())
-                .tabUrl(tabUrl)
-                .tabTitle(tabTitle)
+                .tabUrl(truncate(tabUrl, MAX_TAB_URL_LENGTH))
+                .tabTitle(truncate(tabTitle, MAX_TAB_TITLE_LENGTH))
                 .switchCount(switchCount)
                 .build();
+    }
+
+    private String truncate(String value, int maxLength) {
+        if (value == null || value.length() <= maxLength) return value;
+        return value.substring(0, maxLength);
     }
 
 }
