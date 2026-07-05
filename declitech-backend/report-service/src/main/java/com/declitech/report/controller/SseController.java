@@ -117,8 +117,12 @@ public class SseController {
         }
         // DB empty — flush from Redis (handles sessions ended before this code was
         // deployed)
-        List<SessionAlert> flushed = alertService.flushAlertsToDb(sessionId, studentLoginIdentity);
-        return ResponseEntity.ok(flushed);
+        try {
+            List<SessionAlert> flushed = alertService.flushAlertsToDb(sessionId, studentLoginIdentity);
+            return ResponseEntity.ok(flushed);
+        } catch (Exception e) {
+            return ResponseEntity.ok(List.of());
+        }
     }
 
     /**
