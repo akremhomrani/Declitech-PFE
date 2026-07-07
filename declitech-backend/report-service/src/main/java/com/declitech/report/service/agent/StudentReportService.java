@@ -123,9 +123,9 @@ public class StudentReportService {
 
     private String resolveDifficulty(JsonNode llm, int errors, int executions) {
         if (llm != null && llm.hasNonNull("difficulty")) return llm.get("difficulty").asText();
-        if (errors >= 3) return "élevée";
-        if (errors >= 1) return "moyenne";
-        return "faible";
+        if (errors >= 3) return "high";
+        if (errors >= 1) return "medium";
+        return "low";
     }
 
     private boolean resolveWorkedWell(JsonNode llm, int errors, int executions) {
@@ -135,8 +135,48 @@ public class StudentReportService {
 
     private String resolveSummary(JsonNode llm, Map<String, ActivityAgg> byActivity, int executions, int errors) {
         if (llm != null && llm.hasNonNull("summary")) return llm.get("summary").asText();
-        return "Élève sur " + byActivity.size() + " activité(s), " + executions
-                + " exécution(s), " + errors + " erreur(s).";
+        return buildFallbackSummary(byActivity, executions, errors);
+    }
+
+    private String buildFallbackSummary(Map<String, ActivityAgg> byActivity, int executions, int errors) {
+        int activityCount = byActivity.size();
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("The student worked on ").append(activityCount)
+                .append(activityCount > 1 ? " activities during this session, " : " activity during this session, ")
+                .append("totaling ").append(executions)
+                .append(executions > 1 ? " code executions and " : " code execution and ")
+                .append(errors).append(errors > 1 ? " errors encountered. " : " error encountered. ");
+
+        if (executions == 0) {
+            sb.append("No execution was recorded: the student likely stayed in a reading or reflection phase "
+                    + "without running any code yet. ");
+        } else if (errors == 0) {
+            sb.append("No error was detected across all executions, which shows a good understanding of the "
+                    + "instructions and solid autonomy in solving the exercises. ");
+        } else if ((double) errors / executions >= 0.5) {
+            sb.append("The proportion of errors relative to executions is high, a sign of recurring difficulties "
+                    + "that would benefit from targeted support on the concepts involved. ");
+        } else {
+            sb.append("A few errors occurred during the session but the student progressed overall, which is "
+                    + "normal during an active learning phase. ");
+        }
+
+        if (!byActivity.isEmpty()) {
+            List<String> details = new ArrayList<>();
+            for (ActivityAgg a : byActivity.values()) {
+                String name = a.name.isBlank() ? a.activityId : a.name;
+                details.add("\"" + name + "\" (" + a.executions + " execution(s), " + a.errors + " error(s))");
+            }
+            sb.append("Breakdown by activity: ").append(String.join(", ", details)).append(". ");
+        }
+
+        sb.append(executions > 0 && errors == 0
+                ? "It is recommended to now offer slightly more complex exercises to consolidate these skills."
+                : "It is recommended to review the points that caused errors with the student and offer "
+                        + "targeted reinforcement exercises on these concepts.");
+
+        return sb.toString();
     }
 
     private String resolveDetails(JsonNode llm, Map<String, ActivityAgg> byActivity) {

@@ -128,14 +128,15 @@ public class OpenRouterClient {
             log.warn("OpenRouter API key missing — skipping session summary");
             return null;
         }
-        String system = "Tu es un assistant pédagogique. À partir des données d'une session de code d'un élève "
-                + "(code et sorties console par activité), produis un rapport détaillé en français. Réponds UNIQUEMENT "
-                + "en JSON avec les clés: workedWell (boolean), difficulty (\"faible\"|\"moyenne\"|\"élevée\"), "
-                + "errorsCount (number), summary (string), activities (tableau de {activity, note}). "
-                + "Le champ summary doit être un paragraphe développé de 6 à 9 phrases qui: décrit la progression "
-                + "globale de l'élève, les concepts maîtrisés et ceux encore fragiles, la nature des erreurs "
-                + "rencontrées et comment l'élève y a réagi, son niveau d'autonomie et d'engagement, puis se "
-                + "termine par une recommandation pédagogique concrète pour la suite. Reste factuel et bienveillant.";
+        String system = "You are a pedagogical assistant. From a student's coding session data (code and console "
+                + "outputs per activity), produce a detailed report in English. Reply ONLY in JSON with the keys: "
+                + "workedWell (boolean), difficulty (\"low\"|\"medium\"|\"high\"), errorsCount (number), "
+                + "summary (string), activities (array of {activity, note}). "
+                + "The summary field must be a developed paragraph of 6 to 9 sentences that: describes the "
+                + "student's overall progress, the concepts mastered and those still fragile, the nature of the "
+                + "errors encountered and how the student reacted to them, their level of autonomy and "
+                + "engagement, then ends with a concrete pedagogical recommendation for what comes next. Stay "
+                + "factual and encouraging.";
 
         List<Map<String, Object>> messages = List.of(
                 Map.of("role", "system", "content", system),
